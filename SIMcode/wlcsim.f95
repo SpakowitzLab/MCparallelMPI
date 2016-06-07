@@ -301,9 +301,11 @@ Subroutine wlcsim(rand_stat)
   
 END
 Subroutine strength_schedule(ind,HP1_bind)
+    implicit none
     Integer ind
     Double PRECISION HP1_bind
     Double precision maximum
+    maximum=-28.0
     
     if(ind.lt.101) then
         HP1_bind=0

@@ -358,7 +358,6 @@ Subroutine MCvar_saveR(mc,md,fileName,repeatingBC)
     character*32 fullName
     fullName=  trim(fileName) // trim(mc%repSufix) 
     fullName=trim(fullName)
-    print*,"fullName: ",fullName
     OPEN (UNIT = 1, FILE = fullName, STATUS = 'NEW')
     IB=1
     if (repeatingBC.eq.1) then 
