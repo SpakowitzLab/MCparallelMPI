@@ -14,8 +14,9 @@ SUBROUTINE initchem(AB,NT,N,G,NP,FA,LAM,rand_stat)
 
 !  use mt19937, only : grnd, init_genrand, rnorm, mt, mti
     use mersenne_twister
+    use setPrecision
 
-  PARAMETER (PI=3.141593)
+  PARAMETER (PI=3.141593_dp)
   
   INTEGER AB(NT)            ! Chemical identity of beads
   INTEGER N                 ! Number of monomers per polymer
@@ -35,10 +36,10 @@ SUBROUTINE initchem(AB,NT,N,G,NP,FA,LAM,rand_stat)
 
   !		Translate LAM and FA to probabilities
 
-  PAA=FA*(1.-LAM)+LAM
-  PBB=FA*(LAM-1.)+1.
-  PBA=1.-PAA
-  PAB=1.-PBB
+  PAA=FA*(1.0_dp-LAM)+LAM
+  PBB=FA*(LAM-1.0_dp)+1.0_dp
+  PBA=1.0_dp-PAA
+  PAB=1.0_dp-PBB
 
   !		Determine the bead identities
   

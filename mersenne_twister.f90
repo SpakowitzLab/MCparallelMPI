@@ -365,10 +365,10 @@
               harvest(j)=real(y)*twop32m1i
             endif
             stat%mti=stat%mti+1
-            if(harvest(j).lt.0.000001) then
-                harvest(j)=0.000001
-            elseif (harvest(j).gt.0.99999) then
-                harvest(j)=0.99999
+            if(harvest(j).lt.0.0000001) then
+                harvest(j)=0.0000001
+            elseif (harvest(j).gt.0.999999) then
+                harvest(j)=0.9999999
             endif
           enddo
         end subroutine

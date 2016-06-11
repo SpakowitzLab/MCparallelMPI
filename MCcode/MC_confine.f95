@@ -13,64 +13,65 @@
 !    2         |  Cube of size LBox**3,  range: 0-LBox
 !    3         |  Circle of radius LBox, centered at LBox/2
 
-      SUBROUTINE MC_confine(confineType, LBox, RP, NT, IT1, IT2, ECon)
+SUBROUTINE MC_confine(confineType, LBox, RP, NT, IT1, IT2, ECon)
+use setPrecision
 
 
-      IMPLICIT NONE
+IMPLICIT NONE
 
-      INTEGER confineType  ! Specifier for type of confinement
-      DOUBLE PRECISION LBox ! Side length of box
-      INTEGER NT     ! Total number of beads in simulation
-      DOUBLE PRECISION RP(NT,3)  ! Bead positions
-      INTEGER IT1    ! Start test bead
-      INTEGER IT2    ! Final test bead
-      INTEGER I      ! Index of bead being compared
-      DOUBLE PRECISION ECon
+INTEGER confineType  ! Specifier for type of confinement
+DOUBLE PRECISION LBox ! Side length of box
+INTEGER NT     ! Total number of beads in simulation
+DOUBLE PRECISION RP(NT,3)  ! Bead positions
+INTEGER IT1    ! Start test bead
+INTEGER IT2    ! Final test bead
+INTEGER I      ! Index of bead being compared
+DOUBLE PRECISION ECon
 
-      ECon=0.0
-
-      
-      if (confineType.EQ.0) then
-          return
-      elseif(confineType.EQ.1) then
-          ! Confinement only in the z-direction
-          ! limits: 0 and LBox
-          DO I=IT1,IT2
-              if(RP(I,3)<0.0) then
-                  ECon=99000.0
-              elseif (RP(I,3)>LBox) then
-                  ECon=99000.0
-              endif
-          ENDDO
-      elseif(confineType.EQ.2) then
-          DO I=IT1,IT2
-              if(RP(I,1)<0.0) then
-                  ECon=99000.0
-              elseif(RP(I,1)>LBox) then
-                  ECon=99000.0
-              elseif(RP(I,2)<0.0) then
-                  ECon=99000.0
-              elseif(RP(I,2)>LBox) then
-                  ECon=99000.0
-              elseif(RP(I,3)<0.0) then
-                  ECon=99000.0
-              elseif(RP(I,3)>LBox) then
-                  ECon=99000.0
-              endif
-          ENDDO
-      elseif(confineType.EQ.3) then
-          DO I=IT1,IT2
-              if(((RP(I,1)-LBox/2)**2 + (RP(I,2)-LBox/2)**2 + &
-                 (RP(I,3)-LBox/2)**2).GT.dble(LBox*LBox*0.25)) then
-                  ECon=99000.0
-              endif
-          Enddo    
-      else 
-         print*, "Undefined comfone Type"
-         stop 1
-      endif
-     
-      
+ECon=0.0_dp
 
 
-      END
+if (confineType.EQ.0) then
+    return
+elseif(confineType.EQ.1) then
+    ! Confinement only in the z-direction
+    ! limits: 0 and LBox
+    DO I=IT1,IT2
+        if(RP(I,3)<0.0_dp) then
+            ECon=99000.0_dp
+        elseif (RP(I,3)>LBox) then
+            ECon=99000.0_dp
+        endif
+    ENDDO
+elseif(confineType.EQ.2) then
+    DO I=IT1,IT2
+        if(RP(I,1)<0.0) then
+            ECon=99000.0_dp
+        elseif(RP(I,1)>LBox) then
+            ECon=99000.0_dp
+        elseif(RP(I,2)<0.0) then
+            ECon=99000.0_dp
+        elseif(RP(I,2)>LBox) then
+            ECon=99000.0
+        elseif(RP(I,3)<0.0) then
+            ECon=99000.0_dp
+        elseif(RP(I,3)>LBox) then
+            ECon=99000.0_dp
+        endif
+    ENDDO
+elseif(confineType.EQ.3) then
+    DO I=IT1,IT2
+        if(((RP(I,1)-LBox/2)**2 + (RP(I,2)-LBox/2_dp)**2 + &
+           (RP(I,3)-LBox/2)**2).GT.dble(LBox*LBox*0.25_dp)) then
+            ECon=99000.0
+        endif
+    Enddo    
+else 
+   print*, "Undefined comfone Type"
+   stop 1
+endif
+
+
+
+
+END

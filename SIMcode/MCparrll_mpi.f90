@@ -12,6 +12,7 @@ program main
 !
 !*****************************************************************************
   use mpi
+  use setPrecision
 
   implicit none
 
@@ -55,7 +56,11 @@ program main
     
     
   end if
-  call paraTemp ( p, id )
+  if (p.gt.1) then
+    call paraTemp ( p, id )
+  else
+      call singleCall()
+  endif
 !
 !  Shut down MPI.
 !
@@ -71,6 +76,29 @@ program main
 
   stop
 end
+subroutine singleCall()
+    use mersenne_twister
+    implicit none
+!   variable for random number generator seeding
+    type(random_stat) rand_stat  ! state of random number chain
+    integer Irand     ! Seed
+    character*8 datedum  ! trash
+    character*10 timedum ! trash
+    character*5 zonedum  ! trash
+    integer seedvalues(8) ! clock readings
+    real urand(1)
+    if (.false.) then ! set spedific seed
+        Irand=7171
+    else ! seed from clock
+        call date_and_time(datedum,timedum,zonedum,seedvalues)
+        Irand=-seedvalues(5)*1E7-seedvalues(6)*1E5-seedvalues(7)*1E3-seedvalues(8)
+        Irand=mod(Irand,10000)
+        print*, "Random Intiger seed:",Irand
+    endif
+    call random_setseed(Irand,rand_stat) ! random seed for head node
+    print*, "calling single wlcsim"
+    call wlcsim(rand_stat)
+end subroutine
 subroutine paraTemp ( p, id)
 
 !*****************************************************************************
@@ -79,6 +107,7 @@ subroutine paraTemp ( p, id)
   use mpi
   use mersenne_twister
   use simMod
+  use setPrecision
 
     implicit none
 
@@ -156,7 +185,7 @@ subroutine paraTemp ( p, id)
         !   M(i) is the sum from the i'th physical replica
         !   nodeNumber(i) is the node running the i'th physical replica
         do rep=1,nPTReplicas
-            mu(rep)=-2+rep*0.08
+            mu(rep)=-2.0_dp+rep*0.08_dp
             upSuccess(rep)=0
             downSuccess(rep)=0
         enddo
@@ -186,7 +215,6 @@ subroutine paraTemp ( p, id)
                                 MPI_COMM_WORLD,error )
                 call MPI_Send (mu(rep),1, MPI_DOUBLE_PRECISION, dest,   0, &
                                 MPI_COMM_WORLD,error )
-                
             enddo
             ! get results from workers
             
@@ -245,12 +273,11 @@ subroutine paraTemp ( p, id)
         !
         !  --------------------------------
         print*, "Calling wlcsim for", mc%rep," node",id
-        call wlcsim(rand_stat,id)
+        call wlcsim(rand_stat)
         print*, "Exiting from replica", mc%rep," node",id
         mu_value=0
-        mu_value=1.0/mu_value !NaN
+        mu_value=mu_value/mu_value !NaN
         call MPI_Send(mu_value,1,MPI_DOUBLE_PRECISION,0,0,MPI_COMM_WORLD,error)
-
     end if
 
 
@@ -261,16 +288,19 @@ Subroutine PT_override(mc,md)
 !  In particualar it changes: mc%AB, mc%rep, mc%mu, mc%repSufix
     use mpi
     use simMod
+    Implicit none
     TYPE(MCvar) mc
     TYPE(MCData) md
     integer (kind=4) dest ! message destination
     integer (kind=4) source ! message source
     integer (kind=4) id, nThreads,ierror
-    character*16 iostr    ! for file naming
+    integer (kind=4) error  ! error id for MIP functions
+    character*16 iostrg    ! for file naming
+    integer ( kind = 4 ) status(MPI_STATUS_SIZE) ! MPI stuff
     
     call MPI_COMM_SIZE(MPI_COMM_WORLD,nThreads,ierror)
     call MPI_COMM_RANK(MPI_COMM_WORLD,id,ierror)
-
+    
     mc%rep=id    
     source=0
     dest=0
@@ -294,13 +324,13 @@ Subroutine PT_override(mc,md)
     
     call MPI_Recv ( mc%mu, 1, MPI_DOUBLE_PRECISION, source, 0, &
       MPI_COMM_WORLD, status, error ) 
-    
-    write(iostr,"(I4)"), mc%rep
-    iostr=adjustL(iostr)
-    iostr=trim(iostr)
-    iostr="v"//trim(iostr)
-    iostr=trim(iostr)
-    mc%repSufix=iostr
+   
+    write(iostrg,"(I4)"), mc%rep
+    iostrg=adjustL(iostrg)
+    iostrg=trim(iostrg)
+    iostrg="v"//trim(iostrg)
+    iostrg=trim(iostrg)
+    mc%repSufix=iostrg
 end Subroutine
 Subroutine replicaExchange(mc,md)
 ! This checks in with the mpi head node to 
@@ -320,7 +350,7 @@ Subroutine replicaExchange(mc,md)
     double precision mu_old
 
     ! Calculate M
-    mc%M=0.0
+    mc%M=0.0_dp
     do i=1,mc%NT
        mc%M=mc%M+md%AB(i) 
     enddo
@@ -385,6 +415,7 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
 end subroutine
 Subroutine PT_message(iostr) 
     use mpi
+    implicit none
     integer (kind=4) id, nThreads,ierror
     character*16 iostr    ! for file naming
 

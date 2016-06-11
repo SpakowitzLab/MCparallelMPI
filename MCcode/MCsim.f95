@@ -38,7 +38,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     
     
     INTEGER MCTYPE                    ! Type of MC move
-    INTEGER initialize
+    logical initialize
     
     DOUBLE PRECISION EB,EPAR,EPERP
     DOUBLE PRECISION GAM,ETA
@@ -52,7 +52,9 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     type(random_stat) rand_stat
 !   Load the input parameters
     Type(MCvar) mc 
-    Type(MCData) md 
+    Type(MCData) md
+
+
     EB=   mc%PARA(1)
     EPAR= mc%PARA(2)
     EPERP=mc%PARA(3)
@@ -98,7 +100,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
         ! initialize phi
         IT1=1
         IT2=mc%NT ! need to set up all beads
-        initialize=1
+        initialize=.TRUE.
         do I=1,mc%NBIN
              md%PHIA(I)=0
              md%PHIB(I)=0
@@ -189,7 +191,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 !   Calculate the change in the self-interaction energy (actually all
 !   interation energy, not just self?)
           if (INTON.EQ.1) then
-             initialize=0
+             initialize=.FALSE.
              call MC_int(mc%DEINT,md%R,md%AB,mc%NT,mc%NBIN, &
                   mc%V,mc%CHI,mc%KAP,mc%LBOX,mc%DEL,md%PHIA,md%PHIB,md%DPHIA,md%DPHIB, &
                   md%INDPHI,mc%NPHI,md%RP,IT1,IT2,mc%HP1_Bind,md%ABP,& 
@@ -207,7 +209,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
 !   Change the position if appropriate
           mc%ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3)+mc%DEINT+mc%DEBind+mc%ECon
-          
           PROB=exp(-mc%ENERGY)
           call random_number(urnd,rand_stat)
           TEST=urnd(1)
@@ -252,14 +253,14 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
              call MCvar_addapt(mc,MCTYPE,ISTEP,rand_stat)
            
              ! move each chain back if drifted though repeated BC 
-             call MCvar_recenter(mc,md)  ! You don't need to do this if there is confinement
+             !call MCvar_recenter(mc,md)  ! You don't need to do this if there is confinement
           endif
 
 
        enddo ! End of movetype loop
 
        !  -----  Parallel tempering ----
-       IF ((mc%PTON.EQ.1).and.(mod(ISTEP,mc%NPT)).eq.0) THEN
+       IF ((mc%PTON).and.((mod(ISTEP,mc%NPT)).eq.0)) THEN
           call replicaExchange(mc,md)
        ENDIF
       

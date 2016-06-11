@@ -9,8 +9,10 @@
 !
 !   --------------------------------------------------------------
 Module simMod
+    use setPrecision
     IMPLICIT NONE
     INTEGER, Parameter :: NmoveTypes = 7 ! ******* YOU MAY NEED TO CHAGE THIS ***
+
   Type MCvar   ! Structure for simulation variables of known size
 !     Simulation parameters
     INTEGER NT                ! Total number of beads  NT=NP*N
@@ -53,8 +55,7 @@ Module simMod
     DOUBLE PRECISION moveSlope(NmoveTypes) ! target for ratio of window to anmplitude
     DOUBLE PRECISION PDesire(NmoveTypes) ! desired hit rate     
     DOUBLE PRECISION PHit(NmoveTypes) ! hit rate 
-    INTEGER NADAPT(NmoveTypes)        ! Nunber of steps before addapt
-
+    ! see Timing variables for NADAPT(NmoveTypes)
 
 !   Energys
     DOUBLE PRECISION ENERGY   ! Total energy
@@ -64,10 +65,6 @@ Module simMod
     DOUBLE PRECISION EKAP     ! KAP energy
     DOUBLE PRECISION EBind    ! binding energy
 
-!   Switches
-    INTEGER confineType       ! type of Boundary Conditions
-    INTEGER setType           ! initial condition type
-!    INTEGER INTON             ! interaction on
 
 !   Move Variables 
     DOUBLE PRECISION DEELAS(3)   ! Change in bending energy
@@ -81,8 +78,24 @@ Module simMod
     integer rep  ! which replica am I
     integer (kind = 4) error  ! MPI error
     double precision M ! M=\sum_i \sigma_i   like ising magnitization
-    integer NPT  ! number of steps before parallel tempering
-    integer PTON
+    logical PTON
+    ! see Timing variables for NPT
+
+!   Timing variables
+    INTEGER NADAPT(NmoveTypes) ! Nunber of steps between addapt
+    integer NPT                ! number of steps between parallel tempering
+    integer INDMAX             ! total number of save points
+    integer NSTEP              ! steps per save point
+    integer NNoInt             ! save points before turning on NNoInt
+    
+!   Switches
+    INTEGER confineType       ! type of Boundary Conditions
+    INTEGER setType           ! initial condition type
+!    INTEGER INTON             ! interaction on
+    logical FRMCHEM           ! Initial chemical sequence
+    logical FRMMETH           ! Read methalation from file
+    logical FRMFILE           ! Read Initial condition R
+    
 
   end Type
 
@@ -103,30 +116,177 @@ Module simMod
     INTEGER, Allocatable, Dimension(:) :: INDPHI           ! Indices of the phi
   end TYPE
 contains
+Subroutine MCvar_setParams(mc,fileName)
+! Based on Elena's readkeys subroutine
+    USE INPUTPARAMS, ONLY : READLINE, READA, READF, READI, READO
+    IMPLICIT NONE
+    DOUBLE PRECISION, Parameter :: PI=3.141592654_dp
+    TYPE(MCvar) mc
+    character*16 fileName  ! file with parameters
+    INTEGER :: PF   ! input file unit
+    LOGICAL :: FILEEND=.FALSE. ! done reading file?
+    CHARACTER*100 :: WORD ! keyword
+    INTEGER :: NITEMS ! number of items on the line in the parameter file
+
+
+
+    ! ----------------------------------------------------------
+    !
+    !  set Default values
+    !
+    ! ----------------------------------------------------------
+
+    mc%PTON=.TRUE.
+    mc%NP  =1
+    mc%N   =2000
+    mc%G   =1
+    mc%LBOX=25.0_dp
+    mc%DEL =1.0_dp
+    mc%L0  =1.25_dp
+    mc%V   =0.1_dp
+    mc%FA  =0.5_dp
+    mc%LAM =0.0_dp
+    mc%FRMCHEM=.FALSE.
+    mc%EPS =0.3_dp
+    mc%CHI =0.0_dp
+    mc%KAP =100.0_dp
+    mc%EU  =-1.52_dp
+    mc%EM  =0.01_dp
+    mc%mu  =0.0_dp
+    mc%HP1_Bind=-28.0_dp
+    mc%F_METH=0.5_dp
+    mc%LAM_METH=0.9_dp
+    mc%Fpoly=0.025_dp
+    mc%FRMMETH=.FALSE.
+    mc%moveTypes=7
+    mc%setType = 4 ! 4 for shereical
+    mc%confineType = 3 ! 3 for sherical
+    mc%NPT=100
+    mc%NStep=400000
+    mc%NNoInt=100
+    mc%INDMAX=180             
+   
+    ! -----------------------
+    !
+    !  Read from file
+    !
+    !------------------------- 
+    PF=55
+    OPEN(UNIT=PF,FILE=fileName,STATUS='OLD') 
+
+    ! read in the keywords one line at a time
+    DO 
+       CALL READLINE(PF,FILEEND,NITEMS)
+       IF (FILEEND.and.nitems.eq.0) EXIT
+
+       ! skip empty lines
+       IF (NITEMS.EQ.0) CYCLE
+
+       ! Read in the keyword for this line
+       CALL READA(WORD,CASESET=1)
+
+       ! Skip any empty lines or any comment lines
+       IF (WORD(1:1).EQ.'#') CYCLE
+
+       SELECT CASE(WORD) ! pick which keyword
+       CASE('PTON')
+           CALL READO(mc%PTON)           
+       CASE('N')
+           CALL READI(mc%N)
+       CASE('LAM')
+           CALL READF(MC%LAM)
+       CASE('NNOINT')
+           Call READI(mc%NNoInt)
+       CASE('INDMAX')
+           Call READI(mc%INDMAX)
+       CASE('NSTEP')
+           Call READI(mc%NStep)
+       CASE('NPT')
+           Call READI(mc%NPT)
+       CASE('Fpoly')
+           Call READF(mc%Fpoly)
+       ENDSELECT
+    ENDDO
+    ! --------------------
+    !
+    ! Derived Variables
+    !
+    ! --------------------
+    
+    mc%NT=mc%N*mc%NP*mc%G
+    mc%NB=mc%N*mc%G
+    if (mc%confineType.eq.3) then
+        mc%LBOX=(mc%V*mc%NT*6/(mc%Fpoly*PI))**(1.0_dp/3.0_dp)
+    else
+        mc%LBOX=(mc%V*mc%NT/mc%Fpoly)**(1.0_dp/3.0_dp)
+    endif
+    mc%NBINX=nint(mc%LBOX/mc%DEL)
+    mc%NBIN=mc%NBINX**3.
+    mc%LBOX = mc%NBINX*mc%DEL! used to be: DEL=LBOX/NBINX
+    mc%NBINX=nint(mc%LBOX/mc%DEL)
+    call getpara(mc%PARA,mc%EPS,mc%L0,mc%LBOX)
+    call MCvar_defaultAmp(mc) 
+  
+  
+  
+    ! -----------------------
+    !
+    ! Set initial values
+    !
+    ! ----------------------
+    mc%moveTypes=7
+    mc%EElas(1)=0.0_dp
+    mc%EElas(2)=0.0_dp
+    mc%EElas(3)=0.0_dp
+    mc%Eint=0.0_dp
+    mc%EBind=0.0_dp
+    mc%EKap=0.0_dp
+    mc%ECHI=0.0_dp
+
+    !-----------------------------
+    !
+    !  Idiot checks
+    !
+    !-----------------------------
+    if (mc%NBINX**3.ne.mc%NBIN) then
+        print*, "error in MCsim. Wrong number of bins"
+        stop 1
+    endif
+
+end Subroutine
 Subroutine MCvar_printDiscription(mc)
     IMPLICIT NONE
     TYPE(MCvar) mc
-    print*, "Total number of beads, NT=", mc%NT
-    print*, "Number of beads in a polymer, NB=", mc%NB
-    print*, "Number of monomers in a polymer, N=", mc%N
-    print*, "Number of polymers, NP=",mc%NP
-    print*, "Number of bins", mc%NBIN
-    print*, "Number of bins in x direction", mc%NBINX
-    print*, "LBOX=", mc%LBOX
-    print*, "spatial escritation DEL=",mc%DEL
-    print*, "L0=", mc%L0
-    print*, "bead volume V=", mc%V
-    print*, "elasticity EPS =", mc%EPS
-    print*, "persistance length =",(mc%L0/(2.0*mc%EPS))
-    print*, "solvent-polymer CHI =",mc%CHI
-    print*, "incompressibility KAP=",mc%KAP
-    print*, "volume fraction polymer =", mc%Fpoly
+    print*, "---------------System Description---------------"
+    print*, "Bead variables:"
+    print*, " Total number of beads, NT=", mc%NT
+    print*, " Number of beads in a polymer, NB=", mc%NB
+    print*, " Number of monomers in a polymer, N=", mc%N
+    print*, " Number of polymers, NP=",mc%NP
+    print*, " Number of beads in a monomer, G=", mc%G
+    print*, " fraction Methalated", mc%F_METH
+    print*, " LAM_METH", mc%LAM_METH
+    print*, "Length and volume Variables:"
+    print*, " persistance length =",(mc%L0/(2.0_dp*mc%EPS))
+    print*, " LBOX=", mc%LBOX
+    print*, " Number of bins in x direction", mc%NBINX
+    print*, " Number of bins", mc%NBIN
+    print*, " spatial descritation DEL=",mc%DEL
+    print*, " L0=", mc%L0
+    print*, " volume fraction polymer =", mc%Fpoly
+    print*, " bead volume V=", mc%V
+    print*, "Energy Variables"
+    print*, " elasticity EPS =", mc%EPS
+    print*, " solvent-polymer CHI =",mc%CHI
+    print*, " incompressibility KAP=",mc%KAP
     print*, " -energy of binding unmethalated ", mc%EU," more positive for favorable binding"
     print*, " -energy of binding methalated",mc%EM
-    print*, "HP1_Binding energy parameter", mc%HP1_Bind
-    print*, "fraction Methalated", mc%F_METH
-    print*, "LAM_METH", mc%LAM_METH
-    print*, "chemical potential of HP1", mc%mu
+    print*, " HP1_Binding energy parameter", mc%HP1_Bind
+    print*, " chemical potential of HP1", mc%mu
+    print*, "Other:"
+    print*, " confineType:",mc%confineType
+    print*, " setType:",mc%setType
+    print*, "---------------------------------------------"
     
 end Subroutine
 Subroutine MCvar_allocate(mc,md)
@@ -138,7 +298,14 @@ Subroutine MCvar_allocate(mc,md)
     NT=mc%NT
     NBIN=mc%NBIN
     
-     
+    if ((NT.GT.200000).OR.(NT.lt.1)) then
+        print*, "Tried to allocate ", NT," beads in MCvar_allocate"
+        stop 1
+    endif 
+    if ((NBIN.GT.20000).or.(NBIN.lt.1)) then
+        print*, "Tried to allocate ",NBIN," bins in MCvar_allocate"
+        stop 1
+    endif
     ALLOCATE(md%R(NT,3))
     ALLOCATE(md%U(NT,3))
     Allocate(md%RP(NT,3))
@@ -154,9 +321,9 @@ Subroutine MCvar_allocate(mc,md)
     Allocate(md%INDPHI(NBIN))
 
 end subroutine
-Subroutine MCvar_defaultAmp(mc,NSTEP)
+Subroutine MCvar_defaultAmp(mc)
     IMPLICIT NONE
-    DOUBLE PRECISION, Parameter :: PI=3.141592654
+    DOUBLE PRECISION, Parameter :: PI=3.141592654_dp
     TYPE(MCvar) mc
     INTEGER MCTYPE ! Type of move
     INTEGER NSTEP ! number of steps per save point
@@ -164,13 +331,13 @@ Subroutine MCvar_defaultAmp(mc,NSTEP)
 !    Edit the following variables for better performance
 !   ~~~~~~~~~~~~~~~~~~~
     !  Monte-Carlo simulation parameters
-    mc%MCAMP(1)=0.5*PI
-    mc%MCAMP(2)=0.3*mc%L0
-    mc%MCAMP(3)=0.5*PI
-    mc%MCAMP(4)=0.5*PI
-    mc%MCAMP(5)=0.5*PI
-    mc%MCAMP(6)=5.0*mc%L0
-    mc%MCAMP(7)=1.0
+    mc%MCAMP(1)=0.5_dp*PI
+    mc%MCAMP(2)=0.3_dp*mc%L0
+    mc%MCAMP(3)=0.5_dp*PI
+    mc%MCAMP(4)=0.5_dp*PI
+    mc%MCAMP(5)=0.5_dp*PI
+    mc%MCAMP(6)=5.0_dp*mc%L0
+    mc%MCAMP(7)=1.0_dp
     !switches to turn on various types of moves
     mc%MOVEON(1)=1  ! crank-shaft move
     mc%MOVEON(2)=1  ! slide move
@@ -201,29 +368,25 @@ Subroutine MCvar_defaultAmp(mc,NSTEP)
         mc%moveSlope(MCTYPE)=dble(mc%WINDOW(MCTYPE))/mc%MCAMP(MCTYPE)
     enddo
 
-    mc%MINAMP(1)=0.1*PI
-    mc%MINAMP(2)=0.2*mc%L0
-    mc%MINAMP(3)=0.2*PI
-    mc%MINAMP(4)=0.2*PI
-    mc%MINAMP(5)=0.2*PI
-    mc%MINAMP(6)=0.2*mc%L0
-    mc%MINAMP(7)=1.0   !Amplitude of move 7 is irrelivant
+    mc%MINAMP(1)=0.1_dp*PI
+    mc%MINAMP(2)=0.2_dp*mc%L0
+    mc%MINAMP(3)=0.2_dp*PI
+    mc%MINAMP(4)=0.2_dp*PI
+    mc%MINAMP(5)=0.2_dp*PI
+    mc%MINAMP(6)=0.2_dp*mc%L0
+    mc%MINAMP(7)=1.0_dp   !Amplitude of move 7 is irrelivant
 
-    mc%MAXAMP(1)=1.0*PI
-    mc%MAXAMP(2)=1.0*mc%L0
-    mc%MAXAMP(3)=1.0*PI
-    mc%MAXAMP(4)=1.0*PI
-    mc%MAXAMP(5)=1.0*PI
+    mc%MAXAMP(1)=1.0_dp*PI
+    mc%MAXAMP(2)=1.0_dp*mc%L0
+    mc%MAXAMP(3)=1.0_dp*PI
+    mc%MAXAMP(4)=1.0_dp*PI
+    mc%MAXAMP(5)=1.0_dp*PI
     mc%MAXAMP(6)=0.1*mc%LBOX
     mc%MAXAMP(7)=1 !Amplitude of move 7 is irrelivant
      
     DO MCTYPE=1,mc%moveTypes
         mc%NADAPT(MCTYPE)=1000 ! addapt after at most 1000 steps
-        if (NSTEP.LE.mc%NADAPT(MCTYPE)) then 
-            mc%NADAPT(MCTYPE)=NSTEP ! addapt at least every save point
-        endif
-          
-        mc%PDESIRE(MCTYPE)=0.5 ! Target
+        mc%PDESIRE(MCTYPE)=0.5_dp ! Target
         mc%SUCCESS(MCTYPE)=0
     ENDDO
 end subroutine
@@ -240,9 +403,9 @@ Subroutine MCvar_addapt(mc,MCTYPE,ISTEP,rand_stat)
     type(random_stat) rand_stat  !for random number generator
     mc%PHIT(MCTYPE)=real(mc%SUCCESS(MCTYPE))/real(mc%NADAPT(MCTYPE))
     if (mc%PHIT(MCTYPE).GT.mc%PDESIRE(MCTYPE)) then
-       mc%MCAMP(MCTYPE)=mc%MCAMP(MCTYPE)*1.05
+       mc%MCAMP(MCTYPE)=mc%MCAMP(MCTYPE)*1.05_dp
     else
-       mc%MCAMP(MCTYPE)=mc%MCAMP(MCTYPE)*0.95
+       mc%MCAMP(MCTYPE)=mc%MCAMP(MCTYPE)*0.95_dp
     endif
     
     if (ISTEP.eq.1) then
@@ -250,7 +413,7 @@ Subroutine MCvar_addapt(mc,MCTYPE,ISTEP,rand_stat)
         mc%WA_ratio(MCTYPE)=mc%WINDOW(MCTYPE)/mc%MCAMP(MCTYPE)
     endif
     !drift to chosen ratio
-    mc%WA_ratio(MCTYPE)=mc%WA_ratio(MCTYPE)*0.96+0.04*mc%moveSlope(MCTYPE)
+    mc%WA_ratio(MCTYPE)=mc%WA_ratio(MCTYPE)*0.96_dp+0.04_dp*mc%moveSlope(MCTYPE)
 
     ! probabalisticaly round window
     floatWindow=mc%WA_ratio(MCTYPE)*mc%MCAMP(MCTYPE)
@@ -290,7 +453,7 @@ Subroutine MCvar_recenter(mc,md)
        R0(1)=nint(md%R(IB,1)/mc%LBOX-0.5)*mc%LBOX
        R0(2)=nint(md%R(IB,2)/mc%LBOX-0.5)*mc%LBOX
        R0(3)=nint(md%R(IB,3)/mc%LBOX-0.5)*mc%LBOX
-       if (abs(R0(1)*R0(2)*R0(3)) .gt. 0.0001) then
+       if (abs(R0(1)*R0(2)*R0(3)) .gt. 0.0001_dp) then
            DO J=1,mc%N
               md%R(IB,1)=md%R(IB,1)-R0(1)
               md%R(IB,2)=md%R(IB,2)-R0(2)
@@ -364,9 +527,9 @@ Subroutine MCvar_saveR(mc,md,fileName,repeatingBC)
         Do I=1,mc%NP
             Do J=1,mc%NB
                     WRITE(1,"(3f7.2,I2)") , &
-                          md%R(IB,1)-0.*nint(md%R(IB,1)/mc%LBOX-0.5)*mc%LBOX, &
-                          md%R(IB,2)-0.*nint(md%R(IB,2)/mc%LBOX-0.5)*mc%LBOX, &
-                          md%R(IB,3)-0.*nint(md%R(IB,3)/mc%LBOX-0.5)*mc%LBOX, & 
+                          md%R(IB,1)-0.*nint(md%R(IB,1)/mc%LBOX-0.5_dp)*mc%LBOX, &
+                          md%R(IB,2)-0.*nint(md%R(IB,2)/mc%LBOX-0.5_dp)*mc%LBOX, &
+                          md%R(IB,3)-0.*nint(md%R(IB,3)/mc%LBOX-0.5_dp)*mc%LBOX, & 
                           md%AB(IB)
                 IB=IB+1
             enddo
