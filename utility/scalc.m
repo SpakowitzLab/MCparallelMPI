@@ -2,11 +2,9 @@ function [k,S]=scalc(r,boxl,lksample)
 %% calculate structure factor]
 % INPUTS: 
 % OUTPUT: 
-kb=basisgen(lksample,boxl);
 
-%%%%%%%%% PRE-PROCESS DATA %%%%%%%%%
+%% %%%%%%%%% PRE-PROCESS DATA %%%%%%%%%
 n=length(r);      % number of beads
-nk=length(kb);    % number of wavevectors
 id=r(:,4);        % chemical identities
 f=sum(r(:,4)/n);  % fraction of A-type monomers
 
@@ -21,6 +19,8 @@ t=2*(id-0.5);
 t=0.5*(t+1-2*f);
 
 %%%% start calculations %%%%
+kb=basisgen(lksample,boxl);  % create wavevectors
+nk=length(kb);               % number of wavevectors
 Stot=zeros(nk,1);
 for ii=1:nk
   xcom=kb(ii,1)*xr;
