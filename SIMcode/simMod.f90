@@ -58,17 +58,20 @@ Module simMod
     ! see Timing variables for NADAPT(NmoveTypes)
 
 !   Energys
-    DOUBLE PRECISION ENERGY   ! Total energy
-    DOUBLE PRECISION Eint     ! running Eint
+    !DOUBLE PRECISION Eint     ! running Eint
     DOUBLE PRECISION EELAS(3) ! Elastic force
     DOUBLE PRECISION ECHI     ! CHI energy
     DOUBLE PRECISION EKAP     ! KAP energy
+    DOUBLE PRECISION ECouple  ! Coupling 
     DOUBLE PRECISION EBind    ! binding energy
 
 
 !   Move Variables 
     DOUBLE PRECISION DEELAS(3)   ! Change in bending energy
-    DOUBLE PRECISION DEINT    ! Change in self energy
+!    DOUBLE PRECISION DEINT    ! Change in self energy
+    DOUBLE PRECISION DECouple ! Coupling energy
+    DOUBLE PRECISION DEChi    ! chi interaction energy
+    DOUBLE PRECISION DEKap    ! compression energy
     DOUBLE PRECISION DEBind   ! Change in binding energy
     DOUBLE PRECISION ECon     ! Confinement Energy
     INTEGER NPHI  ! NUMBER o phi values that change
@@ -95,7 +98,7 @@ Module simMod
     logical FRMCHEM           ! Initial chemical sequence
     logical FRMMETH           ! Read methalation from file
     logical FRMFILE           ! Read Initial condition R
-    
+    integer simType           ! Melt vs. Solution, Choose hamiltonian
 
   end Type
 
@@ -128,8 +131,6 @@ Subroutine MCvar_setParams(mc,fileName)
     CHARACTER*100 :: WORD ! keyword
     INTEGER :: NITEMS ! number of items on the line in the parameter file
 
-
-
     ! ----------------------------------------------------------
     !
     !  set Default values
@@ -161,10 +162,12 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%moveTypes=7
     mc%setType = 4 ! 4 for shereical
     mc%confineType = 3 ! 3 for sherical
+    mc%simType=1
     mc%NPT=100
     mc%NStep=400000
     mc%NNoInt=100
     mc%INDMAX=180             
+    call MCvar_defaultAmp(mc) 
    
     ! -----------------------
     !
@@ -189,22 +192,98 @@ Subroutine MCvar_setParams(mc,fileName)
        IF (WORD(1:1).EQ.'#') CYCLE
 
        SELECT CASE(WORD) ! pick which keyword
+       CASE('SETTYPE')
+           Call READI(mc%setType)
+           ! setType      |  Discription
+           ! _____________|_________________________________
+           !    1         |   staight line in y direction with random starting
+           !    2         |   rerandomize when reaching boundary, slit in z dir
+           !    3         |   rerandomize when reaching boundary, cube boundary
+           !    4         |   rerandomize when reaching boundary, shpere
+       CASE('CONFINETYPE')
+           Call READI(mc%confineType)
+           ! confineType  |  Discription
+           ! _____________|_________________________________
+           !    0         |  No confinement
+           !    1         |  Betwene two plates in Z direction at 0 and LBox
+           !    2         |  Cube of size LBox**3,  range: 0-LBox
+           !    3         |  Circle of radius LBox, centered at LBox/2
+       CASE('SIMTYPE')
+           Call READI(mc%simType) 
+           ! simType      | Discription
+           !______________|_________________________________
+           !    0         | Melt density fluctuates around fixed mean
+           !    1         | Solution (For DNA)
+       CASE('FRMCHEM')
+           Call READO(mc%FRMCHEM) ! Initial chemical sequence from file
+       CASE('FRMMETH')
+           Call READO(mc%FRMMETH) ! Read methalation from file
        CASE('PTON')
-           CALL READO(mc%PTON)           
+           CALL READO(mc%PTON) ! Parallel Tempering on
+       CASE('L0')
+           Call READF(mc%L0)  ! Equilibrium segment length
+       CASE('DEL')
+           Call READF(mc%DEL) ! spaitial descretation length, not tested
+       CASE('LBOX')
+           Call READF(mc%LBox) ! side length of box
+       CASE('NP')
+           CALL READI(mc%NP)  ! Number of polymers
+       CASE('G')
+           Call READI(mc%G) ! Beads per monomer
        CASE('N')
-           CALL READI(mc%N)
-       CASE('LAM')
-           CALL READF(MC%LAM)
+           CALL READI(mc%N) ! Number of monomers in a polymer
        CASE('NNOINT')
-           Call READI(mc%NNoInt)
+           Call READI(mc%NNoInt) ! save points before turning on interaction
        CASE('INDMAX')
-           Call READI(mc%INDMAX)
+           Call READI(mc%INDMAX) ! total number of save points
        CASE('NSTEP')
-           Call READI(mc%NStep)
+           Call READI(mc%NStep) ! steps per save point
        CASE('NPT')
-           Call READI(mc%NPT)
-       CASE('Fpoly')
-           Call READF(mc%Fpoly)
+           Call READI(mc%NPT) ! number of steps between parallel tempering
+       CASE('FPOLY')
+           Call READF(mc%Fpoly) ! Fraction Polymer
+       CASE('V')
+           Call READF(mc%V) ! Bead volume
+       CASE('FA')
+           Call READF(mc%FA) ! Fraction of A beads (fraction bound)
+       CASE('LAM')
+           Call READF(mc%LAM) ! Chemical correlation parameter
+       CASE('EPS')
+           Call READF(mc%EPS) ! Elasticity l0/(2lp) 
+       CASE('CHI')
+           Call READF(mc%CHI) ! CHI parameter (definition depends on  hamiltoniaon
+       CASE('KAP')
+           Call READF(mc%KAP) !  Incompressibility parameter 
+       CASE('EU')
+           Call READF(mc%EU) ! Energy of binding for unmethalated
+       CASE('EM')
+           Call READF(mc%EM) ! Energy of binding for methalated
+       CASE('MU')
+           Call READF(mc%MU) ! chemical potential of HP1
+       CASE('HP1_BIND')
+           Call READF(mc%HP1_BIND) ! Energy of binding of HP1 to eachother
+       CASE('F_METH')
+           Call READF(mc%F_METH) ! Fraction methalated
+       CASE('LAM_METH')
+           Call READF(mc%LAM_METH) ! eigenvalue of methalation setup
+       CASE('CRANK_SHAFT_ON')
+           Call READI(mc%MOVEON(1)) ! is Crank shaft move on 1/0
+       CASE('SLIDE_ON')
+           Call READI(mc%MOVEON(2)) ! is Slide move on 1/0
+       CASE('PIVOT_ON')
+           Call READI(mc%MOVEON(3)) ! is Pivon move on 1/0
+       CASE('ROTATE_ON')
+           Call READI(mc%MOVEON(4)) ! is single bead rotate on 1/0
+       CASE('FULL_CHAIN_ROTATION_ON')
+           Call READI(mc%MOVEON(5)) ! is full chain rotate on 1/0
+       CASE('FULL_CHAIN_SLIDE_ON')
+           Call READI(mc%MOVEON(6)) ! is full chain slide on 1/0
+       CASE('BIND_MOVE_ON')
+           Call READI(mc%MOVEON(7)) ! is bind/unbind move on 1/0
+       CASE DEFAULT
+           print*, "Error in MCvar_setParams.  Unidentified keyword:", &
+                   TRIM(WORD)
+           stop 1
        ENDSELECT
     ENDDO
     ! --------------------
@@ -212,20 +291,32 @@ Subroutine MCvar_setParams(mc,fileName)
     ! Derived Variables
     !
     ! --------------------
-    
-    mc%NT=mc%N*mc%NP*mc%G
-    mc%NB=mc%N*mc%G
-    if (mc%confineType.eq.3) then
-        mc%LBOX=(mc%V*mc%NT*6/(mc%Fpoly*PI))**(1.0_dp/3.0_dp)
+   
+     
+    if (mc%simType.eq.1) then
+        mc%NT=mc%N*mc%NP*mc%G
+        mc%NB=mc%N*mc%G
+        if (mc%confineType.eq.3) then
+            mc%LBOX=(mc%V*mc%NT*6/(mc%Fpoly*PI))**(1.0_dp/3.0_dp)
+        else
+            mc%LBOX=(mc%V*mc%NT/mc%Fpoly)**(1.0_dp/3.0_dp)
+        endif
+        mc%NBINX=nint(mc%LBOX/mc%DEL)
+        mc%NBIN=mc%NBINX**3.
+        mc%LBOX = mc%NBINX*mc%DEL! used to be: DEL=LBOX/NBINX
+        mc%NBINX=nint(mc%LBOX/mc%DEL)
+    elseif (mc%simType.eq.0) then
+        mc%NP=nint(mc%LBOX**3.0_dp/(mc%N*mc%G*mc%V))
+        mc%LBOX=(mc%V*mc%N*mc%G*mc%NP)**(1.0_dp/3.0_dp)
+        mc%NT=mc%N*mc%NP*mc%G
+        mc%NBINX=nint(mc%LBOX/mc%DEL)
+        mc%NBIN=mc%NBINX**3.0_dp
+        mc%DEL=mc%LBOX/mc%NBINX
+        mc%NB=mc%N*mc%G
     else
-        mc%LBOX=(mc%V*mc%NT/mc%Fpoly)**(1.0_dp/3.0_dp)
-    endif
-    mc%NBINX=nint(mc%LBOX/mc%DEL)
-    mc%NBIN=mc%NBINX**3.
-    mc%LBOX = mc%NBINX*mc%DEL! used to be: DEL=LBOX/NBINX
-    mc%NBINX=nint(mc%LBOX/mc%DEL)
+       print*, "Error in simMod: symType",mc%simType," not found"
+    endif 
     call getpara(mc%PARA,mc%EPS,mc%L0,mc%LBOX)
-    call MCvar_defaultAmp(mc) 
   
   
   
@@ -238,7 +329,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%EElas(1)=0.0_dp
     mc%EElas(2)=0.0_dp
     mc%EElas(3)=0.0_dp
-    mc%Eint=0.0_dp
+    mc%ECouple=0.0_dp
     mc%EBind=0.0_dp
     mc%EKap=0.0_dp
     mc%ECHI=0.0_dp
@@ -252,7 +343,8 @@ Subroutine MCvar_setParams(mc,fileName)
         print*, "error in MCsim. Wrong number of bins"
         stop 1
     endif
-
+    
+    call MCvar_printDiscription(mc)
 end Subroutine
 Subroutine MCvar_printDiscription(mc)
     IMPLICIT NONE
@@ -327,6 +419,10 @@ Subroutine MCvar_defaultAmp(mc)
     TYPE(MCvar) mc
     INTEGER MCTYPE ! Type of move
     INTEGER NSTEP ! number of steps per save point
+    INTEGER NANI ! NaN
+    DOUBLE PRECISION NAND !NAND
+    NANI=0;NANI=NANI/NANI
+    NAND=0.0_dp;NAND=NAND/NAND
 !   ~~~~~~~~~~~~~~~~~~~
 !    Edit the following variables for better performance
 !   ~~~~~~~~~~~~~~~~~~~
@@ -337,7 +433,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MCAMP(4)=0.5_dp*PI
     mc%MCAMP(5)=0.5_dp*PI
     mc%MCAMP(6)=5.0_dp*mc%L0
-    mc%MCAMP(7)=1.0_dp
+    mc%MCAMP(7)=NAND
     !switches to turn on various types of moves
     mc%MOVEON(1)=1  ! crank-shaft move
     mc%MOVEON(2)=1  ! slide move
@@ -351,18 +447,18 @@ Subroutine MCvar_defaultAmp(mc)
     mc%WINDOW(1)=15 ! used to be N*G
     mc%WINDOW(2)=15 ! used to be N*G
     mc%WINDOW(3)=15 ! used to be N*G
-    mc%WINDOW(4)=15 ! used to be N*G
-    mc%WINDOW(5)=15 ! used to be N*G
-    mc%WINDOW(6)=15 ! used to be N*G
+    mc%WINDOW(4)=1
+    mc%WINDOW(5)=mc%N*mc%G
+    mc%WINDOW(6)=mc%N*mc%G
     mc%WINDOW(7)=15 ! used to be N*G
 
     !    Maximum window size (large windows are expensive)
     mc%MAXWINDOW(1)=150 
     mc%MAXWINDOW(2)=150 
     mc%MAXWINDOW(3)=150 
-    mc%MAXWINDOW(4)=150 
-    mc%MAXWINDOW(5)=150 
-    mc%MAXWINDOW(6)=150 
+    mc%MAXWINDOW(4)=NANI 
+    mc%MAXWINDOW(5)=NANI 
+    mc%MAXWINDOW(6)=NANI
     mc%MAXWINDOW(7)=150 
     Do MCTYPE=1,mc%moveTypes
         mc%moveSlope(MCTYPE)=dble(mc%WINDOW(MCTYPE))/mc%MCAMP(MCTYPE)
@@ -374,7 +470,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MINAMP(4)=0.2_dp*PI
     mc%MINAMP(5)=0.2_dp*PI
     mc%MINAMP(6)=0.2_dp*mc%L0
-    mc%MINAMP(7)=1.0_dp   !Amplitude of move 7 is irrelivant
+    mc%MINAMP(7)=NAND
 
     mc%MAXAMP(1)=1.0_dp*PI
     mc%MAXAMP(2)=1.0_dp*mc%L0
@@ -382,64 +478,13 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MAXAMP(4)=1.0_dp*PI
     mc%MAXAMP(5)=1.0_dp*PI
     mc%MAXAMP(6)=0.1*mc%LBOX
-    mc%MAXAMP(7)=1 !Amplitude of move 7 is irrelivant
+    mc%MAXAMP(7)=NAND
      
     DO MCTYPE=1,mc%moveTypes
         mc%NADAPT(MCTYPE)=1000 ! addapt after at most 1000 steps
         mc%PDESIRE(MCTYPE)=0.5_dp ! Target
         mc%SUCCESS(MCTYPE)=0
     ENDDO
-end subroutine
-Subroutine MCvar_addapt(mc,MCTYPE,ISTEP,rand_stat)
-! Run this after say 1000 move in order to improve performance
-    !use mt19937, only : grnd
-    use mersenne_twister 
-    IMPLICIT NONE
-    INTEGER ISTEP    ! Step number, need to initialize if 1
-    TYPE(MCvar) mc
-    INTEGER MCTYPE   ! Type of move
-    Double Precision floatWindow  !like window but a floating point
-    real urand(1)
-    type(random_stat) rand_stat  !for random number generator
-    mc%PHIT(MCTYPE)=real(mc%SUCCESS(MCTYPE))/real(mc%NADAPT(MCTYPE))
-    if (mc%PHIT(MCTYPE).GT.mc%PDESIRE(MCTYPE)) then
-       mc%MCAMP(MCTYPE)=mc%MCAMP(MCTYPE)*1.05_dp
-    else
-       mc%MCAMP(MCTYPE)=mc%MCAMP(MCTYPE)*0.95_dp
-    endif
-    
-    if (ISTEP.eq.1) then
-        ! initialize
-        mc%WA_ratio(MCTYPE)=mc%WINDOW(MCTYPE)/mc%MCAMP(MCTYPE)
-    endif
-    !drift to chosen ratio
-    mc%WA_ratio(MCTYPE)=mc%WA_ratio(MCTYPE)*0.96_dp+0.04_dp*mc%moveSlope(MCTYPE)
-
-    ! probabalisticaly round window
-    floatWindow=mc%WA_ratio(MCTYPE)*mc%MCAMP(MCTYPE)
-    call random_number(urand,rand_stat) 
-    if (urand(1).lt.(floatWindow-floor(floatWindow))) then
-        mc%Window(MCTYPE)=CEILING(mc%WA_ratio(MCTYPE)*mc%MCAMP(MCTYPE))
-    else
-        mc%Window(MCTYPE)=floor(mc%WA_ratio(MCTYPE)*mc%MCAMP(MCTYPE))
-    endif
-
-    ! amplitude limits
-    if (mc%MCAMP(MCTYPE).GT.mc%MAXAMP(MCTYPE)) then
-       mc%MCAMP(MCTYPE)=mc%MAXAMP(MCTYPE)
-    elseif (mc%MCAMP(MCTYPE).LT.mc%MINAMP(MCTYPE)) then
-       mc%MCAMP(MCTYPE)=mc%MINAMP(MCTYPE)
-    endif
-    
-    !window limits
-    if (mc%WINDOW(MCTYPE).LT.1) then
-       mc%WINDOW(MCTYPE)=1
-    elseif (mc%WINDOW(MCTYPE).GT.mc%MAXWINDOW(MCTYPE)) then
-       mc%WINDOW(MCTYPE)=mc%MAXWINDOW(MCTYPE)
-    endif
-
-    mc%WA_ratio(MCTYPE)=dble(mc%WINDOW(MCTYPE))/mc%MCAMP(MCTYPE)   
-    mc%SUCCESS(MCTYPE)=0
 end subroutine
 Subroutine MCvar_recenter(mc,md)
 !  Prevents drift in periodic BC
@@ -471,13 +516,40 @@ Subroutine MCvar_printEnergies(this)
 ! For realtime feedback on MC simulation
     IMPLICIT NONE
     TYPE(MCvar) this
-    print*, "Eint:", this%Eint
+    print*, "ECouple:", this%ECouple
     print*, "Bending energy", this%EELAS(1)
     print*, "Par compression energy", this%EELAS(2)
     print*, "Shear energy", this%EELAS(3)
     print*, "ECHI", this%ECHI
     print*, "EKAP", this%EKAP
     print*, "EBind", this%EBind
+end subroutine
+Subroutine MCvar_printPhi(mc,md)
+! Prints densities for trouble shooting
+    IMPLICIT NONE
+    TYPE(MCvar) mc
+    TYPE(MCData) md
+    Integer I
+    DOUBLE PRECISION EKap, ECouple, EChi,VV, PHIPOly
+    print*,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    print*, " PHIA  | PHIB  | PPoly |  Vol  | EKap  | EChi  |ECouple|" 
+    Do I=1,mc%NBIN
+        VV=md%Vol(I)
+        if (VV.le.0.1_dp) CYCLE
+        PHIPOLY=md%PHIA(I)+md%PHIB(I)
+        EChi=VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
+        ECouple=VV*mc%HP1_Bind*(md%PHIA(I))**2
+        if(PHIPoly.GT.1.0_dp) then
+           EKap=VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
+        else
+           CYCLE
+           EKap=0.0_dp
+        endif
+        write(*,"(4f8.4,3f8.1)"), md%PHIA(I), md%PHIB(I), & 
+                            md%PHIA(I)+md%PHIB(I),md%Vol(I),&
+                            EKap,EChi,ECouple
+    enddo
+    print*,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 end subroutine
 Subroutine MCvar_printWindowStats(mc)
 ! For realtime feedback on addaptation
@@ -625,7 +697,7 @@ Subroutine MCvar_appendEnergyData(mc,fileName,lnNum)
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
     endif
     WRITE(1,"(I5, 9f9.1)") lnNum, &
-           mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%Eint, &
+           mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
            mc%EKap, mc%ECHI, mc%EBind, mc%M, mc%HP1_Bind
     Close(1)
 end subroutine
@@ -654,7 +726,7 @@ Subroutine MCvar_appendAdaptData(mc,fileName,lnNum)
           REAL(mc%MOVEON(7)),mc%MCAMP(7),mc%PHIT(7)
     Close(1)
 end subroutine
-Subroutine MCvar_writeBindary(mc,md,baceName)
+Subroutine MCvar_writeBinary(mc,md,baceName)
 !    This function writes the contence of the structures mc and md
 !  to a binary file.  If you add more variables to md you need to 
 !  a seperate write command for them as it is not possible to write

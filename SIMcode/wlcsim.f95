@@ -44,18 +44,23 @@ Subroutine wlcsim(rand_stat)
   print*, "setting parameters from: ", iostr
   call MCvar_setParams(mc,iostr)
   call MCvar_allocate(mc,md)
-  
-  print*, "Calculating Bin volumes"
-  !call MCvar_printDiscription(mc) 
-  call MC_caclVolume(mc%confineType,mc%NBINX,mc%DEL, mc%LBox, &
-                     md%Vol,rand_stat)  ! calculate partial volumes
-  print*, "Done Calculating Bin volumes"
+ 
 
   INQUIRE (FILE = 'data/out1', exist = restart)
   if (.NOT.restart) then
 
     PRINT*, '-----new simulation-----'
-
+!    Calculate volume of bins
+    if (mc%confineType.eq.3) then 
+        print*, "Calculating Bin volumes"
+        call MC_caclVolume(mc%confineType,mc%NBINX,mc%DEL, mc%LBox, &
+                           md%Vol,rand_stat)  ! calculate partial volumes
+        print*, "Done Calculating Bin volumes"
+    else
+        do IND=1,mc%NBIN
+             md%Vol(IND)=mc%del**3
+        enddo
+    endif
     
 !     Setup the initial condition
     print*, "setting initial position ..."
@@ -83,6 +88,7 @@ Subroutine wlcsim(rand_stat)
         call initchem(md%METH,mc%NT,mc%N,mc%G,mc%NP,mc%F_METH,mc%LAM_METH,rand_stat)        
     ENDIF
 
+!      Get assignement from other threads
     if ( mc%PTON) then
         print*, "calling PT_overrid ..."
         call PT_override(mc,md)
@@ -108,6 +114,7 @@ Subroutine wlcsim(rand_stat)
 
     PRINT*, '-----load simulation-----'
     iostr='putBinaryFileNameHere'
+    stop 1
     INDEND=0; INDEND=1/INDEND ! make this a variable of simmod before use
     call MCvar_readBindary(mc,md,iostr)
 
@@ -159,6 +166,7 @@ Subroutine wlcsim(rand_stat)
     PRINT*, 'Time point ',IND+INDEND, ' out of', mc%INDMAX
     call MCvar_printEnergies(mc)
     call MCvar_printWindowStats(mc)
+    !call MCvar_printPhi(mc,md)
     IND=IND+1    
   ENDDO
   

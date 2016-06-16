@@ -26,16 +26,16 @@ INTEGER confineType  ! Specifier for type of confinement
 DOUBLE PRECISION LBox ! Side length of box
 INTEGER I      ! for loops
 INTEGER ix,iy,iz      ! location of conder
-DOUBLE PRECISION x,y,z
+DOUBLE PRECISION x,y,z  
 INTEGER :: STATUS = 0
-INTEGER NBINX
-DOUBLE PRECISION Rsqrd
-DOUBLE PRECISION Vol(NBINX**3)
-DOUBLE PRECISION V
+INTEGER NBINX  ! length of side of box as an integer number of bins
+DOUBLE PRECISION Rsqrd 
+DOUBLE PRECISION Vol(NBINX**3)  ! output: volume of bins
+DOUBLE PRECISION V      
 DOUBLE PRECISION corner(8,3)
 INTEGER nc
 INTEGER, PARAMETER:: npts = 10000 
-DOUBLE PRECISION DEL
+DOUBLE PRECISION DEL           ! side length of bins
 DOUBLE PRECISION rsq, minr
 type(random_stat) rand_stat !for random numer generator
 real urand(3)

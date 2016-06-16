@@ -38,32 +38,32 @@ elseif(confineType.EQ.1) then
     ! limits: 0 and LBox
     DO I=IT1,IT2
         if(RP(I,3)<0.0_dp) then
-            ECon=99000.0_dp
+            ECon=9990000.0_dp
         elseif (RP(I,3)>LBox) then
-            ECon=99000.0_dp
+            ECon=9990000.0_dp
         endif
     ENDDO
 elseif(confineType.EQ.2) then
     DO I=IT1,IT2
         if(RP(I,1)<0.0) then
-            ECon=99000.0_dp
+            ECon=9990000.0_dp
         elseif(RP(I,1)>LBox) then
-            ECon=99000.0_dp
+            ECon=9990000.0_dp
         elseif(RP(I,2)<0.0) then
-            ECon=99000.0_dp
+            ECon=9990000.0_dp
         elseif(RP(I,2)>LBox) then
-            ECon=99000.0
+            ECon=9990000.0
         elseif(RP(I,3)<0.0) then
-            ECon=99000.0_dp
+            ECon=9990000.0_dp
         elseif(RP(I,3)>LBox) then
-            ECon=99000.0_dp
+            ECon=9990000.0_dp
         endif
     ENDDO
 elseif(confineType.EQ.3) then
     DO I=IT1,IT2
         if(((RP(I,1)-LBox/2)**2 + (RP(I,2)-LBox/2_dp)**2 + &
            (RP(I,3)-LBox/2)**2).GT.dble(LBox*LBox*0.25_dp)) then
-            ECon=99000.0
+            ECon=9990000.0
         endif
     Enddo    
 else 

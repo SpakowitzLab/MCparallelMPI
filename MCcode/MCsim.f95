@@ -47,12 +47,14 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     DOUBLE PRECISION VHC      ! HC strength
     DOUBLE PRECISION phiTot, phiTot2 ! for testing
 
+    DOUBLE PRECISION ENERGY
+
 ! Things for random number generator
     real urnd(1) ! single random number
     type(random_stat) rand_stat
 !   Load the input parameters
-    Type(MCvar) mc 
-    Type(MCData) md
+    Type(MCvar) mc      ! system varibles 
+    Type(MCData) md     ! system allocated data
 
 
     EB=   mc%PARA(1)
@@ -95,36 +97,42 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     mc%EElas=mc%DEElas ! copy array
 
     ! --- Interaction Energy ---
-    mc%DEINT=0.
     if (INTON.EQ.1) then
         ! initialize phi
         IT1=1
         IT2=mc%NT ! need to set up all beads
         initialize=.TRUE.
         do I=1,mc%NBIN
-             md%PHIA(I)=0
-             md%PHIB(I)=0
+             md%PHIA(I)=0.0_dp
+             md%PHIB(I)=0.0_dp
         enddo
-        call MC_int(mc%DEINT,md%R,md%AB,mc%NT,mc%NBIN, &
-                    mc%V,mc%CHI,mc%KAP,mc%LBOX,mc%DEL,md%PHIA,md%PHIB,md%DPHIA,md%DPHIB, &
-                    md%INDPHI,mc%NPHI,md%RP,IT1,IT2,mc%HP1_Bind,md%ABP,mc%confineType, &
-                    md%Vol,initialize,mc%NBINX)
+        call MC_int(mc,md,IT1,IT2,initialize)
         do I=1,mc%NBIN
             phiTot=phiTot+(md%PHIA(I)+md%PHIB(I))*md%Vol(I)
         enddo
+        ! test to see if sum of changes are same as calculating from scratch
         print*, "phiTot", phiTot," NT:",mc%NT
-        if(abs(mc%Eint-mc%DEINT).gt. 0.0001) then
-             print*, "Warning. Intigrated interaction energy:", & 
-                     mc%Eint,"  while absolute interaction energy:", &
-                     mc%DEINT 
+        if(abs(mc%EChi-mc%DEChi).gt. 0.0001_dp) then
+             print*, "Warning. Intigrated chi energy:", & 
+                     mc%EChi,"  while absolute chi energy:", &
+                     mc%DEChi
         endif
-        mc%Eint=mc%DEINT
-    !   call r_to_phi(R,AB,NT,N,NP,NBIN, &
-    !        V,CHI,KAP,LBOX,DEL,PHIA,PHIB)
+        mc%EChi=mc%DEChi
+        if(abs(mc%ECouple-mc%DECouple).gt. 0.0001_dp) then
+             print*, "Warning. Intigrated couple energy:", & 
+                     mc%ECouple,"  while absolute couple energy:", &
+                     mc%DECouple
+        endif
+        mc%ECouple=mc%DECouple
+        if(abs(mc%EKap-mc%DEKap).gt. 0.0001_dp) then
+             print*, "Warning. Intigrated Kap energy:", & 
+                     mc%EKap,"  while absolute Kap energy:", &
+                     mc%DEKap
+        endif
+        mc%EKap=mc%DEKap
+        ! check for NaN
         do I=1,mc%NBIN
-            if (md%Vol(I).eq.0.0) then
-                Cycle
-            endif
+            if (md%Vol(I).eq.0.0) Cycle
             if (md%PHIA(I) .ne. md%PHIA(I)) then
                 write(*,"(A,I5,A)"), "PHIA(",I,")=NaN"
                 write(*,"(A,I5,A,f8.4)"), "Vol(",I,")=",md%Vol(I)
@@ -143,8 +151,8 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
     else
         do I=1,mc%NBIN
-             md%PHIA(I)=0.0
-             md%PHIB(I)=0.0
+             md%PHIA(I)=0.0_dp
+             md%PHIB(I)=0.0_dp
         enddo
     endif
     print*, "done initializing"
@@ -192,10 +200,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 !   interation energy, not just self?)
           if (INTON.EQ.1) then
              initialize=.FALSE.
-             call MC_int(mc%DEINT,md%R,md%AB,mc%NT,mc%NBIN, &
-                  mc%V,mc%CHI,mc%KAP,mc%LBOX,mc%DEL,md%PHIA,md%PHIB,md%DPHIA,md%DPHIB, &
-                  md%INDPHI,mc%NPHI,md%RP,IT1,IT2,mc%HP1_Bind,md%ABP,& 
-                  mc%confineType,md%Vol,initialize,mc%NBINX)
+             call MC_int(mc,md,IT1,IT2,initialize)
           endif
 
 !   Calculate the change in confinement energy
@@ -203,13 +208,14 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               call MC_confine(mc%confineType, mc%LBox, md%RP, mc%NT, & 
                               IT1,IT2,mc%ECon)
           else
-              mc%ECon=0.0;
+              mc%ECon=0.0_dp;
           endif
 
 
 !   Change the position if appropriate
-          mc%ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3)+mc%DEINT+mc%DEBind+mc%ECon
-          PROB=exp(-mc%ENERGY)
+          ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3) & 
+                 +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon
+          PROB=exp(-ENERGY)
           call random_number(urnd,rand_stat)
           TEST=urnd(1)
           if (TEST.LE.PROB) then
@@ -227,7 +233,9 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                      md%U(I,3)=md%UP(I,3)
                  enddo
              endif
-             if (mc%ECon.ne.0.0) then
+             if (mc%ECon.ne.0.0_dp) then
+                 print*, "MCTYPE", MCType
+                 call MCvar_printEnergies(mc) 
                  print*, "error in MCsim, out of bounds "
                  stop 1
              endif
@@ -241,7 +249,9 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                    md%PHIA(J)=md%PHIA(J)+md%DPHIA(I)
                    md%PHIB(J)=md%PHIB(J)+md%DPHIB(I)  
                 enddo
-                mc%Eint=mc%Eint+mc%DEINT
+                mc%ECouple=mc%ECouple+mc%DECouple
+                mc%EKap=mc%EKap+mc%DEKap
+                mc%EChi=mc%EChi+mc%DEChi
              endif
 
              mc%SUCCESS(MCTYPE)=mc%SUCCESS(MCTYPE)+1
@@ -250,7 +260,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
           !amplitude and window adaptations
           if (mod(ISTEP,mc%NADAPT(MCTYPE)).EQ.0) then  ! Addapt ever NADAPT moves
-             call MCvar_addapt(mc,MCTYPE,ISTEP,rand_stat)
+             call MCvar_adapt(mc,MCTYPE,ISTEP,rand_stat)
            
              ! move each chain back if drifted though repeated BC 
              !call MCvar_recenter(mc,md)  ! You don't need to do this if there is confinement

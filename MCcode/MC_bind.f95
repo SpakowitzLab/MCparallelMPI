@@ -35,7 +35,7 @@ DO I=IT1,IT2,BPM
     endif
 ENDDO
 
-if (abs(DEBind).gt.1000000) then
+if (abs(DEBind).gt.100000) then
     
     DO I=IT1,IT2,BPM
         print*, ABP(I), AB(I)

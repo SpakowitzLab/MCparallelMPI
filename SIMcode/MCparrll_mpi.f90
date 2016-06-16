@@ -126,9 +126,9 @@ subroutine paraTemp ( p, id)
     logical keepGoing   ! set to false when NaN encountered
     integer rep ! physical replica number
     integer, allocatable :: nodeNumber(:)
-    double precision, allocatable :: M(:)  ! sum of bound states
-    double precision, allocatable :: mu(:)
-    double precision mu_value !chemical potential
+    double precision, allocatable :: x(:)  ! sum of bound states
+    double precision, allocatable :: cof(:)
+    double precision nan_dp !chemical potential
       
 !   variable for random number generator seeding
     type(random_stat) rand_stat  ! state of random number chain
@@ -177,24 +177,26 @@ subroutine paraTemp ( p, id)
         !   innitialize
         !
         ! --------------------------
-        nPTReplicas = p-1; 
-        allocate ( mu(1:nPTReplicas))
-        allocate ( M(1:nPTReplicas))
-        allocate ( nodeNumber(1:nPTReplicas))
-        !   mu(i) is the mu of the i'th physical replica,  The mu vectors doesn't change
-        !   M(i) is the sum from the i'th physical replica
-        !   nodeNumber(i) is the node running the i'th physical replica
+        nPTReplicas = p-1;
+
+
+
+        allocate( x(1:nPTReplicas))
+        allocate( cof(1:nPTReplicas))
+        allocate( nodeNumber(1:nPTReplicas))
         do rep=1,nPTReplicas
-            mu(rep)=-2.0_dp+rep*0.08_dp
             upSuccess(rep)=0
             downSuccess(rep)=0
         enddo
-        ! save mu values  
-        OPEN (UNIT = 1, FILE = "data/mu", STATUS = 'NEW')
+        call PT_cofValues(cof,nPTReplicas)
+
+        ! save cof values  
+        OPEN (UNIT = 1, FILE = "data/cof", STATUS = 'NEW')
         Do rep=1,nPTReplicas
-            WRITE(1,"(1f7.4)") mu(rep)
+            WRITE(1,"(1f7.4)") cof(rep)
         enddo
         Close(1)
+
         N_average=0
 
         ! Initially replica numbers are same as nodes
@@ -211,18 +213,21 @@ subroutine paraTemp ( p, id)
             ! give workers thier jobs
             do rep=1,nPTReplicas
                 dest=nodeNumber(rep)
+                !print*, "head --rep=",rep,"-->",dest
                 call MPI_Send (rep,1, MPI_INTEGER, dest,   0, &
                                 MPI_COMM_WORLD,error )
-                call MPI_Send (mu(rep),1, MPI_DOUBLE_PRECISION, dest,   0, &
+                !print*, "head --cof=",cof,"-->",dest
+                call MPI_Send (cof(rep),1, MPI_DOUBLE_PRECISION, dest,   0, &
                                 MPI_COMM_WORLD,error )
             enddo
             ! get results from workers
             
             do rep=1,nPTReplicas
                 source=nodeNumber(rep)
-                call MPI_Recv ( M(rep), 1, MPI_DOUBLE_PRECISION, source, 0, &
+                !print*, "  ",source," --cof=",cof,"--> head"
+                call MPI_Recv ( x(rep), 1, MPI_DOUBLE_PRECISION, source, 0, &
                                MPI_COMM_WORLD, status, error )
-                if(M(rep).ne.M(rep)) then !test for NaN
+                if(x(rep).ne.x(rep)) then !test for NaN
                     keepGoing=.false.
                 endif
             enddo
@@ -230,7 +235,7 @@ subroutine paraTemp ( p, id)
             ! do replica exchange here
             do rep=1,(nPTReplicas-1)
                 call random_number(urand,rand_stat)
-                if (exp(-(M(rep+1)-M(rep))*(mu(rep+1)-mu(rep))).gt.urand(1)) then 
+                if (exp((x(rep+1)-x(rep))*(cof(rep+1)-cof(rep))).gt.urand(1)) then 
                     temp=nodeNumber(rep)
                     nodeNumber(rep)=nodeNumber(rep+1)
                     nodeNumber(rep+1)=temp
@@ -241,14 +246,14 @@ subroutine paraTemp ( p, id)
             N_average=N_average+1
             if (N_average.gt.4999) then
                 call save_repHistory(upSuccess,downSuccess,nPTReplicas, &
-                                     mu,M,nodeNumber,N_average,nExchange)
+                                     cof,x,nodeNumber,N_average,nExchange)
                 N_average=0
             endif
             nExchange=nExchange+1
         enddo
 
-        deallocate (mu)
-        deallocate (nodeNumber)
+        deallocate (cof)
+        deallocate (x)
     else
 !  -----------------------------------------------------------------
 !
@@ -272,12 +277,11 @@ subroutine paraTemp ( p, id)
         ! call main simulation code
         !
         !  --------------------------------
-        print*, "Calling wlcsim for", mc%rep," node",id
+        !print*, "Calling wlcsim for", mc%rep," node",id
         call wlcsim(rand_stat)
-        print*, "Exiting from replica", mc%rep," node",id
-        mu_value=0
-        mu_value=mu_value/mu_value !NaN
-        call MPI_Send(mu_value,1,MPI_DOUBLE_PRECISION,0,0,MPI_COMM_WORLD,error)
+        !print*, "Exiting from replica", mc%rep," node",id
+        nan_dp=0; nan_dp=nan_dp/nan_dp !NaN
+        call MPI_Send(nan_dp,1,MPI_DOUBLE_PRECISION,0,0,MPI_COMM_WORLD,error)
     end if
 
 
@@ -307,14 +311,12 @@ Subroutine PT_override(mc,md)
     !copy AB from replica 1 to others
     if (id.eq.1) then
         do dest=2,nThreads-1
-            !print*,"sending size ",mc%NT," to ",dest
             call MPI_Send (md%METH,mc%NT, MPI_INTEGER, dest,   0, &
                            MPI_COMM_WORLD,error )
         enddo
     else
         source=1
         
-        print*,"receiving size ",mc%NT," at ",id
         call MPI_Recv (md%METH, mc%NT, MPI_INTEGER, source, 0, &
                        MPI_COMM_WORLD, status, error )
         source=0
@@ -332,11 +334,24 @@ Subroutine PT_override(mc,md)
     iostrg=trim(iostrg)
     mc%repSufix=iostrg
 end Subroutine
+Subroutine PT_cofValues(cof,nPTReplicas)
+    use setPrecision
+    Implicit none
+    Integer nPTReplicas 
+    Double precision cof(nptReplicas)
+    INteger rep
+    do rep=1,nPTReplicas
+        !cof(rep)=2.0_dp-rep*0.08_dp  !over mu values
+        cof(rep)=0.0_dp+0.06_dp*rep
+    enddo
+end subroutine
 Subroutine replicaExchange(mc,md)
 ! This checks in with the mpi head node to 
-! 1: Tell head node the M value
+! For parallel tempering of the form:  E=cof*x
+! 1: Tell head node the x value
 ! 2: Recive replica assignment from head node
-! 3: Recive assigned mu value
+! 3: Recive assigned cof value
+    use setPrecision
     use mpi
     use simMod
     IMPLICIT NONE
@@ -347,27 +362,36 @@ Subroutine replicaExchange(mc,md)
     integer (kind=4) source ! message source
     character*16 iostr ! for handling sufix string
     integer status(MPI_STATUS_SIZE)  ! MPI status
+    double precision cof,x
     double precision mu_old
+    double precision chi_old
 
-    ! Calculate M
-    mc%M=0.0_dp
-    do i=1,mc%NT
-       mc%M=mc%M+md%AB(i) 
-    enddo
-    mu_old=mc%mu
+    ! Calculate value conjagate to ajusted parameter
+    !mc%M=mc%EBind/(-1.0_dp*mc%mu)
+    !x=mc%M
+    !mu_old=mc%mu
+    x=mc%EChi/(mc%Chi)  ! sum (Vol/V)*PHIA*PHIB
+    chi_old=mc%chi
+
     ! send number bound to head node
     dest=0
-    call MPI_Send(mc%M,1,MPI_DOUBLE_PRECISION,dest,0,MPI_COMM_WORLD,mc%error)
+    call MPI_Send(x,1,MPI_DOUBLE_PRECISION,dest,0,MPI_COMM_WORLD,mc%error)
     ! hear back on which replica and it's mu value
     source=0
     ! get new replica number
     call MPI_Recv(mc%rep,1,MPI_DOUBLE_PRECISION,source,0, & 
                   MPI_COMM_WORLD,status,mc%error)
     ! get new mu value
-    call MPI_Recv(mc%mu,1,MPI_DOUBLE_PRECISION,source,0,&
+    call MPI_Recv(cof,1,MPI_DOUBLE_PRECISION,source,0,&
                   MPI_COMM_WORLD,status,mc%error)
+
     ! update energy
-    mc%EBind=mc%EBind-mc%M*(mc%mu-mu_old) 
+    !mc%mu=-cof
+    !mc%EBind=mc%EBind-mc%M*(mc%mu-mu_old)
+    mc%chi=cof
+    mc%EChi=mc%EChi+x*(mc%chi-chi_old)
+    
+
     ! change output file sufix
     write(iostr,"(I4)"), mc%rep
     iostr=adjustL(iostr)
@@ -377,7 +401,7 @@ Subroutine replicaExchange(mc,md)
     mc%repSufix=iostr
 end Subroutine
 Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
-                           mu,M,nodeNumber,N_average,nExchange)
+                           cof,x,nodeNumber,N_average,nExchange)
 ! Print Energy data
     IMPLICIT NONE
     LOGICAL isfile
@@ -387,8 +411,8 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     integer upSuccess(nPTReplicas)
     integer downSuccess(nPTReplicas)
     integer nodeNumber(nPTReplicas)
-    double precision mu(nPTReplicas)
-    double precision M(nPTReplicas)
+    double precision cof(nPTReplicas)
+    double precision x(nPTReplicas)
     integer N_average
     integer nExchange
 
@@ -404,7 +428,7 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     write(1,*) "~~~~~~~~~~~~~~~~~",nExchange,"~~~~~~~~~~~~~~~~~~~~~~~~"
     write(1,*) "  rep |  mu  |   M  |  up  | down |  node"
     do rep=1,nPTReplicas
-        write(1,"(I7,f7.3,f7.1,2f7.3,I7)"), rep, mu(rep), M(rep), & 
+        write(1,"(I7,f7.3,f7.1,2f7.3,I7)"), rep, -cof(rep), x(rep), & 
                  real(upSuccess(rep))/real(N_average), &
                  real(downSuccess(rep))/real(N_average), nodeNumber(rep)
         upSuccess(rep)=0
