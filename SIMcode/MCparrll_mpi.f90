@@ -213,10 +213,8 @@ subroutine paraTemp ( p, id)
             ! give workers thier jobs
             do rep=1,nPTReplicas
                 dest=nodeNumber(rep)
-                !print*, "head --rep=",rep,"-->",dest
                 call MPI_Send (rep,1, MPI_INTEGER, dest,   0, &
                                 MPI_COMM_WORLD,error )
-                !print*, "head --cof=",cof,"-->",dest
                 call MPI_Send (cof(rep),1, MPI_DOUBLE_PRECISION, dest,   0, &
                                 MPI_COMM_WORLD,error )
             enddo
@@ -224,7 +222,6 @@ subroutine paraTemp ( p, id)
             
             do rep=1,nPTReplicas
                 source=nodeNumber(rep)
-                !print*, "  ",source," --cof=",cof,"--> head"
                 call MPI_Recv ( x(rep), 1, MPI_DOUBLE_PRECISION, source, 0, &
                                MPI_COMM_WORLD, status, error )
                 if(x(rep).ne.x(rep)) then !test for NaN
@@ -277,9 +274,7 @@ subroutine paraTemp ( p, id)
         ! call main simulation code
         !
         !  --------------------------------
-        !print*, "Calling wlcsim for", mc%rep," node",id
         call wlcsim(rand_stat)
-        !print*, "Exiting from replica", mc%rep," node",id
         nan_dp=0; nan_dp=nan_dp/nan_dp !NaN
         call MPI_Send(nan_dp,1,MPI_DOUBLE_PRECISION,0,0,MPI_COMM_WORLD,error)
     end if
@@ -301,6 +296,8 @@ Subroutine PT_override(mc,md)
     integer (kind=4) error  ! error id for MIP functions
     character*16 iostrg    ! for file naming
     integer ( kind = 4 ) status(MPI_STATUS_SIZE) ! MPI stuff
+    double precision cof
+
     
     call MPI_COMM_SIZE(MPI_COMM_WORLD,nThreads,ierror)
     call MPI_COMM_RANK(MPI_COMM_WORLD,id,ierror)
@@ -324,9 +321,13 @@ Subroutine PT_override(mc,md)
     call MPI_Recv ( mc%rep, 1, MPI_INTEGER, source, 0, &
       MPI_COMM_WORLD, status, error )
     
-    call MPI_Recv ( mc%mu, 1, MPI_DOUBLE_PRECISION, source, 0, &
+    call MPI_Recv ( cof, 1, MPI_DOUBLE_PRECISION, source, 0, &
       MPI_COMM_WORLD, status, error ) 
    
+    ! set cof
+    !mc%mu=cof
+    mc%chi=cof
+
     write(iostrg,"(I4)"), mc%rep
     iostrg=adjustL(iostrg)
     iostrg=trim(iostrg)
@@ -342,7 +343,7 @@ Subroutine PT_cofValues(cof,nPTReplicas)
     INteger rep
     do rep=1,nPTReplicas
         !cof(rep)=2.0_dp-rep*0.08_dp  !over mu values
-        cof(rep)=0.0_dp+0.06_dp*rep
+        cof(rep)=0.0001_dp+0.06_dp*rep
     enddo
 end subroutine
 Subroutine replicaExchange(mc,md)
@@ -373,13 +374,19 @@ Subroutine replicaExchange(mc,md)
     x=mc%EChi/(mc%Chi)  ! sum (Vol/V)*PHIA*PHIB
     chi_old=mc%chi
 
+
+    if (x.ne.x) then
+        print*, "Error in replicaExchange! NaN encountered"
+        stop 1
+    endif
+
     ! send number bound to head node
     dest=0
     call MPI_Send(x,1,MPI_DOUBLE_PRECISION,dest,0,MPI_COMM_WORLD,mc%error)
     ! hear back on which replica and it's mu value
     source=0
     ! get new replica number
-    call MPI_Recv(mc%rep,1,MPI_DOUBLE_PRECISION,source,0, & 
+    call MPI_Recv(mc%rep,1,MPI_INTEGER,source,0, & 
                   MPI_COMM_WORLD,status,mc%error)
     ! get new mu value
     call MPI_Recv(cof,1,MPI_DOUBLE_PRECISION,source,0,&

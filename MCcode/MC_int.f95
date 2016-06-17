@@ -311,7 +311,7 @@ else ! Calculate change in energy
             VV=md%Vol(J)
             if (VV.le.0.1_dp) CYCLE
             ! new
-            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*((md%PHIA(J)+md%DPHIA(I))*(md%PHIB(J)+md%DPHIA(I)))
+            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*((md%PHIA(J)+md%DPHIA(I))*(md%PHIB(J)+md%DPHIB(I)))
             mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)-1.0_dp)**2)
             ! minus old
             mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*(md%PHIA(J)*md%PHIB(J))

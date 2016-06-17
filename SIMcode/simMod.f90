@@ -138,6 +138,7 @@ Subroutine MCvar_setParams(mc,fileName)
     ! ----------------------------------------------------------
 
     mc%PTON=.TRUE.
+    mc%FRMFILE=.FALSE.
     mc%NP  =1
     mc%N   =2000
     mc%G   =1
@@ -313,6 +314,18 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%NBIN=mc%NBINX**3.0_dp
         mc%DEL=mc%LBOX/mc%NBINX
         mc%NB=mc%N*mc%G
+        mc%WINDOW(5)=mc%N*mc%G
+        mc%WINDOW(6)=mc%N*mc%G
+        mc%MCAMP(2)=0.3_dp*mc%L0
+        mc%MCAMP(6)=5.0_dp*mc%L0
+        mc%MINAMP(2)=0.2_dp*mc%L0
+        mc%MINAMP(6)=0.2_dp*mc%L0
+        mc%MAXWINDOW(1)=min(150,mc%NB)
+        mc%MAXWINDOW(2)=min(150,mc%NB)
+        mc%MAXWINDOW(3)=min(150,mc%NB)
+        mc%MAXWINDOW(7)=min(150,mc%NB)
+        mc%MAXAMP(2)=1.0_dp*mc%L0
+        mc%MAXAMP(6)=0.1*mc%LBOX
     else
        print*, "Error in simMod: symType",mc%simType," not found"
     endif 
@@ -453,13 +466,13 @@ Subroutine MCvar_defaultAmp(mc)
     mc%WINDOW(7)=15 ! used to be N*G
 
     !    Maximum window size (large windows are expensive)
-    mc%MAXWINDOW(1)=150 
-    mc%MAXWINDOW(2)=150 
-    mc%MAXWINDOW(3)=150 
+    mc%MAXWINDOW(1)=min(150,mc%NB)
+    mc%MAXWINDOW(2)=min(150,mc%NB)
+    mc%MAXWINDOW(3)=min(150,mc%NB)
     mc%MAXWINDOW(4)=NANI 
     mc%MAXWINDOW(5)=NANI 
     mc%MAXWINDOW(6)=NANI
-    mc%MAXWINDOW(7)=150 
+    mc%MAXWINDOW(7)=min(150,mc%NB)
     Do MCTYPE=1,mc%moveTypes
         mc%moveSlope(MCTYPE)=dble(mc%WINDOW(MCTYPE))/mc%MCAMP(MCTYPE)
     enddo
@@ -468,7 +481,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MINAMP(2)=0.2_dp*mc%L0
     mc%MINAMP(3)=0.2_dp*PI
     mc%MINAMP(4)=0.2_dp*PI
-    mc%MINAMP(5)=0.2_dp*PI
+    mc%MINAMP(5)=0.05_dp*PI
     mc%MINAMP(6)=0.2_dp*mc%L0
     mc%MINAMP(7)=NAND
 
