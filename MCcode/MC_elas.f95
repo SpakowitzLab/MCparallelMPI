@@ -2,15 +2,18 @@
 
 ! Calculate the change in the bending energy for a displacement.
      
-SUBROUTINE MC_eelas(DEELAS,R,U,RP,UP,NT,N,NP,IP,IB1,IB2, &
+SUBROUTINE MC_eelas(DEELAS,R,U,RP,UP,&
+                    NT,NB,IP,IB1,IB2,&
                     IT1,IT2,EB,EPAR,EPERP,GAM,ETA)
 
 use setPrecision
+IMPLICIT NONE
 DOUBLE PRECISION R(NT,3)  ! Bead positions
 DOUBLE PRECISION U(NT,3)  ! Tangent vectors
 DOUBLE PRECISION RP(NT,3)  ! Bead positions
 DOUBLE PRECISION UP(NT,3)  ! Tangent vectors
-INTEGER N,NP,NT           ! Number of beads
+INTEGER NB                ! Number of beads in a polymer
+INTEGER NT                ! Total number of beads
 
 INTEGER IP  ! not in use  ! Test polymer 
 INTEGER IB1               ! Test bead position 1
@@ -79,7 +82,7 @@ if (IB1.NE.1) then
    
 endif
 
-if (IB2.NE.N) then
+if (IB2.NE.NB) then
    
    DR(1)=R(IT2+1,1)-R(IT2,1)
    DR(2)=R(IT2+1,2)-R(IT2,2)

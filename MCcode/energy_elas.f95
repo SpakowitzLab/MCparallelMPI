@@ -8,9 +8,9 @@
 !     Andrew Spakowitz
 !     Written 9-1-04
       
-      SUBROUTINE energy_elas(EELAS,R,U,NT,N,NP,PARA)
+      SUBROUTINE energy_elas(EELAS,R,U,NT,NB,NP,PARA)
       use setPrecision
-      
+      IMPLICIT NONE 
       DOUBLE PRECISION EELAS(3) ! Elastic force
       DOUBLE PRECISION R(NT,3)  ! Bead positions
       DOUBLE PRECISION U(NT,3)  ! Tangent vectors
@@ -21,7 +21,9 @@
       DOUBLE PRECISION FCOM(3)  ! Compress force
       DOUBLE PRECISION FBEND(3) ! Bend force
       INTEGER I,J,IB            ! Index holders
-      INTEGER N,NT,NP           ! Number of bead
+      INTEGER NB           ! Number of beads in a polymer
+      INTEGER NT           ! Number of beads total
+      INTEGER NP           ! Number of polymers
 
 !     Polymer properties
 
@@ -48,7 +50,7 @@
       EELAS(3)=0.0_dp
       IB=1
       DO 30 I=1,NP
-         DO 40 J=1,(N-1)
+         DO 40 J=1,(NB-1)
             DR(1)=R(IB+1,1)-R(IB,1)
             DR(2)=R(IB+1,2)-R(IB,2)
             DR(3)=R(IB+1,3)-R(IB,3)

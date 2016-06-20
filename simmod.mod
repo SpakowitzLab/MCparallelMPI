@@ -1,5 +1,5 @@
-GFORTRAN module version '6' created from SIMcode/simMod.f90 on Thu Jun 16 17:32:58 2016
-MD5:df9c5e8e34eac4d4e17dff04c91a23d7 -- If you edit this, you'll get what you deserve.
+GFORTRAN module version '6' created from SIMcode/simMod.f90 on Fri Jun 17 15:51:57 2016
+MD5:78ede957c94d0ca94139e6722f96c701 -- If you edit this, you'll get what you deserve.
 
 (() () () () () () () () () () () () () () () () () () () () () () ()
 () () () ())
@@ -187,166 +187,168 @@ UNKNOWN-ACCESS ()) (80 'frmfile' (LOGICAL 4 0 0 LOGICAL ()) () (
 UNKNOWN-FL UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN UNKNOWN 0 0)
 UNKNOWN-ACCESS ()) (81 'simtype' (INTEGER 4 0 0 INTEGER ()) () (
 UNKNOWN-FL UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN UNKNOWN 0 0)
+UNKNOWN-ACCESS ()) (82 'recenter_on' (LOGICAL 4 0 0 LOGICAL ()) () (
+UNKNOWN-FL UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN UNKNOWN 0 0)
 UNKNOWN-ACCESS ())) PUBLIC (() () () ()) () 0 0 93566333)
-82 'mcvar_allocate' 'simmod' 'mcvar_allocate' 1 ((PROCEDURE
+83 'mcvar_allocate' 'simmod' 'mcvar_allocate' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0
-UNKNOWN ()) 83 0 (84 85) () 0 () () () 0 0)
-86 'mcvar_appendadaptdata' 'simmod' 'mcvar_appendadaptdata' 1 ((
+UNKNOWN ()) 84 0 (85 86) () 0 () () () 0 0)
+87 'mcvar_appendadaptdata' 'simmod' 'mcvar_appendadaptdata' 1 ((
 PROCEDURE UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (
-UNKNOWN 0 0 0 UNKNOWN ()) 87 0 (88 89 90) () 0 () () () 0 0)
-91 'mcvar_appendenergydata' 'simmod' 'mcvar_appendenergydata' 1 ((
+UNKNOWN 0 0 0 UNKNOWN ()) 88 0 (89 90 91) () 0 () () () 0 0)
+92 'mcvar_appendenergydata' 'simmod' 'mcvar_appendenergydata' 1 ((
 PROCEDURE UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (
-UNKNOWN 0 0 0 UNKNOWN ()) 92 0 (93 94 95) () 0 () () () 0 0)
-96 'mcvar_defaultamp' 'simmod' 'mcvar_defaultamp' 1 ((PROCEDURE
+UNKNOWN 0 0 0 UNKNOWN ()) 93 0 (94 95 96) () 0 () () () 0 0)
+97 'mcvar_defaultamp' 'simmod' 'mcvar_defaultamp' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0
-UNKNOWN ()) 97 0 (98) () 0 () () () 0 0)
-99 'mcvar_loadab' 'simmod' 'mcvar_loadab' 1 ((PROCEDURE UNKNOWN-INTENT
-MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 100
-0 (101 102 103) () 0 () () () 0 0)
-104 'mcvar_printdiscription' 'simmod' 'mcvar_printdiscription' 1 ((
+UNKNOWN ()) 98 0 (99) () 0 () () () 0 0)
+100 'mcvar_loadab' 'simmod' 'mcvar_loadab' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 101
+0 (102 103 104) () 0 () () () 0 0)
+105 'mcvar_printdiscription' 'simmod' 'mcvar_printdiscription' 1 ((
 PROCEDURE UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (
-UNKNOWN 0 0 0 UNKNOWN ()) 105 0 (106) () 0 () () () 0 0)
-107 'mcvar_printenergies' 'simmod' 'mcvar_printenergies' 1 ((PROCEDURE
+UNKNOWN 0 0 0 UNKNOWN ()) 106 0 (107) () 0 () () () 0 0)
+108 'mcvar_printenergies' 'simmod' 'mcvar_printenergies' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0
-UNKNOWN ()) 108 0 (109) () 0 () () () 0 0)
-110 'mcvar_printphi' 'simmod' 'mcvar_printphi' 1 ((PROCEDURE
+UNKNOWN ()) 109 0 (110) () 0 () () () 0 0)
+111 'mcvar_printphi' 'simmod' 'mcvar_printphi' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0
-UNKNOWN ()) 111 0 (112 113) () 0 () () () 0 0)
-114 'mcvar_printwindowstats' 'simmod' 'mcvar_printwindowstats' 1 ((
+UNKNOWN ()) 112 0 (113 114) () 0 () () () 0 0)
+115 'mcvar_printwindowstats' 'simmod' 'mcvar_printwindowstats' 1 ((
 PROCEDURE UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (
-UNKNOWN 0 0 0 UNKNOWN ()) 115 0 (116) () 0 () () () 0 0)
-117 'mcvar_readbindary' 'simmod' 'mcvar_readbindary' 1 ((PROCEDURE
+UNKNOWN 0 0 0 UNKNOWN ()) 116 0 (117) () 0 () () () 0 0)
+118 'mcvar_readbindary' 'simmod' 'mcvar_readbindary' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0
-UNKNOWN ()) 118 0 (119 120 121) () 0 () () () 0 0)
-122 'mcvar_recenter' 'simmod' 'mcvar_recenter' 1 ((PROCEDURE
+UNKNOWN ()) 119 0 (120 121 122) () 0 () () () 0 0)
+123 'mcvar_recenter' 'simmod' 'mcvar_recenter' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0
-UNKNOWN ()) 123 0 (124 125) () 0 () () () 0 0)
-126 'mcvar_saveparameters' 'simmod' 'mcvar_saveparameters' 1 ((
+UNKNOWN ()) 124 0 (125 126) () 0 () () () 0 0)
+127 'mcvar_saveparameters' 'simmod' 'mcvar_saveparameters' 1 ((
 PROCEDURE UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (
-UNKNOWN 0 0 0 UNKNOWN ()) 127 0 (128 129) () 0 () () () 0 0)
-130 'mcvar_savephi' 'simmod' 'mcvar_savephi' 1 ((PROCEDURE
+UNKNOWN 0 0 0 UNKNOWN ()) 128 0 (129 130) () 0 () () () 0 0)
+131 'mcvar_savephi' 'simmod' 'mcvar_savephi' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0
-UNKNOWN ()) 131 0 (132 133 134) () 0 () () () 0 0)
-135 'mcvar_saver' 'simmod' 'mcvar_saver' 1 ((PROCEDURE UNKNOWN-INTENT
-MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 136
-0 (137 138 139 140) () 0 () () () 0 0)
-141 'mcvar_saveu' 'simmod' 'mcvar_saveu' 1 ((PROCEDURE UNKNOWN-INTENT
-MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 142
-0 (143 144 145) () 0 () () () 0 0)
-146 'mcvar_setparams' 'simmod' 'mcvar_setparams' 1 ((PROCEDURE
+UNKNOWN ()) 132 0 (133 134 135) () 0 () () () 0 0)
+136 'mcvar_saver' 'simmod' 'mcvar_saver' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 137
+0 (138 139 140 141) () 0 () () () 0 0)
+142 'mcvar_saveu' 'simmod' 'mcvar_saveu' 1 ((PROCEDURE UNKNOWN-INTENT
+MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0 UNKNOWN ()) 143
+0 (144 145 146) () 0 () () () 0 0)
+147 'mcvar_setparams' 'simmod' 'mcvar_setparams' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0
-UNKNOWN ()) 147 0 (148 149) () 0 () () () 0 0)
-150 'mcvar_writebinary' 'simmod' 'mcvar_writebinary' 1 ((PROCEDURE
+UNKNOWN ()) 148 0 (149 150) () 0 () () () 0 0)
+151 'mcvar_writebinary' 'simmod' 'mcvar_writebinary' 1 ((PROCEDURE
 UNKNOWN-INTENT MODULE-PROC DECL UNKNOWN 0 0 SUBROUTINE) (UNKNOWN 0 0 0
-UNKNOWN ()) 151 0 (152 153 154) () 0 () () () 0 0)
-155 'nmovetypes' 'simmod' 'nmovetypes' 1 ((PARAMETER UNKNOWN-INTENT
+UNKNOWN ()) 152 0 (153 154 155) () 0 () () () 0 0)
+156 'nmovetypes' 'simmod' 'nmovetypes' 1 ((PARAMETER UNKNOWN-INTENT
 UNKNOWN-PROC UNKNOWN IMPLICIT-SAVE 0 0) (INTEGER 4 0 0 INTEGER ()) 0 0 ()
 (CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '7') () 0 () () () 0 0)
-156 'selected_real_kind' '(intrinsic)' 'selected_real_kind' 1 ((
+157 'selected_real_kind' '(intrinsic)' 'selected_real_kind' 1 ((
 PROCEDURE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN UNKNOWN 0 0 FUNCTION) (
-UNKNOWN 0 0 0 UNKNOWN ()) 0 0 () () 156 () () () 0 0)
-157 'setprecision' 'setprecision' 'setprecision' 1 ((MODULE
+UNKNOWN 0 0 0 UNKNOWN ()) 0 0 () () 157 () () () 0 0)
+158 'setprecision' 'setprecision' 'setprecision' 1 ((MODULE
 UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN UNKNOWN 0 0) (UNKNOWN 0 0 0 UNKNOWN
 ()) 0 0 () () 0 () () () 0 0)
-158 'simmod' 'simmod' 'simmod' 1 ((MODULE UNKNOWN-INTENT UNKNOWN-PROC
+159 'simmod' 'simmod' 'simmod' 1 ((MODULE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0) (UNKNOWN 0 0 0 UNKNOWN ()) 0 0 () () 0 () () () 0 0)
-148 'mc' '' 'mc' 147 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+149 'mc' '' 'mc' 148 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-149 'filename' '' 'filename' 147 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+150 'filename' '' 'filename' 148 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
-106 'mc' '' 'mc' 105 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+107 'mc' '' 'mc' 106 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-84 'mc' '' 'mc' 83 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+85 'mc' '' 'mc' 84 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-85 'md' '' 'md' 83 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+86 'md' '' 'md' 84 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 3 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-98 'mc' '' 'mc' 97 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+99 'mc' '' 'mc' 98 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-124 'mc' '' 'mc' 123 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+125 'mc' '' 'mc' 124 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-125 'md' '' 'md' 123 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+126 'md' '' 'md' 124 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 3 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-109 'this' '' 'this' 108 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+110 'this' '' 'this' 109 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-112 'mc' '' 'mc' 111 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+113 'mc' '' 'mc' 112 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-113 'md' '' 'md' 111 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+114 'md' '' 'md' 112 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 3 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-116 'mc' '' 'mc' 115 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+117 'mc' '' 'mc' 116 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-101 'mc' '' 'mc' 100 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+102 'mc' '' 'mc' 101 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-102 'md' '' 'md' 100 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+103 'md' '' 'md' 101 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 3 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-103 'filename' '' 'filename' 100 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+104 'filename' '' 'filename' 101 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
-137 'mc' '' 'mc' 136 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+138 'mc' '' 'mc' 137 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-138 'md' '' 'md' 136 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+139 'md' '' 'md' 137 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 3 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-139 'filename' '' 'filename' 136 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+140 'filename' '' 'filename' 137 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
-140 'repeatingbc' '' 'repeatingbc' 136 ((VARIABLE UNKNOWN-INTENT
+141 'repeatingbc' '' 'repeatingbc' 137 ((VARIABLE UNKNOWN-INTENT
 UNKNOWN-PROC UNKNOWN UNKNOWN 0 0 DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 ()
 () 0 () () () 0 0)
-132 'mc' '' 'mc' 131 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+133 'mc' '' 'mc' 132 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-133 'md' '' 'md' 131 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+134 'md' '' 'md' 132 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 3 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-134 'filename' '' 'filename' 131 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+135 'filename' '' 'filename' 132 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
-143 'mc' '' 'mc' 142 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+144 'mc' '' 'mc' 143 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-144 'md' '' 'md' 142 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+145 'md' '' 'md' 143 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 3 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-145 'filename' '' 'filename' 142 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+146 'filename' '' 'filename' 143 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
-128 'mc' '' 'mc' 127 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+129 'mc' '' 'mc' 128 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-129 'filename' '' 'filename' 127 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+130 'filename' '' 'filename' 128 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
-93 'mc' '' 'mc' 92 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+94 'mc' '' 'mc' 93 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-94 'filename' '' 'filename' 92 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+95 'filename' '' 'filename' 93 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
-95 'lnnum' '' 'lnnum' 92 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+96 'lnnum' '' 'lnnum' 93 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
-88 'mc' '' 'mc' 87 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+89 'mc' '' 'mc' 88 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-89 'filename' '' 'filename' 87 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+90 'filename' '' 'filename' 88 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
-90 'lnnum' '' 'lnnum' 87 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+91 'lnnum' '' 'lnnum' 88 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
-152 'mc' '' 'mc' 151 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+153 'mc' '' 'mc' 152 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-153 'md' '' 'md' 151 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+154 'md' '' 'md' 152 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 3 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-154 'bacename' '' 'bacename' 151 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+155 'bacename' '' 'bacename' 152 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
-119 'mc' '' 'mc' 118 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+120 'mc' '' 'mc' 119 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 17 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-120 'md' '' 'md' 118 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
+121 'md' '' 'md' 119 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC UNKNOWN
 UNKNOWN 0 0 DUMMY) (DERIVED 3 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-121 'bacename' '' 'bacename' 118 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+122 'bacename' '' 'bacename' 119 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 DUMMY) (CHARACTER 1 0 0 CHARACTER ((CONSTANT (
 INTEGER 4 0 0 INTEGER ()) 0 '16'))) 0 0 () () 0 () () () 0 0)
 )
 
-('dp' 0 2 'mcdata' 0 3 'mcvar' 0 17 'mcvar_allocate' 0 82
-'mcvar_appendadaptdata' 0 86 'mcvar_appendenergydata' 0 91
-'mcvar_defaultamp' 0 96 'mcvar_loadab' 0 99 'mcvar_printdiscription' 0
-104 'mcvar_printenergies' 0 107 'mcvar_printphi' 0 110
-'mcvar_printwindowstats' 0 114 'mcvar_readbindary' 0 117 'mcvar_recenter'
-0 122 'mcvar_saveparameters' 0 126 'mcvar_savephi' 0 130 'mcvar_saver' 0
-135 'mcvar_saveu' 0 141 'mcvar_setparams' 0 146 'mcvar_writebinary' 0
-150 'nmovetypes' 0 155 'selected_real_kind' 0 156 'setprecision' 0 157
-'simmod' 0 158)
+('dp' 0 2 'mcdata' 0 3 'mcvar' 0 17 'mcvar_allocate' 0 83
+'mcvar_appendadaptdata' 0 87 'mcvar_appendenergydata' 0 92
+'mcvar_defaultamp' 0 97 'mcvar_loadab' 0 100 'mcvar_printdiscription' 0
+105 'mcvar_printenergies' 0 108 'mcvar_printphi' 0 111
+'mcvar_printwindowstats' 0 115 'mcvar_readbindary' 0 118 'mcvar_recenter'
+0 123 'mcvar_saveparameters' 0 127 'mcvar_savephi' 0 131 'mcvar_saver' 0
+136 'mcvar_saveu' 0 142 'mcvar_setparams' 0 147 'mcvar_writebinary' 0
+151 'nmovetypes' 0 156 'selected_real_kind' 0 157 'setprecision' 0 158
+'simmod' 0 159)

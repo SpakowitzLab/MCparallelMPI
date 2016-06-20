@@ -15,7 +15,7 @@ Module simMod
 
   Type MCvar   ! Structure for simulation variables of known size
 !     Simulation parameters
-    INTEGER NT                ! Total number of beads  NT=NP*N
+    INTEGER NT                ! Total number of beads  NT=NP*N*G
     INTEGER NB                ! Number of beads in a polymer NB=N*G
     INTEGER N                 ! Number of monomers in a polymer
     INTEGER G                 ! Beads per monomer
@@ -99,6 +99,7 @@ Module simMod
     logical FRMMETH           ! Read methalation from file
     logical FRMFILE           ! Read Initial condition R
     integer simType           ! Melt vs. Solution, Choose hamiltonian
+    logical recenter_on       ! recenter in periodic boundary
 
   end Type
 
@@ -209,6 +210,8 @@ Subroutine MCvar_setParams(mc,fileName)
            !    1         |  Betwene two plates in Z direction at 0 and LBox
            !    2         |  Cube of size LBox**3,  range: 0-LBox
            !    3         |  Circle of radius LBox, centered at LBox/2
+       CASE('RECENTER_ON')
+           Call READO(mc%recenter_on) ! recenter in periodic boundary
        CASE('SIMTYPE')
            Call READI(mc%simType) 
            ! simType      | Discription
@@ -314,8 +317,8 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%NBIN=mc%NBINX**3.0_dp
         mc%DEL=mc%LBOX/mc%NBINX
         mc%NB=mc%N*mc%G
-        mc%WINDOW(5)=mc%N*mc%G
-        mc%WINDOW(6)=mc%N*mc%G
+        mc%WINDOW(5)=mc%NB
+        mc%WINDOW(6)=mc%NB
         mc%MCAMP(2)=0.3_dp*mc%L0
         mc%MCAMP(6)=5.0_dp*mc%L0
         mc%MINAMP(2)=0.2_dp*mc%L0
@@ -356,7 +359,14 @@ Subroutine MCvar_setParams(mc,fileName)
         print*, "error in MCsim. Wrong number of bins"
         stop 1
     endif
-    
+    if (mc%NT.ne.mc%N*mc%NP*mc%G) then
+        print*, "error in MCsim.  NT=",mc%NT," N=",mc%N," NP=",mc%NP," G=",mc%G
+        stop 1
+    endif
+    if (mc%NB.ne.mc%N*mc%G) then
+        print*, "error in MCsim.  NB=",mc%NB," N=",mc%N," G=",mc%G
+        stop 1
+    endif
     call MCvar_printDiscription(mc)
 end Subroutine
 Subroutine MCvar_printDiscription(mc)
@@ -383,7 +393,7 @@ Subroutine MCvar_printDiscription(mc)
     print*, "Energy Variables"
     print*, " elasticity EPS =", mc%EPS
     print*, " solvent-polymer CHI =",mc%CHI
-    print*, " incompressibility KAP=",mc%KAP
+
     print*, " -energy of binding unmethalated ", mc%EU," more positive for favorable binding"
     print*, " -energy of binding methalated",mc%EM
     print*, " HP1_Binding energy parameter", mc%HP1_Bind
@@ -512,16 +522,12 @@ Subroutine MCvar_recenter(mc,md)
        R0(2)=nint(md%R(IB,2)/mc%LBOX-0.5)*mc%LBOX
        R0(3)=nint(md%R(IB,3)/mc%LBOX-0.5)*mc%LBOX
        if (abs(R0(1)*R0(2)*R0(3)) .gt. 0.0001_dp) then
-           DO J=1,mc%N
+           DO J=1,mc%NB
               md%R(IB,1)=md%R(IB,1)-R0(1)
               md%R(IB,2)=md%R(IB,2)-R0(2)
               md%R(IB,3)=md%R(IB,3)-R0(3)
               IB=IB+1
            Enddo
-           print*, "Error in MCvar_recenter"
-           print*, "Shouldn't have to recenter"
-           print*, "Remove this error if repeating BC"
-           stop 1
       endif
     enddo
 end Subroutine

@@ -86,7 +86,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     mc%EBind=mc%DEBind
 
     ! --- Elastic Energy ---
-    call energy_elas(mc%DEELAS,md%R,md%U,mc%NT,mc%N,mc%NP,mc%Para)
+    call energy_elas(mc%DEELAS,md%R,md%U,mc%NT,mc%NB,mc%NP,mc%Para)
     if(abs((mc%EElas(1)+  mc%EElas(2)+ mc%EElas(3))-& 
            (mc%DEElas(1)+mc%DEElas(2)+mc%DEElas(3))).gt.0.0001) then
         print*, "Warning. Integrated elastic enrgy:", &
@@ -170,17 +170,18 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           if (mc%MOVEON(MCTYPE).EQ.0) then
              cycle
           endif
-          call MC_move(md%R,md%U,md%RP,md%UP,mc%NT,mc%N,mc%NP, &
+          call MC_move(md%R,md%U,md%RP,md%UP,mc%NT,mc%NB,mc%NP, &
                        IP,IB1,IB2,IT1,IT2,MCTYPE, & 
                        mc%MCAMP,mc%WINDOW,md%AB,md%ABP,mc%G,&
                        rand_stat)
           
 !   Calculate the change in compression and bending energy
-          if (MCTYPE.NE.7) then
-              call MC_eelas(mc%DEELAS,md%R,md%U,md%RP,md%UP,mc%NT,mc%N, &
-                            mc%NP,IP,IB1,IB2, & 
+          if ((MCTYPE.NE.5) .and. &
+              (MCTYPE.NE.6) .and. &
+              (MCTYPE.NE.7) )then
+              call MC_eelas(mc%DEELAS,md%R,md%U,md%RP,md%UP,&
+                            mc%NT,mc%NB,IP,IB1,IB2, & 
                             IT1,IT2,EB,EPAR,EPERP,GAM,ETA)
-              !print*, mc%DEELAS(1), mc%DEELAS(2), mc%DEELAS(3)
           else
               mc%DEELAS(1)=0.0
               mc%DEELAS(2)=0.0
@@ -188,7 +189,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           endif
 !   Calculate the change in the binding energy
           if (MCTYPE.EQ.7) then
-
               !print*, 'MCsim says EM:',EM,'EU',EU
               call MC_bind(mc%NT,mc%G,IT1,IT2,md%AB,md%ABP,md%METH,mc%EU,mc%EM, &
                            mc%DEBind,mc%mu)
@@ -263,7 +263,9 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
              call MCvar_adapt(mc,MCTYPE,ISTEP,rand_stat)
            
              ! move each chain back if drifted though repeated BC 
-             !call MCvar_recenter(mc,md)  ! You don't need to do this if there is confinement
+             if (mc%recenter_on) then
+                 call MCvar_recenter(mc,md)  ! You don't need to do this if there is confinement
+            endif
           endif
 
 

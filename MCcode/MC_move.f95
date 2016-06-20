@@ -9,11 +9,12 @@
 
 ! Find change in bead position for a crank-shaft type move
      
-      SUBROUTINE MC_move(R,U,RP,UP,NT,N,NP,IP,IB1,IB2,IT1,IT2,MCTYPE &
+      SUBROUTINE MC_move(R,U,RP,UP,NT,NB,NP,IP,IB1,IB2,IT1,IT2,MCTYPE &
                         ,MCAMP,WINDOW,AB,ABP,BPM,rand_stat)
 
       !use mt19937, only : grnd, sgrnd, rnorm, mt, mti
       use mersenne_twister      
+      use setPrecision
       IMPLICIT NONE
       DOUBLE PRECISION, PARAMETER :: PI=3.141592654 ! Value of pi 
       
@@ -21,10 +22,10 @@
       DOUBLE PRECISION U(NT,3)  ! Tangent vectors
       DOUBLE PRECISION RP(NT,3)  ! Bead positions
       DOUBLE PRECISION UP(NT,3)  ! Tangent vectors
-      INTEGER N                 ! Number of beads on a polymer
+      INTEGER NB                 ! Number of beads on a polymer
       INTEGER NP                ! Number of polymers
       INTEGER NT                ! Total beads in simulation 
-      INTEGER BPM               ! Beads per monomer
+      INTEGER BPM               ! Beads per monomer, aka G
 
       INTEGER IP                ! Test polymer 
       INTEGER IB1               ! Test bead position 1
@@ -66,14 +67,14 @@
       if (MCTYPE.EQ.1) then
          call random_number(urand,rand_stat)
          IP=nint(0.5+urand(1)*NP)
-         IB1=nint(0.5+urand(2)*N)
+         IB1=nint(0.5+urand(2)*NB)
          IB2=IB1+nint((urand(3)-0.5)*(2*WINDOW(MCTYPE)+1))
 
          if (IB2.LT.1) then
             IB2=1
          endif
-         if (IB2.GT.N) then
-            IB2=N
+         if (IB2.GT.NB) then
+            IB2=NB
          endif
 
          if (IB2.LT.IB1) then
@@ -81,18 +82,18 @@
             IB1=IB2
             IB2=TEMP
          endif
-         IT1=N*(IP-1)+IB1
-         IT2=N*(IP-1)+IB2
+         IT1=NB*(IP-1)+IB1
+         IT2=NB*(IP-1)+IB2
          
          if (IB1.EQ.IB2.AND.IB1.EQ.1) then
             TA(1)=R(IT1+1,1)-R(IT1,1)
             TA(2)=R(IT1+1,2)-R(IT1,2)
             TA(3)=R(IT1+1,3)-R(IT1,3)
-         elseif (IB1.EQ.IB2.AND.IB1.EQ.N) then
+         elseif (IB1.EQ.IB2.AND.IB1.EQ.NB) then
             TA(1)=R(IT1,1)-R(IT1-1,1)
             TA(2)=R(IT1,2)-R(IT1-1,2)
             TA(3)=R(IT1,3)-R(IT1-1,3)
-         elseif (IB1.EQ.IB2.AND.IB1.NE.1.AND.IB2.NE.N) then
+         elseif (IB1.EQ.IB2.AND.IB1.NE.1.AND.IB2.NE.NB) then
             TA(1)=R(IT1+1,1)-R(IT1-1,1)
             TA(2)=R(IT1+1,2)-R(IT1-1,2)
             TA(3)=R(IT1+1,3)-R(IT1-1,3)
@@ -188,14 +189,14 @@
          
          call random_number(urand,rand_stat)
          IP=nint(0.5+urand(1)*NP)
-         IB1=nint(0.5+urand(2)*N)
+         IB1=nint(0.5+urand(2)*NB)
          IB2=IB1+nint((urand(3)-0.5)*(2*WINDOW(MCTYPE)+1))
 
          if (IB2.LT.1) then
             IB2=1
          endif
-         if (IB2.GT.N) then
-            IB2=N
+         if (IB2.GT.NB) then
+            IB2=NB
          endif
 
          if (IB2.LT.IB1) then
@@ -203,8 +204,8 @@
             IB1=IB2
             IB2=TEMP
          endif
-         IT1=N*(IP-1)+IB1
-         IT2=N*(IP-1)+IB2
+         IT1=NB*(IP-1)+IB1
+         IT2=NB*(IP-1)+IB2
                   
          call random_number(urand,rand_stat)
          DR(1)=MCAMP(2)*(urand(1)-0.5)
@@ -231,23 +232,23 @@
          
          if (IB1.LE.WINDOW(MCTYPE)) then
             IB2=IB1
-            if (IB2.GT.N) then
-               IB2=N
+            if (IB2.GT.NB) then
+               IB2=NB
             endif
             IB1=1
-            IT1=N*(IP-1)+IB1
-            IT2=N*(IP-1)+IB2
+            IT1=NB*(IP-1)+IB1
+            IT2=NB*(IP-1)+IB2
             P1(1)=R(IT2,1)
             P1(2)=R(IT2,2)
             P1(3)=R(IT2,3)	  
          else
-            IB1=N+WINDOW(MCTYPE)+1-IB1
+            IB1=NB+WINDOW(MCTYPE)+1-IB1
             if (IB1.LT.1) then
                IB1=1
             endif
-            IB2=N
-            IT1=N*(IP-1)+IB1
-            IT2=N*(IP-1)+IB2
+            IB2=NB
+            IT1=NB*(IP-1)+IB1
+            IT2=NB*(IP-1)+IB2
             P1(1)=R(IT1,1)
             P1(2)=R(IT1,2)
             P1(3)=R(IT1,3)	  
@@ -297,10 +298,10 @@
          
          call random_number(urand,rand_stat)
          IP=nint(0.5+urand(1)*NP)
-         IB1=nint(0.5+urand(2)*N)
+         IB1=nint(0.5+urand(2)*NB)
          IB2=IB1
-         IT1=N*(IP-1)+IB1
-         IT2=N*(IP-1)+IB2
+         IT1=NB*(IP-1)+IB1
+         IT2=NB*(IP-1)+IB2
          
          call random_number(urand,rand_stat)
          ALPHA=2.*PI*urand(1)
@@ -343,14 +344,14 @@
       elseif (MCTYPE.EQ.5) then
          
          call random_number(urand,rand_stat)
-         IP=nint(0.5+urand(1)*NP)
+         IP=nint(0.5_dp+urand(1)*NP)
          IB1=1
-         IB2=N
-         IT1=N*(IP-1)+IB1
-         IT2=N*(IP-1)+IB2
+         IB2=NB
+         IT1=NB*(IP-1)+IB1
+         IT2=NB*(IP-1)+IB2
          
-         ALPHA=2.*PI*urand(2)
-         BETA=acos(2.*urand(3)-1.)
+         ALPHA=2.0_dp*PI*urand(2)
+         BETA=acos(2.0_dp*urand(3)-1.0_dp)
          TA(1)=sin(BETA)*cos(ALPHA)
          TA(2)=sin(BETA)*sin(ALPHA)
          TA(3)=cos(BETA)
@@ -391,16 +392,16 @@
       elseif (MCTYPE.EQ.6) then
          
          call random_number(urnd,rand_stat)
-         IP=nint(0.5+urnd(1)*NP)
+         IP=nint(0.5_dp+urnd(1)*NP)
          IB1=1
-         IB2=N
-         IT1=N*(IP-1)+IB1
-         IT2=N*(IP-1)+IB2
+         IB2=NB
+         IT1=NB*(IP-1)+IB1
+         IT2=NB*(IP-1)+IB2
          
          call random_number(urand,rand_stat)
-         DR(1)=MCAMP(6)*(urand(1)-0.5)
-         DR(2)=MCAMP(6)*(urand(2)-0.5)
-         DR(3)=MCAMP(6)*(urand(3)-0.5)
+         DR(1)=MCAMP(6)*(urand(1)-0.5_dp)
+         DR(2)=MCAMP(6)*(urand(2)-0.5_dp)
+         DR(3)=MCAMP(6)*(urand(3)-0.5_dp)
          
          DO 50 I=IT1,IT2
             RP(I,1)=R(I,1)+DR(1)
@@ -418,14 +419,14 @@
 
          call random_number(urand,rand_stat)
          IP=nint(0.5+urand(1)*NP)
-         IB1=nint(0.5+urand(2)*N)
+         IB1=nint(0.5+urand(2)*NB)
          IB2=IB1+nint((urand(3)-0.5)*(2*WINDOW(MCTYPE)+1))
 
          if (IB2.LT.1) then
             IB2=1
          endif
-         if (IB2.GT.N) then
-            IB2=N
+         if (IB2.GT.NB) then
+            IB2=NB
          endif
 
          if (IB2.LT.IB1) then
@@ -433,8 +434,8 @@
             IB1=IB2
             IB2=TEMP
          endif
-         IT1=N*(IP-1)+IB1
-         IT2=N*(IP-1)+IB2
+         IT1=NB*(IP-1)+IB1
+         IT2=NB*(IP-1)+IB2
 
          !keep binding constant within monomers
          IT1=IT1-MOD(IT1-1,BPM)
