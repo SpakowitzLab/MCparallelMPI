@@ -136,8 +136,8 @@ Subroutine wlcsim(rand_stat)
          INTON=1
      endif
      ! for coupling schedule
-     if (.FALSE.) then
-         call strength_schedule(IND+INDEND,mc%HP1_bind)
+     if (mc%UseSchedule) then
+         call strength_schedule(IND+INDEND,mc%Couple_ON,mc%KAP_ON,mc%CHI_ON,mc%PTON)
      endif
      
 
@@ -171,51 +171,68 @@ Subroutine wlcsim(rand_stat)
   ENDDO
   
 END
-Subroutine strength_schedule(ind,HP1_bind)
+Subroutine strength_schedule(ind,Couple_ON,KAP_ON,CHI_ON,PTON)
     use setPrecision
     implicit none
     Integer ind
     Double PRECISION HP1_bind
     Double precision maximum
-    maximum=-28.0_dp
-    
-    if(ind.lt.101) then
-        HP1_bind=0.0_dp
-    elseif(ind.lt.111) then
-        HP1_bind=maximum*0.1_dp
-    elseif(ind.lt.121) then
-        HP1_bind=maximum*0.2_dp
-    elseif(ind.lt.131) then
-        HP1_bind=maximum*0.3_dp
-    elseif(ind.lt.141) then
-        HP1_bind=maximum*0.4_dp
-    elseif(ind.lt.151) then
-        HP1_bind=maximum*0.5_dp
-    elseif(ind.lt.161) then
-        HP1_bind=maximum*0.6_dp
-    elseif(ind.lt.171) then
-        HP1_bind=maximum*0.7_dp
-    elseif(ind.lt.181) then
-        HP1_bind=maximum*0.8_dp
-    elseif(ind.lt.191) then
-        HP1_bind=maximum*0.9_dp
-    elseif(ind.lt.201) then
-        HP1_bind=maximum*1.0_dp
-    elseif(ind.lt.211) then
-        HP1_bind=maximum*1.3_dp
-    elseif(ind.lt.221) then
-        HP1_bind=maximum*1.2_dp
-    elseif(ind.lt.231) then
-        HP1_bind=maximum*1.1_dp
-    elseif(ind.lt.241) then
-        HP1_bind=maximum*1.0_dp
-    elseif(ind.lt.251) then
-        HP1_bind=maximum*0.9_dp
-    elseif(ind.lt.261) then
-        HP1_bind=maximum*0.8_dp
-    elseif(ind.lt.271) then
-        HP1_bind=maximum*0.7_dp
+    DOUBLE PRECISION KAP_ON
+    DOUBLE PRECISION CHI_ON
+    DOUBLE PRECISION Couple_ON
+    logical PTON
+
+    if(ind.lt.5) then
+        KAP_ON=0.0_dp
+    else
+        KAP_ON=1.0_dp
     endif
 
+    if(ind.lt.10) then
+!        PTON=.False.
+        CHI_ON=0.0_dp
+    else
+!        PTON=.True.
+        CHI_ON=1.0_dp
+    endif
+!    maximum=-28.0_dp    
+!    if(ind.lt.101) then
+!        Couple_ON=0.0_dp
+!    elseif(ind.lt.111) then
+!        Couple_ON=0.1_dp
+!    elseif(ind.lt.121) then
+!        Couple_ON=0.2_dp
+!    elseif(ind.lt.131) then
+!        Couple_ON=0.3_dp
+!    elseif(ind.lt.141) then
+!        Couple_ON=0.4_dp
+!    elseif(ind.lt.151) then
+!        Couple_ON=0.5_dp
+!    elseif(ind.lt.161) then
+!        Couple_ON=0.6_dp
+!    elseif(ind.lt.171) then
+!        Couple_ON=0.7_dp
+!    elseif(ind.lt.181) then
+!        Couple_ON=0.8_dp
+!    elseif(ind.lt.191) then
+!        Couple_ON=0.9_dp
+!    elseif(ind.lt.201) then
+!        Couple_ON=1.0_dp
+!    elseif(ind.lt.211) then
+!        Couple_ON=1.1_dp
+!    elseif(ind.lt.221) then
+!        Couple_ON=1.2_dp
+!    elseif(ind.lt.231) then
+!        Couple_ON=1.1_dp
+!    elseif(ind.lt.241) then
+!        Couple_ON=1.0_dp
+!    elseif(ind.lt.251) then
+!        Couple_ON=0.9_dp
+!    elseif(ind.lt.261) then
+!        Couple_ON=0.8_dp
+!    elseif(ind.lt.271) then
+!        Couple_ON=0.7_dp
+!    endif
+    return
 end subroutine
 !---------------------------------------------------------------*

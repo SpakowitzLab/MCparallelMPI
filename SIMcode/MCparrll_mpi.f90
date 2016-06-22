@@ -57,7 +57,7 @@ program main
     
   end if
   if (p.gt.1) then
-    call paraTemp ( p, id )
+      call paraTemp ( p, id )
   else
       call singleCall()
   endif
@@ -308,14 +308,29 @@ Subroutine PT_override(mc,md)
     !copy AB from replica 1 to others
     if (id.eq.1) then
         do dest=2,nThreads-1
-            call MPI_Send (md%METH,mc%NT, MPI_INTEGER, dest,   0, &
-                           MPI_COMM_WORLD,error )
+            if(mc%simType.eq.1) then
+                call MPI_Send (md%METH,mc%NT, MPI_INTEGER, dest,   0, &
+                               MPI_COMM_WORLD,error )
+            elseif(mc%simType.eq.0) then
+                call MPI_Send (md%AB,mc%NT, MPI_INTEGER, dest,   0, &
+                               MPI_COMM_WORLD,error )
+            else
+                print*, "Error in PT_override. simType doesn't exist."
+                stop 1
+            endif
         enddo
     else
         source=1
-        
-        call MPI_Recv (md%METH, mc%NT, MPI_INTEGER, source, 0, &
-                       MPI_COMM_WORLD, status, error )
+        if(mc%simType.eq.1) then
+            call MPI_Recv (md%METH, mc%NT, MPI_INTEGER, source, 0, &
+                           MPI_COMM_WORLD, status, error )
+        elseif(mc%simType.eq.0) then
+            call MPI_Recv (md%AB, mc%NT, MPI_INTEGER, source, 0, &
+                           MPI_COMM_WORLD, status, error )
+        else
+            print*, "Error in PT_override. simType doesn't exist."
+            stop 1
+        endif
         source=0
     endif
     call MPI_Recv ( mc%rep, 1, MPI_INTEGER, source, 0, &
@@ -325,8 +340,14 @@ Subroutine PT_override(mc,md)
       MPI_COMM_WORLD, status, error ) 
    
     ! set cof
-    !mc%mu=cof
-    mc%chi=cof
+    if(mc%simType.eq.1) then
+        mc%mu=cof
+    elseif(mc%simType.eq.0) then
+        mc%chi=cof
+    else
+        print*, "Error in PT_override. simType doesn't exist."
+        stop 1
+    endif
 
     write(iostrg,"(I4)"), mc%rep
     iostrg=adjustL(iostrg)
@@ -337,14 +358,64 @@ Subroutine PT_override(mc,md)
 end Subroutine
 Subroutine PT_cofValues(cof,nPTReplicas)
     use setPrecision
+    USE INPUTPARAMS, ONLY : READLINE, READA, READF, READI, READO
     Implicit none
     Integer nPTReplicas 
     Double precision cof(nptReplicas)
     INteger rep
+    ! IO variables
+    character*16 fileName  ! file with parameters
+    INTEGER :: PF   ! input file unit
+    LOGICAL :: FILEEND=.FALSE. ! done reading file?
+    CHARACTER*100 :: WORD ! keyword
+    INTEGER :: NITEMS ! number of items on the line in the parameter file
+    ! outputs
+    Double precision gap
+    Double precision minCof
+    ! -----------------------
+    !
+    !  Read from file
+    !
+    !-------------------------
+    fileName='input/RepSetting'
+    PF=55
+    OPEN(UNIT=PF,FILE=fileName,STATUS='OLD') 
+
+    ! read in the keywords one line at a time
+    DO 
+       CALL READLINE(PF,FILEEND,NITEMS)
+       IF (FILEEND.and.nitems.eq.0) EXIT
+
+       ! skip empty lines
+       IF (NITEMS.EQ.0) CYCLE
+
+       ! Read in the keyword for this line
+       CALL READA(WORD,CASESET=1)
+
+       ! Skip any empty lines or any comment lines
+       IF (WORD(1:1).EQ.'#') CYCLE
+
+       SELECT CASE(WORD) ! pick which keyword
+       CASE('MIN')
+           Call READF(minCof)
+       CASE('GAP')
+           Call READF(gap)
+       CASE DEFAULT
+           print*, "Error in MCvar_setParams.  Unidentified keyword:", &
+                   TRIM(WORD)
+           stop 1
+       ENDSELECT
+    ENDDO
+
+    print*, "MIN=",minCof," GAP=",GAP
     do rep=1,nPTReplicas
         !cof(rep)=2.0_dp-rep*0.08_dp  !over mu values
-        cof(rep)=0.0001_dp+0.06_dp*rep
+        cof(rep)=minCof+Gap*(rep-1)
     enddo
+    print*, "cof values:"
+    print*, cof
+    Close(PF)
+    return
 end subroutine
 Subroutine replicaExchange(mc,md)
 ! This checks in with the mpi head node to 
@@ -368,11 +439,17 @@ Subroutine replicaExchange(mc,md)
     double precision chi_old
 
     ! Calculate value conjagate to ajusted parameter
-    !mc%M=mc%EBind/(-1.0_dp*mc%mu)
-    !x=mc%M
-    !mu_old=mc%mu
-    x=mc%EChi/(mc%Chi)  ! sum (Vol/V)*PHIA*PHIB
-    chi_old=mc%chi
+    if(mc%simType.eq.1) then
+        mc%M=mc%EBind/(-1.0_dp*mc%mu)
+        x=mc%M
+        mu_old=mc%mu
+    elseif(mc%simType.eq.0) then
+        x=mc%EChi/(mc%Chi)  ! sum (Vol/V)*PHIA*PHIB
+        chi_old=mc%chi
+    else
+        print*, "Error in PT_override. simType doesn't exist."
+        stop 1
+    endif
 
 
     if (x.ne.x) then
@@ -393,10 +470,13 @@ Subroutine replicaExchange(mc,md)
                   MPI_COMM_WORLD,status,mc%error)
 
     ! update energy
-    !mc%mu=-cof
-    !mc%EBind=mc%EBind-mc%M*(mc%mu-mu_old)
-    mc%chi=cof
-    mc%EChi=mc%EChi+x*(mc%chi-chi_old)
+    if(mc%simType.eq.1) then
+        mc%mu=-cof
+        mc%EBind=mc%EBind-mc%M*(mc%mu-mu_old)
+    elseif(mc%simType.eq.0) then
+        mc%chi=cof
+        mc%EChi=mc%EChi+x*(mc%chi-chi_old)
+    endif
     
 
     ! change output file sufix
@@ -433,9 +513,9 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     endif
 
     write(1,*) "~~~~~~~~~~~~~~~~~",nExchange,"~~~~~~~~~~~~~~~~~~~~~~~~"
-    write(1,*) "  rep |  mu  |   M  |  up  | down |  node"
+    write(1,*) " rep |  cof  |   x    |  up  | down |node"
     do rep=1,nPTReplicas
-        write(1,"(I7,f7.3,f7.1,2f7.3,I7)"), rep, -cof(rep), x(rep), & 
+        write(1,"(I6,f8.3,f9.1,2f7.3,I4)"), rep, cof(rep), x(rep), & 
                  real(upSuccess(rep))/real(N_average), &
                  real(downSuccess(rep))/real(N_average), nodeNumber(rep)
         upSuccess(rep)=0

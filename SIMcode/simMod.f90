@@ -48,11 +48,11 @@ Module simMod
     DOUBLE PRECISION MinAMP(NmoveTypes) ! minium amplitude
     DOUBLE PRECISION MaxAMP(NmoveTypes) ! maximum amplitude
     INTEGER MOVEON(NmoveTypes)         ! Is the move active
-    INTEGER WINDOW(NmoveTypes)         ! Size of window for bead selection
-    INTEGER MAXWINDOW(NmoveTypes)         ! Size of window for bead selection
-    DOUBLE PRECISION WA_ratio(NmoveTypes)         ! Size of window for bead selection
+    DOUBLE PRECISION WINDOW(NmoveTypes)         ! Size of window for bead selection
+    Double precision MAXWINDOW(NmoveTypes)         ! Max Size of window for bead selection
+    double precision MINWINDOW(NmoveTypes)         ! Min Size of window for bead selection
+    DOUBLE PRECISION winTarget(NmoveTypes) ! target for ratio of window to anmplitude
     INTEGER SUCCESS(NmoveTypes)        ! Number of successes
-    DOUBLE PRECISION moveSlope(NmoveTypes) ! target for ratio of window to anmplitude
     DOUBLE PRECISION PDesire(NmoveTypes) ! desired hit rate     
     DOUBLE PRECISION PHit(NmoveTypes) ! hit rate 
     ! see Timing variables for NADAPT(NmoveTypes)
@@ -100,6 +100,12 @@ Module simMod
     logical FRMFILE           ! Read Initial condition R
     integer simType           ! Melt vs. Solution, Choose hamiltonian
     logical recenter_on       ! recenter in periodic boundary
+    integer winType           ! how to choose random section of polymer to move
+    integer reduce_move       ! only exicute unlikely movetypes every ____ cycles
+    logical UseSchedule       ! use scheduled change in interactions strength(s)
+    double precision KAP_ON   
+    double precision CHI_ON
+    double precision Couple_ON
 
   end Type
 
@@ -165,10 +171,17 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%setType = 4 ! 4 for shereical
     mc%confineType = 3 ! 3 for sherical
     mc%simType=1
+    mc%winType=1    
     mc%NPT=100
     mc%NStep=400000
     mc%NNoInt=100
-    mc%INDMAX=180             
+    mc%INDMAX=180   
+    mc%NB=mc%G*mc%N    
+    mc%reduce_move=10
+    mc%UseSchedule=.False.
+    mc%KAP_ON=1.0_dp
+    mc%CHI_ON=1.0_dp
+    mc%Couple_ON=1.0_dp
     call MCvar_defaultAmp(mc) 
    
     ! -----------------------
@@ -275,7 +288,7 @@ Subroutine MCvar_setParams(mc,fileName)
        CASE('SLIDE_ON')
            Call READI(mc%MOVEON(2)) ! is Slide move on 1/0
        CASE('PIVOT_ON')
-           Call READI(mc%MOVEON(3)) ! is Pivon move on 1/0
+           Call READI(mc%MOVEON(3)) ! is Pivot move on 1/0
        CASE('ROTATE_ON')
            Call READI(mc%MOVEON(4)) ! is single bead rotate on 1/0
        CASE('FULL_CHAIN_ROTATION_ON')
@@ -284,12 +297,33 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READI(mc%MOVEON(6)) ! is full chain slide on 1/0
        CASE('BIND_MOVE_ON')
            Call READI(mc%MOVEON(7)) ! is bind/unbind move on 1/0
+       CASE('WINTYPE')
+           Call READI(mc%winType)  ! 0 for uniform, 1 for exponential
+       CASE('MIN_CRANK_SHAFT_WIN') 
+           Call READF(mc%MINWINDOW(1)) ! min mean window size
+       CASE('MIN_SLIDE_WIN') 
+           Call READF(mc%MINWINDOW(2)) 
+       CASE('MIN_PIVOT_WIN') 
+           Call READF(mc%MINWINDOW(3))
+       CASE('MIN_BIND_WIN') 
+           Call READF(mc%MINWINDOW(7))
+       CASE('REDUCE_MOVE')
+           Call READI(mc%reduce_move) !  only exicute unlikely movetypes every ____ cycles
+       CASE('CRANK_SHAFT_TARGET')
+           Call READF(mc%winTarget(1)) ! target window size for crank shaft move
+       CASE('SLIDE_TARGET')
+           Call READF(mc%winTarget(2)) ! target window size for slide move
+       CASE('PIVOT_TARGET')
+           Call READF(mc%winTarget(3)) ! target window size for Pivot move
+       CASE('STRENGTH_SCHEDULE')
+           Call READO(mc%UseSchedule) ! use scheduled ramp in interaction strength(s)
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
            stop 1
        ENDSELECT
     ENDDO
+    close(PF)
     ! --------------------
     !
     ! Derived Variables
@@ -367,9 +401,8 @@ Subroutine MCvar_setParams(mc,fileName)
         print*, "error in MCsim.  NB=",mc%NB," N=",mc%N," G=",mc%G
         stop 1
     endif
-    call MCvar_printDiscription(mc)
 end Subroutine
-Subroutine MCvar_printDiscription(mc)
+Subroutine MCvar_printDescription(mc)
     IMPLICIT NONE
     TYPE(MCvar) mc
     print*, "---------------System Description---------------"
@@ -467,24 +500,32 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MOVEON(7)=1  ! Change in Binding state
     
     !     Initial segment window for MC moves
-    mc%WINDOW(1)=15 ! used to be N*G
-    mc%WINDOW(2)=15 ! used to be N*G
-    mc%WINDOW(3)=15 ! used to be N*G
-    mc%WINDOW(4)=1
-    mc%WINDOW(5)=mc%N*mc%G
-    mc%WINDOW(6)=mc%N*mc%G
-    mc%WINDOW(7)=15 ! used to be N*G
+    mc%WINDOW(1)=15.0_dp ! used to be N*G
+    mc%WINDOW(2)=15.0_dp ! used to be N*G
+    mc%WINDOW(3)=15.0_dp ! used to be N*G
+    mc%WINDOW(4)=1.0_dp
+    mc%WINDOW(5)=dble(mc%N*mc%G)
+    mc%WINDOW(6)=dble(mc%N*mc%G)
+    mc%WINDOW(7)=15.0_dp ! used to be N*G
 
     !    Maximum window size (large windows are expensive)
-    mc%MAXWINDOW(1)=min(150,mc%NB)
-    mc%MAXWINDOW(2)=min(150,mc%NB)
-    mc%MAXWINDOW(3)=min(150,mc%NB)
-    mc%MAXWINDOW(4)=NANI 
-    mc%MAXWINDOW(5)=NANI 
-    mc%MAXWINDOW(6)=NANI
-    mc%MAXWINDOW(7)=min(150,mc%NB)
+    mc%MAXWINDOW(1)=dble(min(150,mc%NB))
+    mc%MAXWINDOW(2)=dble(min(150,mc%NB))
+    mc%MAXWINDOW(3)=dble(min(150,mc%NB))
+    mc%MAXWINDOW(4)=NAND 
+    mc%MAXWINDOW(5)=NAND 
+    mc%MAXWINDOW(6)=NAND
+    mc%MAXWINDOW(7)=dble(min(4,mc%NB))
+
+    mc%MINWINDOW(1)=dble(min(4,mc%NB))
+    mc%MINWINDOW(2)=dble(min(4,mc%NB))
+    mc%MINWINDOW(3)=dble(min(4,mc%NB))
+    mc%MINWINDOW(4)=NAND 
+    mc%MINWINDOW(5)=NAND 
+    mc%MINWINDOW(6)=NAND
+    mc%MINWINDOW(7)=dble(min(4,mc%NB))
     Do MCTYPE=1,mc%moveTypes
-        mc%moveSlope(MCTYPE)=dble(mc%WINDOW(MCTYPE))/mc%MCAMP(MCTYPE)
+        mc%winTarget(MCTYPE)=8.0_dp
     enddo
 
     mc%MINAMP(1)=0.1_dp*PI
@@ -576,10 +617,10 @@ Subroutine MCvar_printWindowStats(mc)
     TYPE(MCvar) mc
     INTEGER I ! counter
     I=0
-    print*, "Succes | MCAMP | ratio | WINDOW| Type "
+    print*, "Succes | MCAMP | WINDOW| Type "
     Do I=1,mc%moveTypes
         if (mc%MOVEON(i).eq.1) then
-            write(*,"(3f8.2,2I8)"), mc%phit(i), mc%MCAMP(i), mc%WA_ratio(i) ,  mc%WINDOW(i), i
+            write(*,"(3f8.2,1I8)"), mc%phit(i), mc%MCAMP(i),  mc%WINDOW(i), i
         endif
     enddo
 end subroutine

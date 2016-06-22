@@ -340,6 +340,12 @@ else ! Calculate change in energy
         enddo
     endif
 endif
+
+! Discount if interaction are only partial on
+mc%DEChi=mc%DECHI*mc%CHI_ON
+mc%DECouple=mc%DECouple*mc%Couple_ON
+mc%DEKap=mc%DEKap*mc%KAP_ON
+
 RETURN
 END
 

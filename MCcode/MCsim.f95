@@ -170,10 +170,17 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           if (mc%MOVEON(MCTYPE).EQ.0) then
              cycle
           endif
+
+          ! Turn down poor moves
+          if ((mc%PHit(MCTYPE).lt.0.01_dp).and. &
+              (mod(ISTEP,mc%reduce_move).ne.0)) then
+              CYCLE
+          endif
+
           call MC_move(md%R,md%U,md%RP,md%UP,mc%NT,mc%NB,mc%NP, &
                        IP,IB1,IB2,IT1,IT2,MCTYPE, & 
                        mc%MCAMP,mc%WINDOW,md%AB,md%ABP,mc%G,&
-                       rand_stat)
+                       rand_stat, mc%winType)
           
 !   Calculate the change in compression and bending energy
           if ((MCTYPE.NE.5) .and. &
@@ -201,6 +208,10 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           if (INTON.EQ.1) then
              initialize=.FALSE.
              call MC_int(mc,md,IT1,IT2,initialize)
+          else
+              mc%DEKap=0.0_dp
+              mc%DECouple=0.0_dp
+              mc%DEChi=0.0_dp
           endif
 
 !   Calculate the change in confinement energy
@@ -212,6 +223,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           endif
 
 
+          
 !   Change the position if appropriate
           ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3) & 
                  +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon
@@ -260,7 +272,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
           !amplitude and window adaptations
           if (mod(ISTEP,mc%NADAPT(MCTYPE)).EQ.0) then  ! Addapt ever NADAPT moves
-             call MCvar_adapt(mc,MCTYPE,ISTEP,rand_stat)
+             call MCvar_adapt(mc,MCTYPE,ISTEP)
            
              ! move each chain back if drifted though repeated BC 
              if (mc%recenter_on) then

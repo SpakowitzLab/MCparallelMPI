@@ -10,7 +10,7 @@
 ! Find change in bead position for a crank-shaft type move
      
       SUBROUTINE MC_move(R,U,RP,UP,NT,NB,NP,IP,IB1,IB2,IT1,IT2,MCTYPE &
-                        ,MCAMP,WINDOW,AB,ABP,BPM,rand_stat)
+                        ,MCAMP,WINDOW,AB,ABP,BPM,rand_stat,winType)
 
       !use mt19937, only : grnd, sgrnd, rnorm, mt, mti
       use mersenne_twister      
@@ -53,9 +53,10 @@
       INTEGER, PARAMETER :: moveTypes=7 ! Number of different move types 
       DOUBLE PRECISION MCAMP(moveTypes) ! Amplitude of random change      
       INTEGER MCTYPE            ! Type of MC move
+      INTEGER winType
       DOUBLE PRECISION DR(3)    ! Displacement for slide move
       INTEGER TEMP
-      INTEGER WINDOW(moveTypes) ! Size of window for bead selection
+      Double precision WINDOW(moveTypes) ! Size of window for bead selection
 
 ! Variables for change of binding state move
       INTEGER AB(NT)            ! Chemical (binding) state
@@ -66,9 +67,15 @@
           
       if (MCTYPE.EQ.1) then
          call random_number(urand,rand_stat)
-         IP=nint(0.5+urand(1)*NP)
-         IB1=nint(0.5+urand(2)*NB)
-         IB2=IB1+nint((urand(3)-0.5)*(2*WINDOW(MCTYPE)+1))
+         IP=nint(0.5_dp+urand(1)*NP)
+         IB1=nint(0.5_dp+urand(2)*NB)
+         if (winType.eq.0) then
+             IB2=IB1+nint((urand(3)-0.5_dp)*(2.0_dp*WINDOW(MCTYPE)+1.0))
+         elseif (winType.eq.1) then 
+             call random_number(urnd,rand_stat)
+             IB2=IB1+(2.0_dp*nint(urand(3))-1.0)* &
+                     nint(-1.0*log(urnd(1))*WINDOW(MCTYPE))
+         endif
 
          if (IB2.LT.1) then
             IB2=1
@@ -186,12 +193,17 @@
 !     Perform slide move (MCTYPE 2)
          
       elseif (MCTYPE.EQ.2) then
-         
          call random_number(urand,rand_stat)
-         IP=nint(0.5+urand(1)*NP)
-         IB1=nint(0.5+urand(2)*NB)
-         IB2=IB1+nint((urand(3)-0.5)*(2*WINDOW(MCTYPE)+1))
-
+         IP=nint(0.5_dp+urand(1)*NP)
+         IB1=nint(0.5_dp+urand(2)*NB)
+         if (winType.eq.0) then
+             IB2=IB1+nint((urand(3)-0.5_dp)*(2.0_dp*WINDOW(MCTYPE)+1.0))
+         elseif (winType.eq.1) then 
+             call random_number(urnd,rand_stat)
+             IB2=IB1+(2.0_dp*nint(urand(3))-1.0)* &
+                     nint(-1.0*log(urnd(1))*WINDOW(MCTYPE))
+         endif
+        
          if (IB2.LT.1) then
             IB2=1
          endif
@@ -204,6 +216,7 @@
             IB1=IB2
             IB2=TEMP
          endif
+
          IT1=NB*(IP-1)+IB1
          IT2=NB*(IP-1)+IB2
                   
@@ -226,32 +239,64 @@
              
       elseif (MCTYPE.EQ.3) then
 
-         call random_number(urand,rand_stat)
-         IP=nint(0.5+urand(1)*NP)
-         IB1=nint(0.5+urand(3)*(2*WINDOW(MCTYPE)))
-         
-         if (IB1.LE.WINDOW(MCTYPE)) then
-            IB2=IB1
-            if (IB2.GT.NB) then
-               IB2=NB
-            endif
-            IB1=1
-            IT1=NB*(IP-1)+IB1
-            IT2=NB*(IP-1)+IB2
-            P1(1)=R(IT2,1)
-            P1(2)=R(IT2,2)
-            P1(3)=R(IT2,3)	  
+         call random_number(urnd,rand_stat)
+         IP=nint(0.5_dp+urnd(1)*NP)
+         if (wintype.eq.0) then
+             call random_number(urnd,rand_stat)
+             IB1=nint(0.5+urnd(1)*(2.0_dp*WINDOW(MCTYPE)))
+             if (IB1.LE.WINDOW(MCTYPE)) then
+                IB2=IB1
+                if (IB2.GT.NB) then
+                   IB2=NB
+                endif
+                IB1=1
+                IT1=NB*(IP-1)+IB1
+                IT2=NB*(IP-1)+IB2
+                P1(1)=R(IT2,1)
+                P1(2)=R(IT2,2)
+                P1(3)=R(IT2,3)	  
+             else
+                IB1=NB+WINDOW(MCTYPE)+1-IB1
+                if (IB1.LT.1) then
+                   IB1=1
+                endif
+                IB2=NB
+                IT1=NB*(IP-1)+IB1
+                IT2=NB*(IP-1)+IB2
+                P1(1)=R(IT1,1)
+                P1(2)=R(IT1,2)
+                P1(3)=R(IT1,3)	  
+             endif
+         elseif(winType.eq.1) then
+             call random_number(urnd,rand_stat)
+             if (urnd(1).gt.0.5_dp) then
+                call random_number(urnd,rand_stat)
+                IB2=nint(-1.0_dp*log(urnd(1))*WINDOW(MCTYPE))+1
+                if (IB2.GT.NB) then 
+                    IB2=NB
+                endif
+                IB1=1
+                IT1=NB*(IP-1)+IB1
+                IT2=NB*(IP-1)+IB2
+                P1(1)=R(IT2,1)
+                P1(2)=R(IT2,2)
+                P1(3)=R(IT2,3)
+             else
+                call random_number(urnd,rand_stat)
+                IB1=NB-nint(-1.0_dp*log(urnd(1))*WINDOW(MCTYPE))
+                if (IB1.LT.1) then
+                   IB1=1
+                endif
+                IB2=NB
+                IT1=NB*(IP-1)+IB1
+                IT2=NB*(IP-1)+IB2
+                P1(1)=R(IT1,1)
+                P1(2)=R(IT1,2)
+                P1(3)=R(IT1,3) 
+             endif
          else
-            IB1=NB+WINDOW(MCTYPE)+1-IB1
-            if (IB1.LT.1) then
-               IB1=1
-            endif
-            IB2=NB
-            IT1=NB*(IP-1)+IB1
-            IT2=NB*(IP-1)+IB2
-            P1(1)=R(IT1,1)
-            P1(2)=R(IT1,2)
-            P1(3)=R(IT1,3)	  
+             print*, "Error, no other option"
+             stop 1
          endif             
              
          call random_number(urand,rand_stat)
@@ -418,9 +463,15 @@
          ! Move amplitude is ignored for this move type
 
          call random_number(urand,rand_stat)
-         IP=nint(0.5+urand(1)*NP)
-         IB1=nint(0.5+urand(2)*NB)
-         IB2=IB1+nint((urand(3)-0.5)*(2*WINDOW(MCTYPE)+1))
+         IP=nint(0.5_dp+urand(1)*NP)
+         IB1=nint(0.5_dp+urand(2)*NB)
+         if (winType.eq.0) then
+             IB2=IB1+nint((urand(3)-0.5_dp)*(2.0_dp*WINDOW(MCTYPE)+1.0))
+         elseif (winType.eq.1) then 
+             call random_number(urnd,rand_stat)
+             IB2=IB1+(2.0_dp*nint(urand(3))-1.0)* &
+                     nint(-1.0*log(urnd(1))*WINDOW(MCTYPE))
+         endif
 
          if (IB2.LT.1) then
             IB2=1
