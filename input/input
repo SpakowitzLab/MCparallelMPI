@@ -1,0 +1,150 @@
+! ---- ---- ----
+! ---- input file ----
+
+!INPUT 1
+!PTON, switch to tourn on parallel tempering
+1
+
+!INPUT 2
+!N Number of beads (actually number of monomers in polymer)
+2000
+
+!INPUT 3
+!G # of submonomers (beads) in each monomer
+1
+
+!INPUT 4
+!LBOX Box size (approximate)
+25.000
+
+!INPUT 5
+!DEL 
+1.000000
+
+!INPUT 6
+!L0, Length per bead
+1.25
+
+!INPUT 7
+!v, Volume of bead
+0.100000
+
+!INPUT 8
+!FA, Fraction of A monomers
+0.500000
+
+!INPUT 9
+!LAM, initial chemical correlation of binding
+0
+
+!INPUT 9
+!FRMCHEM, Read Initial chemical sequence from file
+0
+
+!INPUT 10
+!EPS, Chain rigidity, was 0.1 on 5/12
+0.30000
+
+!INPUT 11
+!CHI0, Initial CHI.  Solvent-Polymer Chi
+0.000
+
+!INPUT 12
+!DELCHI 
+0.000000
+
+!INPUT 13
+!KAP, Incompressibility
+100.000000
+
+!INPUT 14
+!INDMAX, Total number of savepoints
+281
+
+!INPUT 15
+!FRMFILE, Read initial position from file
+0
+
+!INPUT 16
+!BROWN
+1
+
+!INPUT 17
+!INTON
+1
+
+!INPUT 18
+!NCHI, number of savepoints per chi change 
+1
+
+!INPUT 19
+!NPT, number of moves per tempering 
+10
+
+!INPUT 20
+!NNOINT, number of initialization (save points)moves without interaction, was 500 on 4/25/15 
+100
+
+!INPUT 21
+!NINIT, number of initialization oves with interaction 
+0
+
+!INPUT 22
+!NSTEP, number of steps between save points, was 100 on 2/29/16 
+400000
+
+!INPUT 23
+!WRTON 
+1
+
+!INPUT 24
+!PTID 
+1
+
+!INPUT 25
+!NRABOVE 
+-1
+
+!INPUT 26
+!NRBELOW 
+1
+
+!INPUT 27
+!NRNOW
+1
+
+!INPUT 28
+!NRMAX 
+2
+
+!INPUT 29
+!EU, -energy of binding when unmethalated. Negitive means less favoriable.  Add mu.
+-1.52
+
+!INPUT 30
+!EM, -energy of binding when methalated.
+0.01
+
+!INPUT 31
+!HP1_Bind, energy of HP1 binding to eachother. 
+-28
+
+!INPUT 32
+!F_METH, fraction methlated
+0.5
+
+!INPUT 33
+!LAM_METH, eigenvalue of methalation profile
+0.9
+
+!INPUT 34
+!Fpoly, fraction of volume polymer
+0.025
+
+!INPUT 35
+!FRMMETH, Methation profile sourse
+0
+
+!Input condition
+! mu, HP1_chemcial potential
+0

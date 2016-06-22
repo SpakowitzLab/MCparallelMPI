@@ -1,0 +1,69 @@
+SUBROUTINE gcalc(KMAG,SK,R,AB,NT)
+
+INTEGER NT
+DOUBLE PRECISION R(NT,3)  ! Bead positions
+INTEGER AB(NT)            ! Chemical identity of beads
+DOUBLE PRECISION, PARAMETER:: PI = 3.1415926535
+DOUBLE PRECISION, PARAMETER:: BOXL=20
+DOUBLE PRECISION, PARAMETER:: BINL=1
+
+INTEGER, PARAMETER:: XNUM = 11
+INTEGER, PARAMETER:: KNUM = (XNUM)**3                 !TOTAL WAVE # IN EACH DIRECTION
+DOUBLE PRECISION K(KNUM,3)
+DOUBLE PRECISION KMAG(KNUM)
+DOUBLE PRECISION SK(KNUM)
+DOUBLE PRECISION SCOS
+DOUBLE PRECISION SSIN
+
+INTEGER IX
+INTEGER IY
+INTEGER IZ
+INTEGER J
+INTEGER I
+
+DOUBLE PRECISION FA
+DOUBLE PRECISION FB
+DOUBLE PRECISION IT
+DOUBLE PRECISION ID
+DOUBLE PRECISION RX
+DOUBLE PRECISION RY
+DOUBLE PRECISION RZ
+DOUBLE PRECISION KR
+
+FA=REAL(sum(AB))/NT
+FB=1-FA
+
+   !calculate structure factors
+   IK=0
+   DO IX = 1,XNUM
+      DO IY =1,XNUM
+         DO IZ=1,XNUM
+            IK=IK+1
+            K(IK,1)=2*PI/BOXL*(IX-1)
+            K(IK,2)=2*PI/BOXL*(IY-1)
+            K(IK,3)=2*PI/BOXL*(IZ-1)
+            KMAG(IK)=SQRT(K(IK,1)**2+K(IK,2)**2+K(IK,3)**2)
+
+            SCOS=0
+            SSIN=0
+            DO J = 1,NT
+               !periodic boundary condition
+               RX=R(J,1)-BOXL*FLOOR(R(J,1)/BOXL)
+               RY=R(J,2)-BOXL*FLOOR(R(J,2)/BOXL)
+               RZ=R(J,3)-BOXL*FLOOR(R(J,3)/BOXL)
+               KR=RX*K(IK,1)+RY*K(IK,2)+RZ*K(IK,3)
+
+               IT=2*(AB(J)-0.5)
+               ID=(0.5)*(IT+1-2*FA)
+
+               SCOS=SCOS+COS(KR)*ID
+               SSIN=SSIN+SIN(KR)*ID
+            ENDDO
+            SK(IK)=SCOS*SCOS+SSIN*SSIN
+         ENDDO
+      ENDDO
+   ENDDO
+   
+RETURN
+
+END

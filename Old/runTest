@@ -1,0 +1,2 @@
+gfortran -o TestBin test.f95 mt19937.f90
+./TestBin
