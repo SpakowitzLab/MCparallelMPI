@@ -182,13 +182,13 @@ Subroutine strength_schedule(ind,Couple_ON,KAP_ON,CHI_ON,PTON)
     DOUBLE PRECISION Couple_ON
     logical PTON
 
-    if(ind.lt.5) then
+    if(ind.lt.10) then
         KAP_ON=0.0_dp
     else
         KAP_ON=1.0_dp
     endif
 
-    if(ind.lt.10) then
+    if(ind.lt.20) then
 !        PTON=.False.
         CHI_ON=0.0_dp
     else

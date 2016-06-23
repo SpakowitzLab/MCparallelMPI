@@ -1,5 +1,5 @@
 clear;
-%close all
+close all
 % inputs:
 % r101, an example file for bead coordinates
 % pdata, analytical solution for end-to-end distribution
@@ -8,14 +8,15 @@ clear;
 %   sdata available shifan@tower12:~/testdir/sdata
 
 %% read data
-r = load('r101');
+% r = load('r101');
+r = dlmread('../data/r41v1');
 
 %% TEST OPTIONS
 TEST1 = 0;  % end-to-end distribution
 TEST2 = 0;  % bead-bead distribution
-TEST3 = 0;  % total and partial density
+TEST3 = 1;  % total and partial density
 TEST4 = 0;  % radial distrbution function
-TEST5 = 1;  % structure factor
+TEST5 = 0;  % structure factor
 TEST6 = 0;  % chemical potential (widom insertion)
 
 %% parameters
