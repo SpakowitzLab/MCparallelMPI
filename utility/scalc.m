@@ -38,7 +38,8 @@ S=S./n;                    % include bead normalization
 
 end
 
-function [kb]=basisgen(Nsample,L)
+function [kbnew]=basisgen(Nsample,L)
+Ksample = 200;
 % generate basis wavevectors
 
 kb=[];
@@ -55,6 +56,17 @@ for n1=0:Nsample
     end
   end
 end
+
+%only select some k values at high k
+nk=length(unique(kb(:,4)));
+kmag=unique(kb(:,4));
+ind =unique(round(logspace(0,log10(nk),Ksample)));
+
+kbnew=[];
+for ii=1:length(ind)
+  kbnew=[kbnew;kb(kb(:,4)==kmag(ind(ii)),:)];
+end
+
 end
 
 function [k,S]=scalcavg(kb,Stot)
