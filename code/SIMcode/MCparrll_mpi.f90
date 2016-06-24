@@ -256,12 +256,12 @@ subroutine paraTemp ( p, id)
                                    mc%lowerRepExe,mc%upperRepExe,mc%lowerCofRail,mc%upperCofRail)
                 endif
                 N_average=0
+                do rep=1,nPTReplicas
+                    upSuccess(rep)=0
+                    downSuccess(rep)=0
+                enddo
             endif
-            do rep=1,nPTReplicas
-                nExchange=nExchange+1
-                upSuccess(rep)=0
-                downSuccess(rep)=0
-            enddo
+            nExchange=nExchange+1
         enddo
 
         deallocate (cof)

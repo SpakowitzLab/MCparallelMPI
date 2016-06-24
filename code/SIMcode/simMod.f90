@@ -805,9 +805,10 @@ Subroutine MCvar_appendEnergyData(mc,fileName)
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
     endif
-    WRITE(1,"(I5, 9f9.1)") mc%IND, &
+    WRITE(1,"(I5, 8f9.1,4f9.4)") mc%IND, &
            mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
-           mc%EKap, mc%ECHI, mc%EBind, mc%M, mc%HP1_Bind
+           mc%EKap, mc%ECHI, mc%EBind, mc%M, &
+           mc%HP1_Bind*mc%Couple_on, mc%CHI*mc*CHI_ON, mc%mu, mc%KAP*mc%KAP_ON
     Close(1)
 end subroutine
 Subroutine MCvar_appendAdaptData(mc,fileName)
