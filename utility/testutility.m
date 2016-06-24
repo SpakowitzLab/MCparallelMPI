@@ -8,7 +8,7 @@ clear;
 %   sdata available shifan@tower12:~/testdir/sdata
 
 %% read data
-r = load('r101');
+r = load('../data/r9v2');
 
 %% TEST OPTIONS
 TEST1 = 0;  % end-to-end distribution
@@ -32,7 +32,7 @@ LP=L0/(2*EPS);
 Ree = 2;
 LAM = -0.75;
 FA = 0.5;
-CHI = 1/G;
+CHI = 0/G;
 KAP = 10;
 
 %% Single chain conformation tests

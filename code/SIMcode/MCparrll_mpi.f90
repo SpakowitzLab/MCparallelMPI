@@ -111,6 +111,7 @@ subroutine paraTemp ( p, id)
 
     implicit none
 
+!   MPI variables
     integer ( kind = 4 ) dest   !destination id for messages
     integer ( kind = 4 ) source  !source id for messages
     integer ( kind = 4 ) error  ! error id for MIP functions
@@ -119,17 +120,6 @@ subroutine paraTemp ( p, id)
     integer ( kind = 4 ) status(MPI_STATUS_SIZE) ! MPI stuff
     integer nPTReplicas     ! number of replicas.
 
-! now siulation variables
-    type(MCvar) mc
-    type(MCdata) md
-    integer temp ! for castling
-    logical keepGoing   ! set to false when NaN encountered
-    integer rep ! physical replica number
-    integer, allocatable :: nodeNumber(:)
-    double precision, allocatable :: x(:)  ! sum of bound states
-    double precision, allocatable :: cof(:)
-    double precision nan_dp !chemical potential
-      
 !   variable for random number generator seeding
     type(random_stat) rand_stat  ! state of random number chain
     integer Irand     ! Seed
@@ -139,15 +129,26 @@ subroutine paraTemp ( p, id)
     integer seedvalues(8) ! clock readings
     real urand(1)
 
-!   traking variables
-    integer N_average
-    integer upSuccess(p-1)
-    integer downSuccess(p-1)
-    integer NT
-    integer nExchange
-    nExchange=0
+!   worker node only variables
+    double precision nan_dp !chemical potential
 
+!   for head node use only variables
+    integer rep ! physical replica number, for loops
+    integer temp ! for castling
+    logical keepGoing   ! set to false when NaN encountered
+    integer, allocatable :: nodeNumber(:)  ! list of which nodes are which
+    double precision, allocatable :: x(:)  ! sum of bound states 
+    double precision, allocatable :: cof(:) ! mu or chi or whatever
+    integer N_average      ! number of attempts since last average
+    integer upSuccess(p-1)  ! number of successes since last average
+    integer downSuccess(p-1) ! number of successes since last average
+    integer nExchange ! total number of exchanges attemted
+    type(MCvar) mc ! genaral symulation parameters
+    character*16 fileName
+
+    nExchange=0
     nPTReplicas=p-1 
+    fileName='input/params'
 !  -----------------------------------------------------------------
 !
 !      Head Node
@@ -179,7 +180,7 @@ subroutine paraTemp ( p, id)
         ! --------------------------
         nPTReplicas = p-1;
 
-
+        call MCvar_setParams(mc,fileName) ! so that the head thread knows the  parameters
 
         allocate( x(1:nPTReplicas))
         allocate( cof(1:nPTReplicas))
@@ -228,7 +229,7 @@ subroutine paraTemp ( p, id)
                     keepGoing=.false.
                 endif
             enddo
-            !
+            
             ! do replica exchange here
             do rep=1,(nPTReplicas-1)
                 call random_number(urand,rand_stat)
@@ -240,13 +241,27 @@ subroutine paraTemp ( p, id)
                     downSuccess(rep+1)=downSuccess(rep+1)+1
                 endif
             enddo
+
+            source=1 
+            call MPI_Recv (mc%Ind, 1, MPI_INTEGER, source, 0, &
+                           MPI_COMM_WORLD, status, error )
+            
+            ! track/adapt acceptance rates
             N_average=N_average+1
-            if (N_average.gt.4999) then
+            if (N_average.ge.mc%NRepAdapt) then
                 call save_repHistory(upSuccess,downSuccess,nPTReplicas, &
-                                     cof,x,nodeNumber,N_average,nExchange)
+                                     cof,x,nodeNumber,N_average,nExchange,mc%IND)
+                if (mc%IND.gt.mc%indStartRepAdapt) then ! insert input defined location here
+                    call adaptCof(upSuccess,nPTReplicas,cof,N_average,&
+                                   mc%lowerRepExe,mc%upperRepExe,mc%lowerCofRail,mc%upperCofRail)
+                endif
                 N_average=0
             endif
-            nExchange=nExchange+1
+            do rep=1,nPTReplicas
+                nExchange=nExchange+1
+                upSuccess(rep)=0
+                downSuccess(rep)=0
+            enddo
         enddo
 
         deallocate (cof)
@@ -417,7 +432,7 @@ Subroutine PT_cofValues(cof,nPTReplicas)
     Close(PF)
     return
 end subroutine
-Subroutine replicaExchange(mc,md)
+Subroutine replicaExchange(mc)
 ! This checks in with the mpi head node to 
 ! For parallel tempering of the form:  E=cof*x
 ! 1: Tell head node the x value
@@ -427,8 +442,8 @@ Subroutine replicaExchange(mc,md)
     use mpi
     use simMod
     IMPLICIT NONE
+    integer (kind=4) id, ierror
     TYPE(MCvar) mc
-    TYPE(MCData) md
     integer i  ! working intiger
     integer (kind=4) dest ! message destination
     integer (kind=4) source ! message source
@@ -454,12 +469,21 @@ Subroutine replicaExchange(mc,md)
 
     if (x.ne.x) then
         print*, "Error in replicaExchange! NaN encountered"
+        print*, "Chi:"
+        print*, mc%Chi
+        print*, "x:"
+        print*, x
         stop 1
     endif
 
     ! send number bound to head node
     dest=0
     call MPI_Send(x,1,MPI_DOUBLE_PRECISION,dest,0,MPI_COMM_WORLD,mc%error)
+    call MPI_COMM_RANK(MPI_COMM_WORLD,id,ierror)
+    ! send IND to head node
+    if (id.eq.1) then 
+        call MPI_Send(mc%IND,1,MPI_INTEGER,dest,0,MPI_COMM_WORLD,mc%error)
+    endif
     ! hear back on which replica and it's mu value
     source=0
     ! get new replica number
@@ -488,7 +512,7 @@ Subroutine replicaExchange(mc,md)
     mc%repSufix=iostr
 end Subroutine
 Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
-                           cof,x,nodeNumber,N_average,nExchange)
+                           cof,x,nodeNumber,N_average,nExchange,IND)
 ! Print Energy data
     IMPLICIT NONE
     LOGICAL isfile
@@ -502,6 +526,7 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     double precision x(nPTReplicas)
     integer N_average
     integer nExchange
+    integer IND
 
 
     fullName=  'data/repHistory'
@@ -512,14 +537,12 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
     endif
 
-    write(1,*) "~~~~~~~~~~~~~~~~~",nExchange,"~~~~~~~~~~~~~~~~~~~~~~~~"
+    write(1,*) "~~~~~~~~~~~exchange: ",nExchange,", IND:",IND,"~~~~~~~~~~~~~~~~~~~~"
     write(1,*) " rep |  cof  |   x    |  up  | down |node"
     do rep=1,nPTReplicas
         write(1,"(I6,f8.3,f9.1,2f7.3,I4)"), rep, cof(rep), x(rep), & 
                  real(upSuccess(rep))/real(N_average), &
                  real(downSuccess(rep))/real(N_average), nodeNumber(rep)
-        upSuccess(rep)=0
-        downSuccess(rep)=0
     enddo  
 
     Close(1)

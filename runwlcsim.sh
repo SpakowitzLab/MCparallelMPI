@@ -14,7 +14,7 @@ mv data/* trash/
 echo "Now run"
 # now run the output
 # --prefix used to avoid changing path
-mpirun --prefix ~/openmpi/ -np 3 MCparrll_out
+mpirun --prefix ~/openmpi/ -np 4 MCparrll_out
 
 
 # cd code

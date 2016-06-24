@@ -26,10 +26,9 @@ Subroutine wlcsim(rand_stat)
   type(random_stat) rand_stat ! state of random number generator
 
   ! miscellaneous
-  INTEGER IND, I            ! Ind in series
+  INTEGER I            
   character*4 fileind       ! Index of output
   character*16 iostr       ! File for output
-  INTEGER INDEND            ! Restart index
   logical restart           ! Restart from previous?
 
 !     Simulation input variables
@@ -57,8 +56,8 @@ Subroutine wlcsim(rand_stat)
                            md%Vol,rand_stat)  ! calculate partial volumes
         print*, "Done Calculating Bin volumes"
     else
-        do IND=1,mc%NBIN
-             md%Vol(IND)=mc%del**3
+        do I=1,mc%NBIN
+             md%Vol(I)=mc%del**3
         enddo
     endif
     
@@ -108,17 +107,16 @@ Subroutine wlcsim(rand_stat)
     print*, "calling saveU..."
     call MCvar_saveU(mc,md,iostr)
 
-    INDEND = 0
 
  else
 
     PRINT*, '-----load simulation-----'
     iostr='putBinaryFileNameHere'
     stop 1
-    INDEND=0; INDEND=1/INDEND ! make this a variable of simmod before use
     call MCvar_readBindary(mc,md,iostr)
 
  endif
+ call MCvar_printDescription(mc)
 
 !  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
@@ -126,18 +124,18 @@ Subroutine wlcsim(rand_stat)
 !
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   print*, 'Beginning simulation'
-  IND=1
+  mc%IND=1
 
-  DO WHILE ((IND+INDEND).LE.mc%INDMAX)  ! INDEND is for sims. that are restarted
+  DO WHILE ((mc%IND).LE.mc%INDMAX) 
 
-     if ((IND+INDEND).LE.mc%NNOINT) then
+     if (mc%IND.LE.mc%NNOINT) then
          INTON=0
      else
          INTON=1
      endif
      ! for coupling schedule
      if (mc%UseSchedule) then
-         call strength_schedule(IND+INDEND,mc%Couple_ON,mc%KAP_ON,mc%CHI_ON,mc%PTON)
+         call strength_schedule(mc)
      endif
      
 
@@ -145,55 +143,53 @@ Subroutine wlcsim(rand_stat)
     call MCsim(mc,md,mc%NSTEP,INTON,rand_stat)
 
 !    Save the conformation and the metrics
-    write (fileind,'(I4)'), INDEND+IND
+    write (fileind,'(I4)'), mc%IND
 
     !Save various energy contiributions to file 
     iostr='data/out1'
-    I=INDEND+IND
-    call MCvar_appendEnergyData(mc,iostr,I)
+    call MCvar_appendEnergyData(mc,iostr)
      
     !part 2.5 - adaptations
     iostr='data/out3'
-    call MCvar_appendAdaptData(mc,iostr,I)
-    
+    call MCvar_appendAdaptData(mc,iostr)
+
+    !print Phi
+    write(iostr,"(I6)"), mc%IND
+    iostr='data/phi' // trim(adjustL(iostr))
+    call MCVar_savePHI(mc,md,iostr)    
 
     !part 3 - R
-    write(iostr,"(I6)"), I
+    write(iostr,"(I6)"), mc%IND
     iostr='data/r' // trim(adjustL(iostr))
     call MCvar_saveR(mc,md,iostr,0)
     
     PRINT*, '________________________________________'
-    PRINT*, 'Time point ',IND+INDEND, ' out of', mc%INDMAX
+    PRINT*, 'Time point ',mc%IND, ' out of', mc%INDMAX
     call MCvar_printEnergies(mc)
     call MCvar_printWindowStats(mc)
     !call MCvar_printPhi(mc,md)
-    IND=IND+1    
+    mc%IND=mc%IND+1    
   ENDDO
   
 END
-Subroutine strength_schedule(ind,Couple_ON,KAP_ON,CHI_ON,PTON)
+Subroutine strength_schedule(mc)
     use setPrecision
+    use simMod
     implicit none
-    Integer ind
-    Double PRECISION HP1_bind
-    Double precision maximum
-    DOUBLE PRECISION KAP_ON
-    DOUBLE PRECISION CHI_ON
-    DOUBLE PRECISION Couple_ON
-    logical PTON
+    TYPE(MCvar) mc
 
-    if(ind.lt.5) then
-        KAP_ON=0.0_dp
+    if(mc%ind.lt.mc%N_KAP_ON) then
+        mc%KAP_ON=0.0_dp
     else
-        KAP_ON=1.0_dp
+        mc%KAP_ON=1.0_dp
     endif
 
-    if(ind.lt.10) then
+    if(mc%ind.lt.mc%N_CHI_ON) then
 !        PTON=.False.
-        CHI_ON=0.0_dp
+        mc%CHI_ON=0.0_dp
     else
 !        PTON=.True.
-        CHI_ON=1.0_dp
+        mc%CHI_ON=1.0_dp
     endif
 !    maximum=-28.0_dp    
 !    if(ind.lt.101) then

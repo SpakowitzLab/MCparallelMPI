@@ -285,7 +285,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
        !  -----  Parallel tempering ----
        IF ((mc%PTON).and.((mod(ISTEP,mc%NPT)).eq.0)) THEN
-          call replicaExchange(mc,md)
+          call replicaExchange(mc)
        ENDIF
       
        ! seps in this subroutine

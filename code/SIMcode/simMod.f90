@@ -42,7 +42,7 @@ Module simMod
         ! EB, EPAR, EPERP, GAM, ETA, ...
 
 
-!   Monte Carlo Variables (for addaptation)
+!   Monte Carlo Variables (for adaptation)
     INTEGER moveTypes
     DOUBLE PRECISION MCAMP(NmoveTypes) ! Amplitude of random change
     DOUBLE PRECISION MinAMP(NmoveTypes) ! minium amplitude
@@ -85,11 +85,14 @@ Module simMod
     ! see Timing variables for NPT
 
 !   Timing variables
-    INTEGER NADAPT(NmoveTypes) ! Nunber of steps between addapt
+    INTEGER NADAPT(NmoveTypes) ! Nunber of steps between adapt
     integer NPT                ! number of steps between parallel tempering
     integer INDMAX             ! total number of save points
+    integer IND                ! save point
     integer NSTEP              ! steps per save point
     integer NNoInt             ! save points before turning on NNoInt
+    integer N_KAP_ON           ! when to turn KAP energy on
+    integer N_CHI_ON           ! when to turn CHI energy on
     
 !   Switches
     INTEGER confineType       ! type of Boundary Conditions
@@ -106,6 +109,14 @@ Module simMod
     double precision KAP_ON   
     double precision CHI_ON
     double precision Couple_ON
+
+!   Replica Dynamic Cof choice 
+    integer NRepAdapt ! number of exchange attemts between adapt
+    double precision lowerRepExe ! when to decrese cof spacing
+    double precision upperRepExe ! when to increase cof spacing
+    double precision lowerCofRail ! minumum acceptable Cof
+    double precision upperCofRail ! maximum acceptable Cof
+    integer indStartRepAdapt
 
   end Type
 
@@ -182,7 +193,17 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%KAP_ON=1.0_dp
     mc%CHI_ON=1.0_dp
     mc%Couple_ON=1.0_dp
+    mc%NRepAdapt=1000  
+    mc%lowerRepExe=0.01
+    mc%upperRepExe=0.1
+    mc%lowerCofRail=0.04
+    mc%upperCofRail=0.06
+    mc%indStartRepAdapt=10
+    mc%N_KAP_ON=0
+    mc%N_CHI_ON=0
+
     call MCvar_defaultAmp(mc) 
+
    
     ! -----------------------
     !
@@ -251,6 +272,10 @@ Subroutine MCvar_setParams(mc,fileName)
            CALL READI(mc%N) ! Number of monomers in a polymer
        CASE('NNOINT')
            Call READI(mc%NNoInt) ! save points before turning on interaction
+       CASE('N_KAP_ON')
+           call readI(mc%N_KAP_ON) ! when to turn compression energy on
+       CASE('N_CHI_ON')
+           call readI(mc%N_CHI_ON) ! when to turn CHI energy on
        CASE('INDMAX')
            Call READI(mc%INDMAX) ! total number of save points
        CASE('NSTEP')
@@ -317,6 +342,18 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READF(mc%winTarget(3)) ! target window size for Pivot move
        CASE('STRENGTH_SCHEDULE')
            Call READO(mc%UseSchedule) ! use scheduled ramp in interaction strength(s)
+       CASE('N_REP_ADAPT')
+           Call READI(mc%NRepAdapt)  ! number of exchange attemts between adapt 
+       CASE('LOWER_REP_EXE')
+           Call READF(mc%lowerRepExe) ! when to decrease cof spacing
+       CASE('UPPER_REP_EXE')
+           Call READF(mc%upperRepExe) ! when to increase cof spacing
+       CASE('LOWER_COF_RAIL')
+           Call READF(mc%lowerCofRail) ! minumum acceptable Cof
+       CASE('UPPER_COF_RAIL')
+           Call READF(mc%upperCofRail) ! maximum acceptable Cof
+       CASE('IND_START_REP_ADAPT')
+           Call READI(mc%indStartRepAdapt) ! ind to start rep. cof. adaptiation on
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
@@ -401,6 +438,18 @@ Subroutine MCvar_setParams(mc,fileName)
         print*, "error in MCsim.  NB=",mc%NB," N=",mc%N," G=",mc%G
         stop 1
     endif
+    if (mc%NNoInt.gt.mc%indStartRepAdapt) then
+        print*, "error in MCsim. Don't run adapt without int on"
+        stop 1
+    endif
+    if (mc%NNoInt.gt.mc%N_CHI_ON) then
+        print*, "error in MCsim. Can't have chi without int on"
+        stop 1
+    endif
+    if (mc%NNoInt.gt.mc%N_KAP_ON) then
+        print*, "error in MCsim. Can't have kap without int on"
+        stop 1
+    endif
 end Subroutine
 Subroutine MCvar_printDescription(mc)
     IMPLICIT NONE
@@ -426,6 +475,7 @@ Subroutine MCvar_printDescription(mc)
     print*, "Energy Variables"
     print*, " elasticity EPS =", mc%EPS
     print*, " solvent-polymer CHI =",mc%CHI
+    print*, " compression cof, KAP =", mc%KAP
 
     print*, " -energy of binding unmethalated ", mc%EU," more positive for favorable binding"
     print*, " -energy of binding methalated",mc%EM
@@ -545,7 +595,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MAXAMP(7)=NAND
      
     DO MCTYPE=1,mc%moveTypes
-        mc%NADAPT(MCTYPE)=1000 ! addapt after at most 1000 steps
+        mc%NADAPT(MCTYPE)=1000 ! adapt after at most 1000 steps
         mc%PDESIRE(MCTYPE)=0.5_dp ! Target
         mc%SUCCESS(MCTYPE)=0
     ENDDO
@@ -612,7 +662,7 @@ Subroutine MCvar_printPhi(mc,md)
     print*,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 end subroutine
 Subroutine MCvar_printWindowStats(mc)
-! For realtime feedback on addaptation
+! For realtime feedback on adaptation
     IMPLICIT NONE
     TYPE(MCvar) mc
     INTEGER I ! counter
@@ -741,10 +791,9 @@ Subroutine MCvar_saveParameters(mc,fileName)
         WRITE(1,"(f10.5)") mc%LAM_METH  ! methalation lambda
     CLOSE(1)
 end subroutine
-Subroutine MCvar_appendEnergyData(mc,fileName,lnNum)
+Subroutine MCvar_appendEnergyData(mc,fileName)
 ! Print Energy data
     IMPLICIT NONE
-    INTEGER lnNum
     TYPE(MCvar) mc
     LOGICAL isfile
     character*16 fileName
@@ -756,15 +805,14 @@ Subroutine MCvar_appendEnergyData(mc,fileName,lnNum)
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
     endif
-    WRITE(1,"(I5, 9f9.1)") lnNum, &
+    WRITE(1,"(I5, 9f9.1)") mc%IND, &
            mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
            mc%EKap, mc%ECHI, mc%EBind, mc%M, mc%HP1_Bind
     Close(1)
 end subroutine
-Subroutine MCvar_appendAdaptData(mc,fileName,lnNum)
-! Appends MC move addaptation data to the file  
+Subroutine MCvar_appendAdaptData(mc,fileName)
+! Appends MC move adaptation data to the file  
     IMPLICIT NONE
-    INTEGER lnNum
     TYPE(MCvar) mc
     LOGICAL isfile
     character*16 fileName
@@ -776,7 +824,7 @@ Subroutine MCvar_appendAdaptData(mc,fileName,lnNum)
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
     endif
-    WRITE(1,"(I4,21f8.2)") lnNum,& 
+    WRITE(1,"(I4,21f8.2)") mc%IND,& 
           REAL(mc%WINDOW(1)),mc%MCAMP(1),mc%PHIT(1), &
           REAL(mc%WINDOW(2)),mc%MCAMP(2),mc%PHIT(2), &
           REAL(mc%WINDOW(3)),mc%MCAMP(3),mc%PHIT(3), &
