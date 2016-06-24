@@ -94,14 +94,14 @@ do IB=I1,I2
    SELECT CASE (mc%confineType)
    CASE (0) ! Box from 0-LBOX, Bins split by boundaries
        ! Periodic BC
-       RBIN(1)=RBIN(1)-nint(RBIN(1)/LBOX-0.5_dp)*LBOX
-       RBIN(2)=RBIN(2)-nint(RBIN(2)/LBOX-0.5_dp)*LBOX
-       RBIN(3)=RBIN(3)-nint(RBIN(3)/LBOX-0.5_dp)*LBOX
+       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX)*LBOX
+       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX)*LBOX
+       RBIN(3)=RBIN(3)-floor(RBIN(3)/LBOX)*LBOX
   
        ! Binning  
-       IX(1)=nint(RBIN(1)/DEL+0.5)
-       IY(1)=nint(RBIN(2)/DEL+0.5)
-       IZ(1)=nint(RBIN(3)/DEL+0.5)
+       IX(1)=ceiling(RBIN(1)/DEL)
+       IY(1)=ceiling(RBIN(2)/DEL)
+       IZ(1)=ceiling(RBIN(3)/DEL)
        
        IX(2)=IX(1)-1
        IY(2)=IY(1)-1
@@ -110,8 +110,8 @@ do IB=I1,I2
        ! Calculate the bin weighting
        WX(2)=(DEL*IX(1)-RBIN(1))/DEL   
        WX(1)=1.0_dp-WX(2)              
-       WY(1)=(DEL*IY(1)-RBIN(2))/DEL   
-       WY(2)=1.0_dp-WY(1)              
+       WY(2)=(DEL*IY(1)-RBIN(2))/DEL   
+       WY(1)=1.0_dp-WY(2)              
        WZ(2)=(DEL*IZ(1)-RBIN(3))/DEL   
        WZ(1)=1.0_dp-WZ(2)              
    
@@ -124,13 +124,13 @@ do IB=I1,I2
        IZ(2)=IZ(2)-floor(REAL((IZ(2)-1))/REAL(NBINX)) * NBINX
    CASE (1)
        ! Periodic BC
-       RBIN(1)=RBIN(1)-nint(RBIN(1)/LBOX-0.5)*LBOX
-       RBIN(2)=RBIN(2)-nint(RBIN(2)/LBOX-0.5)*LBOX
+       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX)*LBOX
+       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX)*LBOX
   
        ! Binning  
-       IX(1)=nint(RBIN(1)/DEL+0.5_dp)
-       IY(1)=nint(RBIN(2)/DEL+0.5_dp)
-       IZ(1)=nint(RBIN(3)/DEL+1.0_dp) ! Note 1.0 so that box centers are on half intigers 
+       IX(1)=ceiling(RBIN(1)/DEL)
+       IY(1)=ceiling(RBIN(2)/DEL)
+       IZ(1)=nint(RBIN(3)/DEL)+1 ! Note 1.0 so that box centers are on half intigers 
        
        IX(2)=IX(1)-1
        IY(2)=IY(1)-1
@@ -139,8 +139,8 @@ do IB=I1,I2
        ! Calculate the bin weighting
        WX(2)=(DEL*IX(1)-RBIN(1))/DEL   ! WX(2)=(RBIN(1)-IX(1)*DEL)/(IX(2)*DEL-IX(1)*DEL)
        WX(1)=1.0_dp-WX(2)              ! WX(1)=(IX(2)*DEL-RBIN(1))/(IX(2)*DEL-IX(1)*DEL)
-       WY(1)=(DEL*IY(1)-RBIN(2))/DEL   ! WY(2)=(RBIN(2)-IY(1)*DEL)/(IY(2)*DEL-IY(1)*DEL)
-       WY(2)=1.0_dp-WY(1)              ! WY(1)=(IY(2)*DEL-RBIN(2))/(IY(2)*DEL-IY(1)*DEL)
+       WY(2)=(DEL*IY(1)-RBIN(2))/DEL   ! WY(2)=(RBIN(2)-IY(1)*DEL)/(IY(2)*DEL-IY(1)*DEL)
+       WY(1)=1.0_dp-WY(2)              ! WY(1)=(IY(2)*DEL-RBIN(2))/(IY(2)*DEL-IY(1)*DEL)
        WZ(2)=(DEL*IZ(1)-0.5_dp*DEL-RBIN(3))/DEL   ! WZ(2)=(RBIN(3)-IZ(1)*DEL)/(IZ(2)*DEL-IZ(1)*DEL)
        WZ(1)=1.0_dp-WZ(2)                   ! WZ(1)=(IZ(2)*DEL-RBIN(3))/(IZ(2)*DEL-IZ(1)*DEL)
    
@@ -156,9 +156,9 @@ do IB=I1,I2
        IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX)) * NBINX
    CASE (2) ! Box confinement
        ! Binning  
-       IX(1)=nint(RBIN(1)/DEL+1.0_dp)
-       IY(1)=nint(RBIN(2)/DEL+1.0_dp)
-       IZ(1)=nint(RBIN(3)/DEL+1.0_dp) ! Note 1.0 so that box centers are on half intigers 
+       IX(1)=nint(RBIN(1)/DEL)+1 
+       IY(1)=nint(RBIN(2)/DEL)+1
+       IZ(1)=nint(RBIN(3)/DEL)+1 ! Note +1 because fortran starts a 1 
        
        IX(2)=IX(1)-1
        IY(2)=IY(1)-1
@@ -167,15 +167,15 @@ do IB=I1,I2
        ! Calculate the bin weighting
        WX(2)=(DEL*IX(1)-0.5_dp*DEL-RBIN(1))/DEL
        WX(1)=1.0_dp-WX(2)             
-       WY(1)=(DEL*IY(1)-0.5_dp*DEL-RBIN(2))/DEL 
-       WY(2)=1.0_dp-WY(1)                           
-       WZ(2)=(DEL*IZ(1)-0.5*DEL-RBIN(3))/DEL    
+       WY(2)=(DEL*IY(1)-0.5_dp*DEL-RBIN(2))/DEL 
+       WY(1)=1.0_dp-WY(2)                           
+       WZ(2)=(DEL*IZ(1)-0.5_dp*DEL-RBIN(3))/DEL    
        WZ(1)=1.0_dp-WZ(2)                  
    CASE (3) 
        ! Binning  
-       IX(1)=nint(RBIN(1)/DEL+1.0_dp)
-       IY(1)=nint(RBIN(2)/DEL+1.0_dp)
-       IZ(1)=nint(RBIN(3)/DEL+1.0_dp) ! Note 1.0 so that box centers are on half intigers 
+       IX(1)=nint(RBIN(1)/DEL)+1 
+       IY(1)=nint(RBIN(2)/DEL)+1
+       IZ(1)=nint(RBIN(3)/DEL)+1 ! Note +1 because fortran starts a 1 
            
        IX(2)=IX(1)-1
        IY(2)=IY(1)-1
@@ -184,8 +184,8 @@ do IB=I1,I2
        ! Calculate the bin weighting
        WX(2)=(DEL*IX(1)-0.5_dp*DEL-RBIN(1))/DEL  
        WX(1)=1.0_dp-WX(2)                          
-       WY(1)=(DEL*IY(1)-0.5_dp*DEL-RBIN(2))/DEL  
-       WY(2)=1.0_dp-WY(1)                          
+       WY(2)=(DEL*IY(1)-0.5_dp*DEL-RBIN(2))/DEL  
+       WY(1)=1.0_dp-WY(2)                          
        WZ(2)=(DEL*IZ(1)-0.5_dp*DEL-RBIN(3))/DEL  
        WZ(1)=1.0_dp-WZ(2)                           
    END SELECT
