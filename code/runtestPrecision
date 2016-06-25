@@ -1,0 +1,2 @@
+gfortran -o testpres.out SIMcode/inputparams.f90 mersenne_twister.f90 testPrecision.f90
+./testpres.out 

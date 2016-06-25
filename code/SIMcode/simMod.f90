@@ -122,18 +122,18 @@ Module simMod
 
   Type MCData  ! for Allocateable variables
 !   Configuration Data
-    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:):: R   ! Conformation of polymer chains
-    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:):: U   ! Conformation of polymer chains 
-    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:):: RP !Test Bead positions - only valid from IT1 to IT2
-    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:):: UP !Test target vectors - only valid from IT1 to IT2
-    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:):: PHIA ! Volume fraction of A
-    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:):: PHIB ! Volume fraction of B
-    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:):: Vol ! Volume fraction of A
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:):: R   ! Conformation of polymer chains
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:):: U   ! Conformation of polymer chains 
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:):: RP !Test Bead positions - only valid from IT1 to IT2
+    REAL(dp), ALLOCATABLE, DIMENSION(:,:):: UP !Test target vectors - only valid from IT1 to IT2
+    REAL(dp), ALLOCATABLE, DIMENSION(:):: PHIA ! Volume fraction of A
+    REAL(dp), ALLOCATABLE, DIMENSION(:):: PHIB ! Volume fraction of B
+    REAL(dp), ALLOCATABLE, DIMENSION(:):: Vol ! Volume fraction of A
     INTEGER, ALLOCATABLE, DIMENSION(:):: AB            ! Chemical identity of beads
     INTEGER, ALLOCATABLE, DIMENSION(:):: ABP           ! Test Chemical identity of beads
     INTEGER, ALLOCATABLE, DIMENSION(:):: METH          ! Methalation state of beads
-    DOUBLE PRECISION, Allocatable, Dimension(:):: DPHIA    ! Change in phi A
-    DOUBLE PRECISION, Allocatable, Dimension(:):: DPHIB    ! Change in phi A
+    REAl(dp), Allocatable, Dimension(:):: DPHIA    ! Change in phi A
+    REAl(dp), Allocatable, Dimension(:):: DPHIB    ! Change in phi A
     INTEGER, Allocatable, Dimension(:) :: INDPHI           ! Indices of the phi
   end TYPE
 contains

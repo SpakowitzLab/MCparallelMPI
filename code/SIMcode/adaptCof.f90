@@ -1,11 +1,11 @@
-Subroutine adaptCof(upSuccess,nPTReplicas,cof,N_average,&
+Subroutine adaptCof(downSuccess,nPTReplicas,cof,N_average,&
                      lowerRepExe,upperRepExe,lowerCofRail,upperCofRail)
 use setPrecision
 implicit none
 
 ! inputs
 integer nPTReplicas
-integer upSuccess(nPTReplicas)
+integer downSuccess(nPTReplicas)
 integer N_average
 double precision lowerRepExe 
 double precision upperRepExe 
@@ -24,7 +24,7 @@ allocate( newCof(1:nPTReplicas) )
 
 newCof(1)=Cof(1)
 do rep=2,nPTReplicas
-    successRate=dble(upSuccess(rep))/dble(N_average) 
+    successRate=dble(downSuccess(rep))/dble(N_average) 
     if (Cof(rep).lt.Cof(rep-1)) then
         print*, "Error in adaptCof!"
         stop 1
