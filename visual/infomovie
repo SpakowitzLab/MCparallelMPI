@@ -1,0 +1,1 @@
+ffmpeg -framerate 6 -i snap%04d.png -c:v libx264 -r 30 -pix_fmt yuv420p -vf scale=1024:-1  out.mp4

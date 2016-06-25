@@ -1,0 +1,8 @@
+./runwlcsim.sh >stdout.txt
+Ctrl +Z
+disown -h %1
+(jobs)
+bg 1
+logout
+(top)
+(kill %2)
