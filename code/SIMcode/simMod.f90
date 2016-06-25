@@ -117,6 +117,7 @@ Module simMod
     double precision lowerCofRail ! minumum acceptable Cof
     double precision upperCofRail ! maximum acceptable Cof
     integer indStartRepAdapt
+    integer indEndRepAdapt
 
   end Type
 
@@ -194,11 +195,12 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%CHI_ON=1.0_dp
     mc%Couple_ON=1.0_dp
     mc%NRepAdapt=1000  
-    mc%lowerRepExe=0.01
-    mc%upperRepExe=0.1
-    mc%lowerCofRail=0.04
-    mc%upperCofRail=0.06
+    mc%lowerRepExe=0.04
+    mc%upperRepExe=0.8
+    mc%lowerCofRail=0.005
+    mc%upperCofRail=0.1
     mc%indStartRepAdapt=10
+    mc%indEndRepAdapt=20
     mc%N_KAP_ON=0
     mc%N_CHI_ON=0
 
@@ -354,6 +356,8 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READF(mc%upperCofRail) ! maximum acceptable Cof
        CASE('IND_START_REP_ADAPT')
            Call READI(mc%indStartRepAdapt) ! ind to start rep. cof. adaptiation on
+       CASE('IND_END_REP_ADAPT')
+           Call READI(mc%indEndRepAdapt) ! turn off rep adapt
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)

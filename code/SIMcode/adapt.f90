@@ -28,9 +28,9 @@ Subroutine MCvar_adapt(mc,MCTYPE,ISTEP)
     ! If move type has no amplitude then only ajust window
     if (MCTYPE.eq.7) then
         if (mc%PHIT(MCTYPE).GT.mc%PDESIRE(MCTYPE)) then
-           mc%WINDOW(MCTYPE)=mc%WINDOW(MCTYPE)*1.05
+           mc%WINDOW(MCTYPE)=mc%WINDOW(MCTYPE)*1.05_dp
         else
-           mc%WINDOW(MCTYPE)=mc%WINDOW(MCTYPE)*0.95
+           mc%WINDOW(MCTYPE)=mc%WINDOW(MCTYPE)*0.95_dp
         endif
         !window limits
         if (mc%WINDOW(MCTYPE).LT.mc%MINWINDOW(MCTYPE)) then
@@ -66,7 +66,7 @@ Subroutine MCvar_adapt(mc,MCTYPE,ISTEP)
        mc%WINDOW(MCTYPE)=mc%WINDOW(MCTYPE)*1.05_dp
     else
        mc%MCAMP(MCTYPE)=mc%MCAMP(MCTYPE)*0.95_dp
-       mc%WINDOW(MCTYPE)=mc%WINDOW(MCTYPE)*0.95
+       mc%WINDOW(MCTYPE)=mc%WINDOW(MCTYPE)*0.95_dp
     endif
 
     ! Drift to target window
