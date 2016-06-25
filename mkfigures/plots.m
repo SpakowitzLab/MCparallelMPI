@@ -1,5 +1,6 @@
 % plot structure factors
 clear; close all
+addpath('misc/');
 addpath('../utility/');
 
 % simulation parameters
@@ -11,21 +12,25 @@ G = 5;
 
 % plot parameters
 lksample = 20;
-NREP = [1:2:10,19,29,39];  % number of replicas
-NAVG = 10:1:15;  % snapshots to average
+%NREP = [1:2:10,19,29,39];  % number of replicas
+%NSNAP = 10:1:10;  % snapshots to average
+NREP =40;
+NSNAP = 50; 
 
 figure;hold
 % plot simulation results
 for REP=NREP
     col = (REP-1)/(max(NREP)-1)
     savg = [];
-    for AVG=NAVG
-        r=dlmread(sprintf('../data/r%dv%d',AVG,REP));
+    for SNAP=NSNAP
+        r=dlmread(sprintf('../data/r%dv%d',SNAP,REP));
         [k,s]=scalc(r,boxl,lksample);
         savg = [savg,s];
     end
-    plot(k*Ree,mean(savg,2),'color',[col 0 1-col]);
+    K = k*Ree; S = mean(savg,2);
+    plot(K,S,'color',[col 0 1-col]);
 end
+[KS,SINV,D2S,ERR]=calcserr(K,S,G)
 
 % plot mean-field theory
 CHI = load('../data/cof');
