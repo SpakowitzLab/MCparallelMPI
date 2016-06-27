@@ -23,7 +23,7 @@ elseif IND<=NUMFIT  % forward differences
     Kfit = K(IND:IND+NUMFIT);
     Sfit = S(IND:IND+NUMFIT);
 
-    % local fit to Lorentzian (two parameter fit)
+    % local fit to Lorentzian with fixed peak at zero k* (two parameter fit)
     options = optimset('Display','off',...
        'TolX',1e-8,'TolFun',1e-8,'MaxFunEvals',1e10,'MaxIter',1e10);
     x0 = [SINV,1];   % x = [sinv_sim,d2s]
