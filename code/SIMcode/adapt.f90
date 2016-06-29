@@ -20,10 +20,15 @@ Subroutine MCvar_adapt(mc,MCTYPE,ISTEP)
     if ((mc%PHit(MCTYPE).lt.0.01_dp)) then
         mc%SUCCESS(MCTYPE)=mc%SUCCESS(MCTYPE)*mc%reduce_move
     endif
-         
+    
+
 !   Change the position if appropriate
     mc%PHIT(MCTYPE)=real(mc%SUCCESS(MCTYPE))/real(mc%NADAPT(MCTYPE))
     mc%SUCCESS(MCTYPE)=0
+
+    if ((MCTYPE.eq.8).or.(MCTYPE.eq.9)) then
+        return
+    endif
 
     ! If move type has no amplitude then only ajust window
     if (MCTYPE.eq.7) then

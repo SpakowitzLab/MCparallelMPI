@@ -10,7 +10,7 @@ cd ..
 mv code/MCparrll_out .
 mv data/* trash/
 
-
+sleep 2
 echo "Now run"
 # now run the output
 # --prefix used to avoid changing path

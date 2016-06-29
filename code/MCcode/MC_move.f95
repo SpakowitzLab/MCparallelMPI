@@ -10,7 +10,8 @@
 ! Find change in bead position for a crank-shaft type move
      
       SUBROUTINE MC_move(R,U,RP,UP,NT,NB,NP,IP,IB1,IB2,IT1,IT2,MCTYPE &
-                        ,MCAMP,WINDOW,AB,ABP,BPM,rand_stat,winType)
+                        ,MCAMP,WINDOW,AB,ABP,BPM,rand_stat,winType &
+                        ,IT3,IT4)
 
       !use mt19937, only : grnd, sgrnd, rnorm, mt, mti
       use mersenne_twister      
@@ -28,10 +29,13 @@
       INTEGER BPM               ! Beads per monomer, aka G
 
       INTEGER IP                ! Test polymer 
+      INTEGER IP2               ! Second Test polymer if applicable 
       INTEGER IB1               ! Test bead position 1
       INTEGER IT1               ! Index of test bead 1
       INTEGER IB2               ! Test bead position 2
       INTEGER IT2               ! Index of test bead 2
+      INTEGER IT3               ! Test bead position 3 if applicable
+      INTEGER IT4               ! Test bead position 4 if applicable
 
       INTEGER I,J			! Test indices
 ! Things for random number generator
@@ -67,8 +71,8 @@
           
       if (MCTYPE.EQ.1) then
          call random_number(urand,rand_stat)
-         IP=nint(0.5_dp+urand(1)*NP)
-         IB1=nint(0.5_dp+urand(2)*NB)
+         IP=ceiling(urand(1)*NP)
+         IB1=ceiling(urand(2)*NB)
          if (winType.eq.0) then
              IB2=IB1+nint((urand(3)-0.5_dp)*(2.0_dp*WINDOW(MCTYPE)+1.0))
          elseif (winType.eq.1) then 
@@ -194,8 +198,8 @@
          
       elseif (MCTYPE.EQ.2) then
          call random_number(urand,rand_stat)
-         IP=nint(0.5_dp+urand(1)*NP)
-         IB1=nint(0.5_dp+urand(2)*NB)
+         IP=ceiling(urand(1)*NP)
+         IB1=ceiling(urand(2)*NB)
          if (winType.eq.0) then
              IB2=IB1+nint((urand(3)-0.5_dp)*(2.0_dp*WINDOW(MCTYPE)+1.0))
          elseif (winType.eq.1) then 
@@ -240,7 +244,7 @@
       elseif (MCTYPE.EQ.3) then
 
          call random_number(urnd,rand_stat)
-         IP=nint(0.5_dp+urnd(1)*NP)
+         IP=ceiling(urnd(1)*NP)
          if (wintype.eq.0) then
              call random_number(urnd,rand_stat)
              IB1=nint(0.5+urnd(1)*(2.0_dp*WINDOW(MCTYPE)))
@@ -342,8 +346,8 @@
       elseif (MCTYPE.EQ.4) then
          
          call random_number(urand,rand_stat)
-         IP=nint(0.5+urand(1)*NP)
-         IB1=nint(0.5+urand(2)*NB)
+         IP=ceiling(urand(1)*NP)
+         IB1=ceiling(urand(2)*NB)
          IB2=IB1
          IT1=NB*(IP-1)+IB1
          IT2=NB*(IP-1)+IB2
@@ -389,7 +393,7 @@
       elseif (MCTYPE.EQ.5) then
          
          call random_number(urand,rand_stat)
-         IP=nint(0.5_dp+urand(1)*NP)
+         IP=ceiling(urand(1)*NP)
          IB1=1
          IB2=NB
          IT1=NB*(IP-1)+IB1
@@ -437,7 +441,7 @@
       elseif (MCTYPE.EQ.6) then
          
          call random_number(urnd,rand_stat)
-         IP=nint(0.5_dp+urnd(1)*NP)
+         IP=ceiling(urnd(1)*NP)
          IB1=1
          IB2=NB
          IT1=NB*(IP-1)+IB1
@@ -463,8 +467,8 @@
          ! Move amplitude is ignored for this move type
 
          call random_number(urand,rand_stat)
-         IP=nint(0.5_dp+urand(1)*NP)
-         IB1=nint(0.5_dp+urand(2)*NB)
+         IP=ceiling(urand(1)*NP)
+         IB1=ceiling(urand(2)*NB)
          if (winType.eq.0) then
              IB2=IB1+nint((urand(3)-0.5_dp)*(2.0_dp*WINDOW(MCTYPE)+1.0))
          elseif (winType.eq.1) then 
@@ -506,7 +510,57 @@
             UP(I,3)=U(I,3)
          ENDDO    
 
-
+      ! chain flip move
+      elseif (MCTYPE.EQ.8) then
+         call random_number(urand,rand_stat)
+         IP=ceiling(urand(1)*NP)
+         IB1=1
+         IB2=NB
+         IT1=NB*(IP-1)+IB1
+         IT2=NB*(IP-1)+IB2
+         DO I=0,NB-1
+            RP(IT1+I,1)=R(IT2-I,1)
+            RP(IT1+I,2)=R(IT2-I,2)
+            RP(IT1+I,3)=R(IT2-I,3)
+            UP(IT1+I,1)=-U(IT2-I,1)
+            UP(IT1+I,2)=-U(IT2-I,2)
+            UP(IT1+I,3)=-U(IT2-I,3)
+            ABP(IT1+I)=AB(IT1+I)
+         ENDDO    
+      ! switch two chains
+      elseif(MCTYPE.EQ.9) then
+         call random_number(urand,rand_stat)
+         IP=ceiling(urand(1)*NP)
+         call random_number(urand,rand_stat)
+         IP2=ceiling(urand(1)*NP)
+         ! Don't switch a chain with itself
+         if (IP.eq.IP2) then
+             IP2=IP-1
+             if (IP2.eq.0) then
+                 IP2=2
+             endif
+         endif
+         IT1=NB*(IP-1)+1
+         IT2=NB*(IP-1)+NB
+         IT3=NB*(IP2-1)+1
+         IT4=NB*(IP2-1)+NB
+         DO I=0,NB-1
+            RP(IT1+I,1)=R(IT3+I,1)
+            RP(IT1+I,2)=R(IT3+I,2)
+            RP(IT1+I,3)=R(IT3+I,3)
+            UP(IT1+I,1)=U(IT3+I,1)
+            UP(IT1+I,2)=U(IT3+I,2)
+            UP(IT1+I,3)=U(IT3+I,3)
+            ABP(IT1+I)=AB(IT1+I)
+            RP(IT3+I,1)=R(IT1+I,1)
+            RP(IT3+I,2)=R(IT1+I,2)
+            RP(IT3+I,3)=R(IT1+I,3)
+            UP(IT3+I,1)=U(IT1+I,1)
+            UP(IT3+I,2)=U(IT1+I,2)
+            UP(IT3+I,3)=U(IT1+I,3)
+            ABP(IT3+I)=AB(IT3+I)
+         ENDDO
+         IB1=0; IB1=IB1/IB1; IB2=IB1
       endif
       RETURN      
       END

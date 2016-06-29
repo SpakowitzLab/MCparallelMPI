@@ -32,10 +32,11 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     INTEGER IT1               ! Index of test bead 1
     INTEGER IB2               ! Test bead position 2
     INTEGER IT2               ! Index of test bead 2
+    INTEGER IT3, IT4          ! second polymer for polymer swap
 
     INTEGER I,J,K
     DOUBLE PRECISION R0(3)
-    
+     
     
     INTEGER MCTYPE                    ! Type of MC move
     logical initialize
@@ -165,27 +166,30 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     ISTEP=1
     DO WHILE (ISTEP.LE.NSTEP)
         
-       DO MCTYPE=1,7  
+       DO MCTYPE=1,9
 
-          if (mc%MOVEON(MCTYPE).EQ.0) then
-             cycle
-          endif
+          if (mc%MOVEON(MCTYPE).EQ.0) cycle
+
+          if ((mc%IND.gt.20).and.(MCTYPE.ne.9)) cycle
 
           ! Turn down poor moves
           if ((mc%PHit(MCTYPE).lt.0.01_dp).and. &
-              (mod(ISTEP,mc%reduce_move).ne.0)) then
+              (mod(ISTEP,mc%reduce_move).ne.0).and. &
+              ((MCTYPE.eq.5).or.(MCTYPE.eq.6))) then
               CYCLE
           endif
 
           call MC_move(md%R,md%U,md%RP,md%UP,mc%NT,mc%NB,mc%NP, &
                        IP,IB1,IB2,IT1,IT2,MCTYPE, & 
                        mc%MCAMP,mc%WINDOW,md%AB,md%ABP,mc%G,&
-                       rand_stat, mc%winType)
+                       rand_stat, mc%winType,IT3,IT4)
           
 !   Calculate the change in compression and bending energy
           if ((MCTYPE.NE.5) .and. &
               (MCTYPE.NE.6) .and. &
-              (MCTYPE.NE.7) )then
+              (MCTYPE.NE.7) .and. &
+              (MCTYPE.NE.8) .and. &
+              (MCTYPE.NE.9) )then
               call MC_eelas(mc%DEELAS,md%R,md%U,md%RP,md%UP,&
                             mc%NT,mc%NB,IP,IB1,IB2, & 
                             IT1,IT2,EB,EPAR,EPERP,GAM,ETA)
@@ -193,6 +197,10 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               mc%DEELAS(1)=0.0
               mc%DEELAS(2)=0.0
               mc%DEELAS(3)=0.0
+          endif
+          if (MCTYPE.eq.8) then
+              print*, "Flop move not working!  Chain energy isn't symmetric"
+              stop 1
           endif
 !   Calculate the change in the binding energy
           if (MCTYPE.EQ.7) then
@@ -207,15 +215,34 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 !   interation energy, not just self?)
           if (INTON.EQ.1) then
              initialize=.FALSE.
-             call MC_int(mc,md,IT1,IT2,initialize)
+             if (MCTYPE.EQ.9) then
+                 !skip if doesn't do anything
+                 if (mc%CHI_ON.eq.0.0_dp) then
+                    CYCLE
+                 endif
+                 call MC_int2(mc,md,IT1,IT2,IT3,IT4,initialize)
+                 if (abs(mc%DEKap).gt.0.0001) then
+                     print*, "Error in MCsim.  Kappa energy shouldn't change on move 9"
+                     print*, "DEKap", mc%DEKap
+                     stop 1
+                 endif
+                 !print*, mc%DECHi
+             else
+                 call MC_int(mc,md,IT1,IT2,initialize)
+             endif
           else
               mc%DEKap=0.0_dp
               mc%DECouple=0.0_dp
               mc%DEChi=0.0_dp
           endif
+          if ((MCTYPE.eq.8).and.(mc%DEKap.gt.0.00001)) then
+              print*, "Error in MCsim. Kappa energy shouldn't change on move 8"
+          endif
 
 !   Calculate the change in confinement energy
-          if (MCTYPE.NE.7) then
+          if ((MCTYPE.NE.7).and. &
+              (MCTYPE.NE.8).and. &
+              (MCTYPE.NE.9)) then
               call MC_confine(mc%confineType, mc%LBox, md%RP, mc%NT, & 
                               IT1,IT2,mc%ECon)
           else
@@ -223,7 +250,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           endif
 
 
-          
 !   Change the position if appropriate
           ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3) & 
                  +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon
@@ -244,6 +270,16 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                      md%U(I,2)=md%UP(I,2)
                      md%U(I,3)=md%UP(I,3)
                  enddo
+                 if (MCTYPE.EQ.9) then
+                     DO I=IT3,IT4
+                         md%R(I,1)=md%RP(I,1)
+                         md%R(I,2)=md%RP(I,2)
+                         md%R(I,3)=md%RP(I,3)
+                         md%U(I,1)=md%UP(I,1)
+                         md%U(I,2)=md%UP(I,2)
+                         md%U(I,3)=md%UP(I,3)
+                     enddo
+                 endif
              endif
              if (mc%ECon.ne.0.0_dp) then
                  print*, "MCTYPE", MCType
@@ -260,12 +296,15 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                    J=md%INDPHI(I)
                    md%PHIA(J)=md%PHIA(J)+md%DPHIA(I)
                    md%PHIB(J)=md%PHIB(J)+md%DPHIB(I)  
+                   if ((md%PHIA(J).lt.-0.000001_dp) .or. (md%PHIB(J).lt.-0.00001_dp)) then
+                       print*, "Error in MCsim. Negitive phi"
+                       stop 1
+                   endif
                 enddo
                 mc%ECouple=mc%ECouple+mc%DECouple
                 mc%EKap=mc%EKap+mc%DEKap
                 mc%EChi=mc%EChi+mc%DEChi
              endif
-
              mc%SUCCESS(MCTYPE)=mc%SUCCESS(MCTYPE)+1
           endif
 !   Adapt the amplitude of step every NADAPT steps

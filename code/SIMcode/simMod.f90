@@ -11,7 +11,7 @@
 Module simMod
     use setPrecision
     IMPLICIT NONE
-    INTEGER, Parameter :: NmoveTypes = 7 ! ******* YOU MAY NEED TO CHAGE THIS ***
+    INTEGER, Parameter :: NmoveTypes = 9 ! ******* YOU MAY NEED TO CHAGE THIS ***
 
   Type MCvar   ! Structure for simulation variables of known size
 !     Simulation parameters
@@ -179,7 +179,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%LAM_METH=0.9_dp
     mc%Fpoly=0.025_dp
     mc%FRMMETH=.FALSE.
-    mc%moveTypes=7
+    mc%moveTypes=9
     mc%setType = 4 ! 4 for shereical
     mc%confineType = 3 ! 3 for sherical
     mc%simType=1
@@ -324,6 +324,10 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READI(mc%MOVEON(6)) ! is full chain slide on 1/0
        CASE('BIND_MOVE_ON')
            Call READI(mc%MOVEON(7)) ! is bind/unbind move on 1/0
+       CASE('CHAIN_FLIP_MOVE_ON')
+           Call READI(mc%MOVEON(8)) ! is bind/unbind move on 1/0
+       CASE('CHAIN_SWAP_MOVE_ON')
+           Call READI(mc%MOVEON(9)) ! is bind/unbind move on 1/0
        CASE('WINTYPE')
            Call READI(mc%winType)  ! 0 for uniform, 1 for exponential
        CASE('MIN_CRANK_SHAFT_WIN') 
@@ -394,6 +398,8 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%NB=mc%N*mc%G
         mc%WINDOW(5)=mc%NB
         mc%WINDOW(6)=mc%NB
+        mc%WINDOW(8)=mc%NB
+        mc%WINDOW(9)=mc%NB
         mc%MCAMP(2)=0.3_dp*mc%L0
         mc%MCAMP(6)=5.0_dp*mc%L0
         mc%MINAMP(2)=0.2_dp*mc%L0
@@ -416,7 +422,6 @@ Subroutine MCvar_setParams(mc,fileName)
     ! Set initial values
     !
     ! ----------------------
-    mc%moveTypes=7
     mc%EElas(1)=0.0_dp
     mc%EElas(2)=0.0_dp
     mc%EElas(3)=0.0_dp
@@ -544,6 +549,8 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MCAMP(5)=0.5_dp*PI
     mc%MCAMP(6)=5.0_dp*mc%L0
     mc%MCAMP(7)=NAND
+    mc%MCAMP(8)=NAND
+    mc%MCAMP(9)=NAND
     !switches to turn on various types of moves
     mc%MOVEON(1)=1  ! crank-shaft move
     mc%MOVEON(2)=1  ! slide move
@@ -552,6 +559,8 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MOVEON(5)=0  ! full chain rotation
     mc%MOVEON(6)=0  ! full chain slide
     mc%MOVEON(7)=1  ! Change in Binding state
+    mc%MOVEON(8)=0  ! Change in Binding state
+    mc%MOVEON(9)=0  ! Change in Binding state
     
     !     Initial segment window for MC moves
     mc%WINDOW(1)=15.0_dp ! used to be N*G
@@ -561,6 +570,8 @@ Subroutine MCvar_defaultAmp(mc)
     mc%WINDOW(5)=dble(mc%N*mc%G)
     mc%WINDOW(6)=dble(mc%N*mc%G)
     mc%WINDOW(7)=15.0_dp ! used to be N*G
+    mc%WINDOW(8)=dble(mc%N*mc%G)
+    mc%WINDOW(9)=dble(mc%N*mc%G)
 
     !    Maximum window size (large windows are expensive)
     mc%MAXWINDOW(1)=dble(min(150,mc%NB))
@@ -570,6 +581,8 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MAXWINDOW(5)=NAND 
     mc%MAXWINDOW(6)=NAND
     mc%MAXWINDOW(7)=dble(min(4,mc%NB))
+    mc%MAXWINDOW(8)=NAND
+    mc%MAXWINDOW(9)=NAND
 
     mc%MINWINDOW(1)=dble(min(4,mc%NB))
     mc%MINWINDOW(2)=dble(min(4,mc%NB))
@@ -578,6 +591,8 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MINWINDOW(5)=NAND 
     mc%MINWINDOW(6)=NAND
     mc%MINWINDOW(7)=dble(min(4,mc%NB))
+    mc%MINWINDOW(8)=NAND
+    mc%MINWINDOW(9)=NAND
     Do MCTYPE=1,mc%moveTypes
         mc%winTarget(MCTYPE)=8.0_dp
     enddo
@@ -589,6 +604,8 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MINAMP(5)=0.05_dp*PI
     mc%MINAMP(6)=0.2_dp*mc%L0
     mc%MINAMP(7)=NAND
+    mc%MINAMP(8)=NAND
+    mc%MINAMP(9)=NAND
 
     mc%MAXAMP(1)=1.0_dp*PI
     mc%MAXAMP(2)=1.0_dp*mc%L0
@@ -597,6 +614,8 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MAXAMP(5)=1.0_dp*PI
     mc%MAXAMP(6)=0.1*mc%LBOX
     mc%MAXAMP(7)=NAND
+    mc%MAXAMP(8)=NAND
+    mc%MAXAMP(9)=NAND
      
     DO MCTYPE=1,mc%moveTypes
         mc%NADAPT(MCTYPE)=1000 ! adapt after at most 1000 steps
@@ -674,7 +693,7 @@ Subroutine MCvar_printWindowStats(mc)
     print*, "Succes | MCAMP | WINDOW| Type "
     Do I=1,mc%moveTypes
         if (mc%MOVEON(i).eq.1) then
-            write(*,"(3f8.2,1I8)"), mc%phit(i), mc%MCAMP(i),  mc%WINDOW(i), i
+            write(*,"(f8.5,2f8.2,1I8)"), mc%phit(i), mc%MCAMP(i),  mc%WINDOW(i), i
         endif
     enddo
 end subroutine

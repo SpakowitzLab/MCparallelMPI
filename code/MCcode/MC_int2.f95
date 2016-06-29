@@ -12,8 +12,9 @@
 !     Edited by Shifan
 !
 !     Edited by Quinn in 2016
-      
-SUBROUTINE MC_int(mc,md,I1,I2,initialize)
+!     
+!     For two sections of changed beads
+SUBROUTINE MC_int2(mc,md,I1,I2,I3,I4,initialize)
 use simMod
 use setPrecision
 IMPLICIT NONE
@@ -22,8 +23,11 @@ IMPLICIT NONE
 TYPE(MCvar) mc   ! <---- Contains output
 TYPE(MCData) md
 LOGICAL initialize        ! if true calculate absolute energy
-INTEGER I1                ! Test bead position 1
-INTEGER I2                ! Test bead position 2
+INTEGER I1                ! Test bead, first bead of first section
+INTEGER I2                ! Test bead, second bead of first section
+INTEGER I3                ! Test bead, first bead of second section
+INTEGER I4                ! Test bead, second bead of second section
+INTEGER II                ! for looping over both sections
 
 !   Internal variables
 INTEGER I,J               ! For looping over bins
@@ -43,6 +47,7 @@ LOGICAL isA   ! The bead is of type A
 DOUBLE PRECISION LBOX
 DOUBLE PRECISION DEL
 INTEGER NBINX
+
 LBOX=mc%LBOX
 DEL=mc%DEL
 NBINX=mC%NBINX
@@ -66,7 +71,13 @@ if (initialize) then
 endif
 
 mc%NPHI=0
-do IB=I1,I2
+
+do II=1,(I2-I1+1)+(I4-I3+1)
+  if (II.le.(I2-I1+1)) then
+      IB=I1+II-1
+  else
+      IB=I3+II-1-(I2-I1+1)
+  endif
   do rrdr=-1,1,2
    ! on initialize only add current position
    ! otherwise subract current and add new
@@ -270,66 +281,40 @@ enddo ! loop over IB  A.k.a. beads
 mc%DEChi=0.0_dp
 mc%DECouple=0.0_dp
 mc%DEKap=0.0_dp
-if (initialize) then  ! calculate absolute energy
-    if (mc%simType.eq.0) then ! Melt Hamiltonian
-        do I=1,mc%NBIN
-            VV=md%Vol(I)
-            if (VV.le.0.1_dp) CYCLE
-            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*(md%PHIA(I)*md%PHIB(I))
-            mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2)
-        enddo        
-    elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
-        do I=1,mc%NBIN
-            VV=md%Vol(I)
-            if (VV.le.0.1_dp) CYCLE
-            PHIPoly=md%PHIA(I)+md%PHIB(I)
-            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
-            mc%DECouple=mc%DECouple+VV*mc%HP1_Bind*(md%PHIA(I))**2
-            if(PHIPoly.GT.1.0_dp) then
-               mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
-            endif
-        enddo        
-    else
-        print*, "Error in MC_int, simType",mc%simType, &
-                " notdefined"
-    endif
-else ! Calculate change in energy
-    if (mc%simType.eq.0) then ! Melt Hamiltonian
-        do I=1,mc%NPHI
-            J=md%INDPHI(I)
-            VV=md%Vol(J)
-            if (VV.le.0.1_dp) CYCLE
-            ! new
-            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*((md%PHIA(J)+md%DPHIA(I))*(md%PHIB(J)+md%DPHIB(I)))
-            mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)-1.0_dp)**2)
-            ! minus old
-            mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*(md%PHIA(J)*md%PHIB(J))
-            mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
-            
-        enddo
-    elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
-        do I=1,mc%NPHI
-            J=md%INDPHI(I)
-            VV=md%Vol(J)
-            if (VV.le.0.1_dp) CYCLE
-            ! new ...
-            PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
-            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
-            mc%DECouple=mc%DECouple+VV*mc%HP1_Bind*(md%PHIA(J)+md%DPHIA(I))**2
-            if(PHIPoly.GT.1.0_dp) then
-               mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
-            endif
-            ! minus old
-            PHIPoly=md%PHIA(J)+md%PHIB(J)
-            mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
-            mc%DECouple=mc%DECouple-VV*mc%HP1_Bind*(md%PHIA(J))**2
-            if(PHIPoly.GT.1.0_dp) then
-               mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
-            endif 
-        enddo
-    endif
+if (mc%simType.eq.0) then ! Melt Hamiltonian
+    do I=1,mc%NPHI
+        J=md%INDPHI(I)
+        VV=md%Vol(J)
+        if (VV.le.0.1_dp) CYCLE
+        ! new
+        mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*((md%PHIA(J)+md%DPHIA(I))*(md%PHIB(J)+md%DPHIB(I)))
+        mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)-1.0_dp)**2)
+        ! minus old
+        mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*(md%PHIA(J)*md%PHIB(J))
+        mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
+        
+    enddo
+elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
+    do I=1,mc%NPHI
+        J=md%INDPHI(I)
+        VV=md%Vol(J)
+        if (VV.le.0.1_dp) CYCLE
+        ! new ...
+        PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
+        mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
+        mc%DECouple=mc%DECouple+VV*mc%HP1_Bind*(md%PHIA(J)+md%DPHIA(I))**2
+        if(PHIPoly.GT.1.0_dp) then
+           mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
+        endif
+        ! minus old
+        PHIPoly=md%PHIA(J)+md%PHIB(J)
+        mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
+        mc%DECouple=mc%DECouple-VV*mc%HP1_Bind*(md%PHIA(J))**2
+        if(PHIPoly.GT.1.0_dp) then
+           mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
+        endif 
+    enddo
 endif
-
 ! Discount if interaction are only partial on
 mc%DEChi=mc%DECHI*mc%CHI_ON
 mc%DECouple=mc%DECouple*mc%Couple_ON
