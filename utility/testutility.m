@@ -8,20 +8,15 @@ close all
 %   sdata available shifan@tower12:~/testdir/sdata
 
 %% read data
-<<<<<<< .merge_file_Zlxz7V
-% r = load('r101');
-r = dlmread('../data/r41v1');
-=======
-r = load('../data/r9v2');
->>>>>>> .merge_file_dciZmW
+r = dlmread('../../data/r15v1');
 
 %% TEST OPTIONS
-TEST1 = 0;  % end-to-end distribution
-TEST2 = 0;  % bead-bead distribution
+TEST1 = 1;  % end-to-end distribution
+TEST2 = 1;  % bead-bead distribution
 TEST3 = 1;  % total and partial density
-TEST4 = 0;  % radial distrbution function
-TEST5 = 0;  % structure factor
-TEST6 = 0;  % chemical potential (widom insertion)
+TEST4 = 1;  % radial distrbution function
+TEST5 = 1;  % structure factor
+TEST6 = 1;  % chemical potential (widom insertion)
 
 %% parameters
 boxl = 20;
