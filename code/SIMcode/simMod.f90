@@ -207,6 +207,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%indEndRepAdapt=20
     mc%N_KAP_ON=0
     mc%N_CHI_ON=0
+    mc%recenter_on=.TRUE.
 
     call MCvar_defaultAmp(mc) 
 
@@ -778,7 +779,7 @@ Subroutine MCvar_saveR(mc,md,fileName,repeatingBC)
     if (repeatingBC.eq.1) then 
         Do I=1,mc%NP
             Do J=1,mc%NB
-                    WRITE(1,"(3f7.2,I2)") , &
+                    WRITE(1,"(3f10.3,I2)") , &
                           md%R(IB,1)-0.*nint(md%R(IB,1)/mc%LBOX(1)-0.5_dp)*mc%LBOX(1), &
                           md%R(IB,2)-0.*nint(md%R(IB,2)/mc%LBOX(2)-0.5_dp)*mc%LBOX(2), &
                           md%R(IB,3)-0.*nint(md%R(IB,3)/mc%LBOX(3)-0.5_dp)*mc%LBOX(3), & 
@@ -792,7 +793,7 @@ Subroutine MCvar_saveR(mc,md,fileName,repeatingBC)
     else
         Do I=1,mc%NP
             Do J=1,mc%NB
-                 WRITE(1,"(3f8.3,I2)") md%R(IB,1),md%R(IB,2),md%R(IB,3),md%AB(IB)
+                 WRITE(1,"(3f10.3,I2)") md%R(IB,1),md%R(IB,2),md%R(IB,3),md%AB(IB)
                 IB=IB+1
             enddo
         enddo
