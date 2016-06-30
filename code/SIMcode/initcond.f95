@@ -26,10 +26,9 @@ DOUBLE PRECISION U(NT,3)  ! Tangent vectors
 INTEGER AB(NT)            ! Chemical identity of beads
 INTEGER N,NP,NT           ! Number of beads
 DOUBLE PRECISION GAM      ! Equil bead separation
-DOUBLE PRECISION LBOX     ! Box edge length
+DOUBLE PRECISION LBOX(3)  ! Box edge length
 INTEGER I,J,IB            ! Index Holders
 LOGICAL FRMFILE           ! Is conformation in file?
-INTEGER INPUT             ! Is input file set?
 DOUBLE PRECISION RMIN
 DOUBLE PRECISION R0(3)
 DOUBLE PRECISION PARA(10)
@@ -57,7 +56,6 @@ type(random_stat) rand_stat
 real urand(3)
 
 !     Setup the choice parameters
-INPUT=1
 
 if(FRMFILE)then
    OPEN (UNIT = 5, FILE = 'input/r0', STATUS = 'OLD')
@@ -78,20 +76,14 @@ endif
 !     Fix the initial condition
 if(setType.eq.1) then
 ! staight line in y direction with random starting position
-    if (INPUT.EQ.0) then
-       LBOX=10.
-       GAM=1.
-    else
-       GAM=PARA(4)
-       LBOX=PARA(8)
-    endif
+    GAM=PARA(4)
 
     IB=1
     DO I=1,NP
        call random_number(urand,rand_stat)
-       R0(1)=urand(1)*LBOX
-       R0(2)=urand(2)*LBOX
-       R0(3)=urand(3)*LBOX
+       R0(1)=urand(1)*LBOX(1)
+       R0(2)=urand(2)*LBOX(2)
+       R0(3)=urand(3)*LBOX(3)
        DO J=1,N
           R(IB,1)=R0(1)
           R(IB,2)=R0(2)+GAM*(J-N/2.0_dp-0.5_dp) ! center on box
@@ -106,21 +98,14 @@ else if(setType.eq.2) then
     ! travel in radom direction
     ! rerandomize when reaching boundary
     ! slit boundary in z direction            
-    
-    if (INPUT.EQ.0) then
-       LBOX=10.0_dp
-       GAM=1.0_dp
-    else
-       GAM=PARA(4)
-       LBOX=PARA(8)
-    endif
+    GAM=PARA(4)
     
     IB=1
     DO  I=1,NP
         call random_number(urand,rand_stat)
-        Rold(1)=urand(1)*LBOX
-        Rold(2)=urand(2)*LBOX
-        Rold(3)=urand(3)*LBOX
+        Rold(1)=urand(1)*LBOX(1)
+        Rold(2)=urand(2)*LBOX(2)
+        Rold(3)=urand(3)*LBOX(3)
         call random_number(urand,rand_stat)
         theta=urand(1)*2*PI
         z=urand(2)*2-1
@@ -143,7 +128,7 @@ else if(setType.eq.2) then
                 test(2)=Rold(2)+Uold(2)*GAM
                 test(3)=Rold(3)+Uold(3)*GAM
                 search=.FALSE.
-                if(test(3).gt.LBOX)then
+                if(test(3).gt.LBOX(3))then
                     search=.TRUE.
                 endif
                 if(test(3).lt.0)then
@@ -175,21 +160,14 @@ else if(setType.eq.3) then
     ! travel in radom direction
     ! rerandomize when reaching boundary
     ! square boundary             
-    
-    if (INPUT.EQ.0) then
-       LBOX=10.0_dp
-       GAM=1.0_dp
-    else
-       GAM=PARA(4)
-       LBOX=PARA(8)
-    endif
+    GAM=PARA(4)
     
     IB=1
     DO  I=1,NP
        call random_number(urand,rand_stat)
-       Rold(1)=urand(1)*LBOX
-       Rold(2)=urand(2)*LBOX
-       Rold(3)=urand(3)*LBOX
+       Rold(1)=urand(1)*LBOX(1)
+       Rold(2)=urand(2)*LBOX(2)
+       Rold(3)=urand(3)*LBOX(3)
        call random_number(urand,rand_stat)
        theta=urand(1)*2*PI
        z=urand(2)*2-1
@@ -212,19 +190,19 @@ else if(setType.eq.3) then
                test(2)=Rold(2)+Uold(2)*GAM
                test(3)=Rold(3)+Uold(3)*GAM
                search=.FALSE.
-               if(test(1).gt.LBOX)then
+               if(test(1).gt.LBOX(1))then
                    search=.TRUE.
                endif
                if(test(1).lt.0)then
                    search=.TRUE.
                endif
-               if(test(2).gt.LBOX)then
+               if(test(2).gt.LBOX(2))then
                    search=.TRUE.
                endif
                if(test(2).lt.0)then
                    search=.TRUE.
                endif
-               if(test(3).gt.LBOX)then
+               if(test(3).gt.LBOX(3))then
                    search=.TRUE.
                endif
                if(test(3).lt.0)then
@@ -258,23 +236,17 @@ else if(setType.eq.4) then
     ! rerandomize when reaching boundary
     ! shpere boundary
     ! radius of LBox/2 centered at LBox/2             
-    Rc=LBOX/2.0_dp ! use LBOX as radius
-    if (INPUT.EQ.0) then
-       LBOX=10.0_dp
-       GAM=1.0_dp
-    else
+    Rc=LBOX(1)/2.0_dp ! use LBOX as radius
        GAM=PARA(4)
-       LBOX=PARA(8)
-    endif            
     IB=1
     DO  I=1,NP
        call random_number(urand,rand_stat)
        theta=urand(1)*2.0_dp*PI
        z=urand(2)*2.0_dp-1.0_dp
        rr=Rc*urand(3)  ! should have an r**2 from jacobian
-       Rold(1)=sqrt(1.0_dp-z*z)*cos(theta)*rr + LBox/2.0_dp
-       Rold(2)=sqrt(1.0_dp-z*z)*sin(theta)*rr + LBox/2.0_dp
-       Rold(3)=z*rr + LBox/2.0_dp
+       Rold(1)=sqrt(1.0_dp-z*z)*cos(theta)*rr + Rc
+       Rold(2)=sqrt(1.0_dp-z*z)*sin(theta)*rr + Rc
+       Rold(3)=z*rr + Rc
        call random_number(urand,rand_stat)
        theta=urand(1)*2_dp*PI
        z=urand(2)*2.0_dp-1.0_dp
@@ -288,9 +260,9 @@ else if(setType.eq.4) then
                test(2)=Rold(2)+Uold(2)*GAM
                test(3)=Rold(3)+Uold(3)*GAM
                search=.FALSE.
-               if((test(1)-LBox/2)**2+&
-                   (test(2)-LBox/2)**2+&
-                   (test(3)-LBox/2)**2.gt.Rc**2)then
+               if((test(1)-Rc)**2+&
+                   (test(2)-Rc)**2+&
+                   (test(3)-Rc)**2.gt.Rc**2)then
                    search=.TRUE.
                endif
                if(search) then
@@ -320,12 +292,12 @@ else if(setType.eq.5) then
         search=.true.
         do while(search)
              call random_number(urand,rand_stat)
-             test(1)=urand(1)*LBox
-             test(2)=urand(2)*LBox
-             test(3)=urand(3)*LBox
-             if(((test(1)-LBox/2)**2+ &
-                 (test(2)-LBox/2)**2+ &
-                 (test(3)-LBox/2)**2).lt.(LBox*LBox*0.25_dp)) then
+             test(1)=urand(1)*LBox(1)
+             test(2)=urand(2)*LBox(2)
+             test(3)=urand(3)*LBox(3)
+             if(((test(1)-LBox(1)/2.0_dp)**2+ &
+                 (test(2)-LBox(1)/2.0_dp)**2+ &
+                 (test(3)-LBox(1)/2.0_dp)**2).lt.(LBox(1)*LBox(1)*0.25_dp)) then
                  search=.false.
              endif
         enddo

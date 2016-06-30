@@ -52,7 +52,7 @@ Subroutine wlcsim(rand_stat)
 !    Calculate volume of bins
     if (mc%confineType.eq.3) then 
         print*, "Calculating Bin volumes"
-        call MC_caclVolume(mc%confineType,mc%NBINX,mc%DEL, mc%LBox, &
+        call MC_caclVolume(mc%confineType,mc%NBINX,mc%DEL, mc%LBox(1), &
                            md%Vol,rand_stat)  ! calculate partial volumes
         print*, "Done Calculating Bin volumes"
     else

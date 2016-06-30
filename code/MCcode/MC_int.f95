@@ -40,9 +40,9 @@ DOUBLE PRECISION VV         ! one of Vol
 LOGICAL isA   ! The bead is of type A
 
 ! Copy so I don't have to type mc% everywhere
-DOUBLE PRECISION LBOX
+DOUBLE PRECISION LBOX(3)
 DOUBLE PRECISION DEL
-INTEGER NBINX
+INTEGER NBINX(3)
 LBOX=mc%LBOX
 DEL=mc%DEL
 NBINX=mC%NBINX
@@ -90,9 +90,9 @@ do IB=I1,I2
    SELECT CASE (mc%confineType)
    CASE (0) ! Box from 0-LBOX, Bins split by boundaries
        ! Periodic BC
-       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX)*LBOX
-       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX)*LBOX
-       RBIN(3)=RBIN(3)-floor(RBIN(3)/LBOX)*LBOX
+       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX(1))*LBOX(1)
+       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX(2))*LBOX(2)
+       RBIN(3)=RBIN(3)-floor(RBIN(3)/LBOX(3))*LBOX(3)
   
        ! Binning  
        IX(1)=ceiling(RBIN(1)/DEL)
@@ -112,16 +112,16 @@ do IB=I1,I2
        WZ(1)=1.0_dp-WZ(2)              
    
        ! Periodic BC on Bins:
-       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX)) * NBINX
-       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX)) * NBINX
-       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX)) * NBINX
-       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX)) * NBINX
-       IZ(1)=IZ(1)-floor(REAL((IZ(1)-1))/REAL(NBINX)) * NBINX
-       IZ(2)=IZ(2)-floor(REAL((IZ(2)-1))/REAL(NBINX)) * NBINX
+       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX(1))) * NBINX(1)
+       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX(1))) * NBINX(1)
+       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX(2))) * NBINX(2)
+       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX(2))) * NBINX(2)
+       IZ(1)=IZ(1)-floor(REAL((IZ(1)-1))/REAL(NBINX(3))) * NBINX(3)
+       IZ(2)=IZ(2)-floor(REAL((IZ(2)-1))/REAL(NBINX(3))) * NBINX(3)
    CASE (1)
        ! Periodic BC
-       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX)*LBOX
-       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX)*LBOX
+       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX(2))*LBOX(1)
+       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX(1))*LBOX(2)
   
        ! Binning  
        IX(1)=ceiling(RBIN(1)/DEL)
@@ -146,10 +146,10 @@ do IB=I1,I2
        endif
 
        ! Periodic BC on Bins:
-       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX)) * NBINX
-       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX)) * NBINX
-       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX)) * NBINX
-       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX)) * NBINX
+       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX(1))) * NBINX(1)
+       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX(1))) * NBINX(1)
+       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX(2))) * NBINX(2)
+       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX(2))) * NBINX(2)
    CASE (2) ! Box confinement
        ! Binning  
        IX(1)=nint(RBIN(1)/DEL)+1 
@@ -184,6 +184,36 @@ do IB=I1,I2
        WY(1)=1.0_dp-WY(2)                          
        WZ(2)=(DEL*IZ(1)-0.5_dp*DEL-RBIN(3))/DEL  
        WZ(1)=1.0_dp-WZ(2)                           
+   CASE (4) ! Box from 0-LBOX, Bins split by boundaries
+       ! Periodic BC
+       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX(1))*LBOX(1)
+       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX(2))*LBOX(2)
+       RBIN(3)=RBIN(3)-floor(RBIN(3)/LBOX(3))*LBOX(3)
+  
+       ! Binning  
+       IX(1)=ceiling(RBIN(1)/DEL)
+       IY(1)=ceiling(RBIN(2)/DEL)
+       IZ(1)=ceiling(RBIN(3)/DEL)
+       
+       IX(2)=IX(1)-1
+       IY(2)=IY(1)-1
+       IZ(2)=IZ(1)-1
+       
+       ! Calculate the bin weighting
+       WX(2)=(DEL*IX(1)-RBIN(1))/DEL   
+       WX(1)=1.0_dp-WX(2)              
+       WY(2)=(DEL*IY(1)-RBIN(2))/DEL   
+       WY(1)=1.0_dp-WY(2)              
+       WZ(2)=(DEL*IZ(1)-RBIN(3))/DEL   
+       WZ(1)=1.0_dp-WZ(2)              
+   
+       ! Periodic BC on Bins:
+       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX(1))) * NBINX(1)
+       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX(1))) * NBINX(1)
+       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX(2))) * NBINX(2)
+       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX(2))) * NBINX(2)
+       IZ(1)=IZ(1)-floor(REAL((IZ(1)-1))/REAL(NBINX(3))) * NBINX(3)
+       IZ(2)=IZ(2)-floor(REAL((IZ(2)-1))/REAL(NBINX(3))) * NBINX(3)
    END SELECT
    ! -------------------------------------------------------
    !
@@ -195,13 +225,13 @@ do IB=I1,I2
    !   makes it faster.
    if (isA) then
        do ISX=1,2
-          if ((IX(ISX).le.0).OR.(IX(ISX).ge.(NBINX+1))) CYCLE
+          if ((IX(ISX).le.0).OR.(IX(ISX).ge.(NBINX(1)+1))) CYCLE
           do ISY=1,2
-             if ((IY(ISY).le.0).OR.(IY(ISY).ge.(NBINX+1))) CYCLE
+             if ((IY(ISY).le.0).OR.(IY(ISY).ge.(NBINX(2)+1))) CYCLE
              do ISZ=1,2
-                if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX+1))) cycle
+                if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX(3)+1))) cycle
                 WTOT=WX(ISX)*WY(ISY)*WZ(ISZ)
-                INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX+(IZ(ISZ)-1)*NBINX**2
+                INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX(1)+(IZ(ISZ)-1)*NBINX(1)*NBINX(2)
                 if (initialize) then
                     ! Set all phi values on initialize
                     md%PHIA(INDBIN)=md%PHIA(INDBIN)+WTOT*mc%V/md%Vol(INDBIN)
@@ -228,13 +258,13 @@ do IB=I1,I2
        enddo
    else
        do ISX=1,2
-          if ((IX(ISX).le.0).OR.(IX(ISX).ge.(NBINX+1))) CYCLE
+          if ((IX(ISX).le.0).OR.(IX(ISX).ge.(NBINX(1)+1))) CYCLE
           do ISY=1,2
-             if ((IY(ISY).le.0).OR.(IY(ISY).ge.(NBINX+1))) CYCLE
+             if ((IY(ISY).le.0).OR.(IY(ISY).ge.(NBINX(2)+1))) CYCLE
              do ISZ=1,2
-                if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX+1))) cycle
+                if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX(3)+1))) cycle
                 WTOT=WX(ISX)*WY(ISY)*WZ(ISZ)
-                INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX+(IZ(ISZ)-1)*NBINX**2
+                INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX(1)+(IZ(ISZ)-1)*NBINX(1)*NBINX(2)
                 if (initialize) then
                     ! Set all phi values on initialize
                     md%PHIB(INDBIN)=md%PHIB(INDBIN)+WTOT*mc%V/md%Vol(INDBIN)

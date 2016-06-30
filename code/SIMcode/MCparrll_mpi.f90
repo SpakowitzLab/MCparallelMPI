@@ -251,7 +251,7 @@ subroutine paraTemp ( p, id)
             if (N_average.ge.mc%NRepAdapt) then
                 call save_repHistory(upSuccess,downSuccess,nPTReplicas, &
                                      cof,x,nodeNumber,N_average,nExchange,mc%IND)
-                if ((mc%IND.gt.mc%indStartRepAdapt).and. &
+                if ((mc%IND.ge.mc%indStartRepAdapt).and. &
                     (mc%IND.lt.mc%indEndRepAdapt)) then ! insert input defined location here
                     call adaptCof(downSuccess,nPTReplicas,cof,N_average,&
                                    mc%lowerRepExe,mc%upperRepExe,mc%lowerCofRail,mc%upperCofRail)

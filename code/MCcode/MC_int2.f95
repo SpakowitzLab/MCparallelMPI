@@ -12,8 +12,7 @@
 !     Edited by Shifan
 !
 !     Edited by Quinn in 2016
-!     
-!     For two sections of changed beads
+      
 SUBROUTINE MC_int2(mc,md,I1,I2,I3,I4,initialize)
 use simMod
 use setPrecision
@@ -23,8 +22,8 @@ IMPLICIT NONE
 TYPE(MCvar) mc   ! <---- Contains output
 TYPE(MCData) md
 LOGICAL initialize        ! if true calculate absolute energy
-INTEGER I1                ! Test bead, first bead of first section
-INTEGER I2                ! Test bead, second bead of first section
+INTEGER I1                ! Test bead position 1
+INTEGER I2                ! Test bead position 2
 INTEGER I3                ! Test bead, first bead of second section
 INTEGER I4                ! Test bead, second bead of second section
 INTEGER II                ! for looping over both sections
@@ -44,10 +43,9 @@ DOUBLE PRECISION VV         ! one of Vol
 LOGICAL isA   ! The bead is of type A
 
 ! Copy so I don't have to type mc% everywhere
-DOUBLE PRECISION LBOX
+DOUBLE PRECISION LBOX(3)
 DOUBLE PRECISION DEL
-INTEGER NBINX
-
+INTEGER NBINX(3)
 LBOX=mc%LBOX
 DEL=mc%DEL
 NBINX=mC%NBINX
@@ -71,7 +69,6 @@ if (initialize) then
 endif
 
 mc%NPHI=0
-
 do II=1,(I2-I1+1)+(I4-I3+1)
   if (II.le.(I2-I1+1)) then
       IB=I1+II-1
@@ -101,9 +98,9 @@ do II=1,(I2-I1+1)+(I4-I3+1)
    SELECT CASE (mc%confineType)
    CASE (0) ! Box from 0-LBOX, Bins split by boundaries
        ! Periodic BC
-       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX)*LBOX
-       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX)*LBOX
-       RBIN(3)=RBIN(3)-floor(RBIN(3)/LBOX)*LBOX
+       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX(1))*LBOX(1)
+       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX(2))*LBOX(2)
+       RBIN(3)=RBIN(3)-floor(RBIN(3)/LBOX(3))*LBOX(3)
   
        ! Binning  
        IX(1)=ceiling(RBIN(1)/DEL)
@@ -123,16 +120,16 @@ do II=1,(I2-I1+1)+(I4-I3+1)
        WZ(1)=1.0_dp-WZ(2)              
    
        ! Periodic BC on Bins:
-       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX)) * NBINX
-       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX)) * NBINX
-       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX)) * NBINX
-       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX)) * NBINX
-       IZ(1)=IZ(1)-floor(REAL((IZ(1)-1))/REAL(NBINX)) * NBINX
-       IZ(2)=IZ(2)-floor(REAL((IZ(2)-1))/REAL(NBINX)) * NBINX
+       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX(1))) * NBINX(1)
+       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX(1))) * NBINX(1)
+       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX(2))) * NBINX(2)
+       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX(2))) * NBINX(2)
+       IZ(1)=IZ(1)-floor(REAL((IZ(1)-1))/REAL(NBINX(3))) * NBINX(3)
+       IZ(2)=IZ(2)-floor(REAL((IZ(2)-1))/REAL(NBINX(3))) * NBINX(3)
    CASE (1)
        ! Periodic BC
-       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX)*LBOX
-       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX)*LBOX
+       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX(2))*LBOX(1)
+       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX(1))*LBOX(2)
   
        ! Binning  
        IX(1)=ceiling(RBIN(1)/DEL)
@@ -157,10 +154,10 @@ do II=1,(I2-I1+1)+(I4-I3+1)
        endif
 
        ! Periodic BC on Bins:
-       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX)) * NBINX
-       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX)) * NBINX
-       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX)) * NBINX
-       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX)) * NBINX
+       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX(1))) * NBINX(1)
+       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX(1))) * NBINX(1)
+       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX(2))) * NBINX(2)
+       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX(2))) * NBINX(2)
    CASE (2) ! Box confinement
        ! Binning  
        IX(1)=nint(RBIN(1)/DEL)+1 
@@ -195,6 +192,36 @@ do II=1,(I2-I1+1)+(I4-I3+1)
        WY(1)=1.0_dp-WY(2)                          
        WZ(2)=(DEL*IZ(1)-0.5_dp*DEL-RBIN(3))/DEL  
        WZ(1)=1.0_dp-WZ(2)                           
+   CASE (4) ! Box from 0-LBOX, Bins split by boundaries
+       ! Periodic BC
+       RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX(1))*LBOX(1)
+       RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX(2))*LBOX(2)
+       RBIN(3)=RBIN(3)-floor(RBIN(3)/LBOX(3))*LBOX(3)
+  
+       ! Binning  
+       IX(1)=ceiling(RBIN(1)/DEL)
+       IY(1)=ceiling(RBIN(2)/DEL)
+       IZ(1)=ceiling(RBIN(3)/DEL)
+       
+       IX(2)=IX(1)-1
+       IY(2)=IY(1)-1
+       IZ(2)=IZ(1)-1
+       
+       ! Calculate the bin weighting
+       WX(2)=(DEL*IX(1)-RBIN(1))/DEL   
+       WX(1)=1.0_dp-WX(2)              
+       WY(2)=(DEL*IY(1)-RBIN(2))/DEL   
+       WY(1)=1.0_dp-WY(2)              
+       WZ(2)=(DEL*IZ(1)-RBIN(3))/DEL   
+       WZ(1)=1.0_dp-WZ(2)              
+   
+       ! Periodic BC on Bins:
+       IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX(1))) * NBINX(1)
+       IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX(1))) * NBINX(1)
+       IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX(2))) * NBINX(2)
+       IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX(2))) * NBINX(2)
+       IZ(1)=IZ(1)-floor(REAL((IZ(1)-1))/REAL(NBINX(3))) * NBINX(3)
+       IZ(2)=IZ(2)-floor(REAL((IZ(2)-1))/REAL(NBINX(3))) * NBINX(3)
    END SELECT
    ! -------------------------------------------------------
    !
@@ -206,13 +233,13 @@ do II=1,(I2-I1+1)+(I4-I3+1)
    !   makes it faster.
    if (isA) then
        do ISX=1,2
-          if ((IX(ISX).le.0).OR.(IX(ISX).ge.(NBINX+1))) CYCLE
+          if ((IX(ISX).le.0).OR.(IX(ISX).ge.(NBINX(1)+1))) CYCLE
           do ISY=1,2
-             if ((IY(ISY).le.0).OR.(IY(ISY).ge.(NBINX+1))) CYCLE
+             if ((IY(ISY).le.0).OR.(IY(ISY).ge.(NBINX(2)+1))) CYCLE
              do ISZ=1,2
-                if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX+1))) cycle
+                if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX(3)+1))) cycle
                 WTOT=WX(ISX)*WY(ISY)*WZ(ISZ)
-                INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX+(IZ(ISZ)-1)*NBINX**2
+                INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX(1)+(IZ(ISZ)-1)*NBINX(1)*NBINX(2)
                 if (initialize) then
                     ! Set all phi values on initialize
                     md%PHIA(INDBIN)=md%PHIA(INDBIN)+WTOT*mc%V/md%Vol(INDBIN)
@@ -239,13 +266,13 @@ do II=1,(I2-I1+1)+(I4-I3+1)
        enddo
    else
        do ISX=1,2
-          if ((IX(ISX).le.0).OR.(IX(ISX).ge.(NBINX+1))) CYCLE
+          if ((IX(ISX).le.0).OR.(IX(ISX).ge.(NBINX(1)+1))) CYCLE
           do ISY=1,2
-             if ((IY(ISY).le.0).OR.(IY(ISY).ge.(NBINX+1))) CYCLE
+             if ((IY(ISY).le.0).OR.(IY(ISY).ge.(NBINX(2)+1))) CYCLE
              do ISZ=1,2
-                if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX+1))) cycle
+                if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX(3)+1))) cycle
                 WTOT=WX(ISX)*WY(ISY)*WZ(ISZ)
-                INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX+(IZ(ISZ)-1)*NBINX**2
+                INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX(1)+(IZ(ISZ)-1)*NBINX(1)*NBINX(2)
                 if (initialize) then
                     ! Set all phi values on initialize
                     md%PHIB(INDBIN)=md%PHIB(INDBIN)+WTOT*mc%V/md%Vol(INDBIN)
@@ -281,40 +308,66 @@ enddo ! loop over IB  A.k.a. beads
 mc%DEChi=0.0_dp
 mc%DECouple=0.0_dp
 mc%DEKap=0.0_dp
-if (mc%simType.eq.0) then ! Melt Hamiltonian
-    do I=1,mc%NPHI
-        J=md%INDPHI(I)
-        VV=md%Vol(J)
-        if (VV.le.0.1_dp) CYCLE
-        ! new
-        mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*((md%PHIA(J)+md%DPHIA(I))*(md%PHIB(J)+md%DPHIB(I)))
-        mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)-1.0_dp)**2)
-        ! minus old
-        mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*(md%PHIA(J)*md%PHIB(J))
-        mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
-        
-    enddo
-elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
-    do I=1,mc%NPHI
-        J=md%INDPHI(I)
-        VV=md%Vol(J)
-        if (VV.le.0.1_dp) CYCLE
-        ! new ...
-        PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
-        mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
-        mc%DECouple=mc%DECouple+VV*mc%HP1_Bind*(md%PHIA(J)+md%DPHIA(I))**2
-        if(PHIPoly.GT.1.0_dp) then
-           mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
-        endif
-        ! minus old
-        PHIPoly=md%PHIA(J)+md%PHIB(J)
-        mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
-        mc%DECouple=mc%DECouple-VV*mc%HP1_Bind*(md%PHIA(J))**2
-        if(PHIPoly.GT.1.0_dp) then
-           mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
-        endif 
-    enddo
+if (initialize) then  ! calculate absolute energy
+    if (mc%simType.eq.0) then ! Melt Hamiltonian
+        do I=1,mc%NBIN
+            VV=md%Vol(I)
+            if (VV.le.0.1_dp) CYCLE
+            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*(md%PHIA(I)*md%PHIB(I))
+            mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2)
+        enddo        
+    elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
+        do I=1,mc%NBIN
+            VV=md%Vol(I)
+            if (VV.le.0.1_dp) CYCLE
+            PHIPoly=md%PHIA(I)+md%PHIB(I)
+            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
+            mc%DECouple=mc%DECouple+VV*mc%HP1_Bind*(md%PHIA(I))**2
+            if(PHIPoly.GT.1.0_dp) then
+               mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
+            endif
+        enddo        
+    else
+        print*, "Error in MC_int, simType",mc%simType, &
+                " notdefined"
+    endif
+else ! Calculate change in energy
+    if (mc%simType.eq.0) then ! Melt Hamiltonian
+        do I=1,mc%NPHI
+            J=md%INDPHI(I)
+            VV=md%Vol(J)
+            if (VV.le.0.1_dp) CYCLE
+            ! new
+            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*((md%PHIA(J)+md%DPHIA(I))*(md%PHIB(J)+md%DPHIB(I)))
+            mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)-1.0_dp)**2)
+            ! minus old
+            mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*(md%PHIA(J)*md%PHIB(J))
+            mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
+            
+        enddo
+    elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
+        do I=1,mc%NPHI
+            J=md%INDPHI(I)
+            VV=md%Vol(J)
+            if (VV.le.0.1_dp) CYCLE
+            ! new ...
+            PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
+            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
+            mc%DECouple=mc%DECouple+VV*mc%HP1_Bind*(md%PHIA(J)+md%DPHIA(I))**2
+            if(PHIPoly.GT.1.0_dp) then
+               mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
+            endif
+            ! minus old
+            PHIPoly=md%PHIA(J)+md%PHIB(J)
+            mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
+            mc%DECouple=mc%DECouple-VV*mc%HP1_Bind*(md%PHIA(J))**2
+            if(PHIPoly.GT.1.0_dp) then
+               mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
+            endif 
+        enddo
+    endif
 endif
+
 ! Discount if interaction are only partial on
 mc%DEChi=mc%DECHI*mc%CHI_ON
 mc%DECouple=mc%DECouple*mc%Couple_ON

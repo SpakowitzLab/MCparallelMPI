@@ -20,7 +20,7 @@ Module simMod
     INTEGER N                 ! Number of monomers in a polymer
     INTEGER G                 ! Beads per monomer
     INTEGER NP                ! Number of polymers
-    DOUBLE PRECISION LBOX     ! Box length (approximate)
+    DOUBLE PRECISION LBOX(3)  ! Box length (approximate)
     DOUBLE PRECISION DEL      ! Discretization size (approximate)
     DOUBLE PRECISION L0       ! Equilibrium segment length
     DOUBLE PRECISION V        ! Bead volume
@@ -37,7 +37,7 @@ Module simMod
     DOUBLE PRECISION LAM_METH ! eigenvalue of methalation setup
     DOUBLE PRECISION mu       ! chemical potential of HP1
     INTEGER NBIN     ! Number of bins
-    INTEGER NBINX    ! Number of bin on an edge
+    INTEGER NBINX(3) ! Number of bin on an edge
     DOUBLE PRECISION PARA(10) ! Parameters for sswlc
         ! EB, EPAR, EPERP, GAM, ETA, ...
 
@@ -149,6 +149,8 @@ Subroutine MCvar_setParams(mc,fileName)
     LOGICAL :: FILEEND=.FALSE. ! done reading file?
     CHARACTER*100 :: WORD ! keyword
     INTEGER :: NITEMS ! number of items on the line in the parameter file
+    DOUBLE PRECISION NAN_dp
+    NAN_dp=0;NAN_dp=NAN_dp/NAN_dp
 
     ! ----------------------------------------------------------
     !
@@ -161,7 +163,9 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%NP  =1
     mc%N   =2000
     mc%G   =1
-    mc%LBOX=25.0_dp
+    mc%LBOX(1)=25.0_dp
+    mc%LBOX(2)=25.0_dp
+    mc%LBOX(3)=25.0_dp
     mc%DEL =1.0_dp
     mc%L0  =1.25_dp
     mc%V   =0.1_dp
@@ -242,10 +246,11 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READI(mc%confineType)
            ! confineType  |  Discription
            ! _____________|_________________________________
-           !    0         |  No confinement
+           !    0         |  No confinement, periodic cube
            !    1         |  Betwene two plates in Z direction at 0 and LBox
            !    2         |  Cube of size LBox**3,  range: 0-LBox
            !    3         |  Circle of radius LBox, centered at LBox/2
+           !    4         |  Periodic, unequal dimensions
        CASE('RECENTER_ON')
            Call READO(mc%recenter_on) ! recenter in periodic boundary
        CASE('SIMTYPE')
@@ -265,7 +270,15 @@ Subroutine MCvar_setParams(mc,fileName)
        CASE('DEL')
            Call READF(mc%DEL) ! spaitial descretation length, not tested
        CASE('LBOX')
-           Call READF(mc%LBox) ! side length of box
+           Call READF(mc%LBox(1)) ! side length of box
+           mc%LBox(2)=mc%LBox(1)
+           mc%LBox(3)=mc%LBox(1)
+       CASE('LBOXX')
+           Call READF(mc%LBox(1)) ! side length of box in x direction
+       CASE('LBOXY')
+           Call READF(mc%LBox(2)) ! side length of box in y direction
+       CASE('LBOXZ')
+           Call READF(mc%LBox(3)) ! side length of box in z direction
        CASE('NP')
            CALL READI(mc%NP)  ! Number of polymers
        CASE('G')
@@ -369,33 +382,53 @@ Subroutine MCvar_setParams(mc,fileName)
        ENDSELECT
     ENDDO
     close(PF)
+
     ! --------------------
     !
-    ! Derived Variables
+    ! Derived Variables, Reconcile inputs
     !
     ! --------------------
-   
-     
     if (mc%simType.eq.1) then
         mc%NT=mc%N*mc%NP*mc%G
         mc%NB=mc%N*mc%G
         if (mc%confineType.eq.3) then
-            mc%LBOX=(mc%V*mc%NT*6/(mc%Fpoly*PI))**(1.0_dp/3.0_dp)
+            mc%LBOX(1)=(mc%V*mc%NT*6/(mc%Fpoly*PI))**(1.0_dp/3.0_dp)
+            mc%LBOX(2)=mc%LBOX(1)
+            mc%LBOX(3)=mc%LBOX(1)
         else
-            mc%LBOX=(mc%V*mc%NT/mc%Fpoly)**(1.0_dp/3.0_dp)
+            mc%LBOX(1)=(mc%V*mc%NT/mc%Fpoly)**(1.0_dp/3.0_dp)
+            mc%LBOX(2)=mc%LBOX(1)
+            mc%LBOX(3)=mc%LBOX(1)
         endif
-        mc%NBINX=nint(mc%LBOX/mc%DEL)
-        mc%NBIN=mc%NBINX**3.
-        mc%LBOX = mc%NBINX*mc%DEL! used to be: DEL=LBOX/NBINX
-        mc%NBINX=nint(mc%LBOX/mc%DEL)
+        mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
+        mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
+        mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
+        mc%NBIN=mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3)
+        mc%LBOX(1) = mc%NBINX(1)*mc%DEL! used to be: DEL=LBOX/NBINX
+        mc%LBOX(2) = mc%NBINX(2)*mc%DEL! used to be: DEL=LBOX/NBINX
+        mc%LBOX(3) = mc%NBINX(3)*mc%DEL! used to be: DEL=LBOX/NBINX
     elseif (mc%simType.eq.0) then
-        mc%NP=nint(mc%LBOX**3.0_dp/(mc%N*mc%G*mc%V))
-        mc%LBOX=(mc%V*mc%N*mc%G*mc%NP)**(1.0_dp/3.0_dp)
-        mc%NT=mc%N*mc%NP*mc%G
-        mc%NBINX=nint(mc%LBOX/mc%DEL)
-        mc%NBIN=mc%NBINX**3.0_dp
-        mc%DEL=mc%LBOX/mc%NBINX
+        if (mc%confineType.eq.0) then
+            mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+            mc%LBOX=(mc%V*mc%N*mc%G*mc%NP)**(1.0_dp/3.0_dp)
+            mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
+            mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
+            mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
+            mc%DEL=mc%LBOX(1)/mc%NBINX(1)
+        elseif(mc%confineType.eq.4) then
+            mc%DEL=mc%LBOX(1)/nint(mc%LBOX(1)/mc%DEL)
+            mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
+            mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
+            mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
+            mc%LBOX(2)=mc%DEL*mc%NBINX(2)
+            mc%LBOX(3)=mc%DEL*mc%NBINX(3)
+            mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+            print*, "Density =", &
+                  mc%N*mc%G*mc%V*mc%NP/(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3))
+        endif
         mc%NB=mc%N*mc%G
+        mc%NBIN=mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3)
+        mc%NT=mc%N*mc%NP*mc%G
         mc%WINDOW(5)=mc%NB
         mc%WINDOW(6)=mc%NB
         mc%WINDOW(8)=mc%NB
@@ -409,14 +442,12 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%MAXWINDOW(3)=min(150,mc%NB)
         mc%MAXWINDOW(7)=min(150,mc%NB)
         mc%MAXAMP(2)=1.0_dp*mc%L0
-        mc%MAXAMP(6)=0.1*mc%LBOX
+        mc%MAXAMP(6)=0.1*mc%LBOX(1)
     else
        print*, "Error in simMod: symType",mc%simType," not found"
     endif 
-    call getpara(mc%PARA,mc%EPS,mc%L0,mc%LBOX)
-  
-  
-  
+    call getpara(mc%PARA,mc%EPS,mc%L0,NAN_dp)
+   
     ! -----------------------
     !
     ! Set initial values
@@ -435,7 +466,7 @@ Subroutine MCvar_setParams(mc,fileName)
     !  Idiot checks
     !
     !-----------------------------
-    if (mc%NBINX**3.ne.mc%NBIN) then
+    if (mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3).ne.mc%NBIN) then
         print*, "error in MCsim. Wrong number of bins"
         stop 1
     endif
@@ -459,6 +490,21 @@ Subroutine MCvar_setParams(mc,fileName)
         print*, "error in MCsim. Can't have kap without int on"
         stop 1
     endif
+    if ((mc%NBINX(1)-mc%NBINX(2).ne.0).or. &
+        (mc%NBINX(1)-mc%NBINX(3).ne.0)) then
+        if (mc%simType.eq.1) then
+            print*, "Solution not tested with non-cube box, more coding needed"
+            stop 1
+        endif
+        if (mc%confineType.ne.4) then
+            print*, "Unequal boundaries require confineType=4"
+            stop 1
+        endif    
+        if (mc%setType.eq.4) then
+            print*, "You shouldn't put a shpere in and unequal box!"
+            stop 1
+        endif    
+    endif
 end Subroutine
 Subroutine MCvar_printDescription(mc)
     IMPLICIT NONE
@@ -474,8 +520,9 @@ Subroutine MCvar_printDescription(mc)
     print*, " LAM_METH", mc%LAM_METH
     print*, "Length and volume Variables:"
     print*, " persistance length =",(mc%L0/(2.0_dp*mc%EPS))
-    print*, " LBOX=", mc%LBOX
-    print*, " Number of bins in x direction", mc%NBINX
+    print*, " LBOX=", mc%LBOX(1), mc%LBOX(2), mc%LBOX(3)
+    print*, " Number of bins in x direction", &
+             mc%NBINX(1), mc%NBINX(2),mc%NBINX(3)
     print*, " Number of bins", mc%NBIN
     print*, " spatial descritation DEL=",mc%DEL
     print*, " L0=", mc%L0
@@ -612,7 +659,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MAXAMP(3)=1.0_dp*PI
     mc%MAXAMP(4)=1.0_dp*PI
     mc%MAXAMP(5)=1.0_dp*PI
-    mc%MAXAMP(6)=0.1*mc%LBOX
+    mc%MAXAMP(6)=0.1*mc%LBOX(1)
     mc%MAXAMP(7)=NAND
     mc%MAXAMP(8)=NAND
     mc%MAXAMP(9)=NAND
@@ -632,9 +679,9 @@ Subroutine MCvar_recenter(mc,md)
     DOUBLE PRECISION R0(3)  ! Offset to move by
     IB=1
     DO I=1,mc%NP
-       R0(1)=nint(md%R(IB,1)/mc%LBOX-0.5)*mc%LBOX
-       R0(2)=nint(md%R(IB,2)/mc%LBOX-0.5)*mc%LBOX
-       R0(3)=nint(md%R(IB,3)/mc%LBOX-0.5)*mc%LBOX
+       R0(1)=nint(md%R(IB,1)/mc%LBOX(1)-0.5_dp)*mc%LBOX(1)
+       R0(2)=nint(md%R(IB,2)/mc%LBOX(2)-0.5_dp)*mc%LBOX(2)
+       R0(3)=nint(md%R(IB,3)/mc%LBOX(3)-0.5_dp)*mc%LBOX(3)
        if (abs(R0(1)*R0(2)*R0(3)) .gt. 0.0001_dp) then
            DO J=1,mc%NB
               md%R(IB,1)=md%R(IB,1)-R0(1)
@@ -732,9 +779,9 @@ Subroutine MCvar_saveR(mc,md,fileName,repeatingBC)
         Do I=1,mc%NP
             Do J=1,mc%NB
                     WRITE(1,"(3f7.2,I2)") , &
-                          md%R(IB,1)-0.*nint(md%R(IB,1)/mc%LBOX-0.5_dp)*mc%LBOX, &
-                          md%R(IB,2)-0.*nint(md%R(IB,2)/mc%LBOX-0.5_dp)*mc%LBOX, &
-                          md%R(IB,3)-0.*nint(md%R(IB,3)/mc%LBOX-0.5_dp)*mc%LBOX, & 
+                          md%R(IB,1)-0.*nint(md%R(IB,1)/mc%LBOX(1)-0.5_dp)*mc%LBOX(1), &
+                          md%R(IB,2)-0.*nint(md%R(IB,2)/mc%LBOX(2)-0.5_dp)*mc%LBOX(2), &
+                          md%R(IB,3)-0.*nint(md%R(IB,3)/mc%LBOX(3)-0.5_dp)*mc%LBOX(3), & 
                           md%AB(IB)
                 IB=IB+1
             enddo
@@ -804,7 +851,7 @@ Subroutine MCvar_saveParameters(mc,fileName)
         WRITE(1,"(f10.5)") mc%L0    ! Equilibrium segment length 
         WRITE(1,"(f10.5)") mc%CHI  ! 8  initail CHI parameter value 
         WRITE(1,"(f10.5)") mc%Fpoly ! Fraction polymer
-        WRITE(1,"(f10.5)") mc%LBOX  ! 10 Lenth of box
+        WRITE(1,"(f10.5)") mc%LBOX(1)  ! 10 Lenth of box
         WRITE(1,"(f10.5)") mc%EU    ! Energy unmethalated       
         WRITE(1,"(f10.5)") mc%EM    ! 12 Energy methalated
         WRITE(1,"(f10.5)") mc%HP1_Bind ! Energy of HP1 binding
@@ -848,14 +895,16 @@ Subroutine MCvar_appendAdaptData(mc,fileName)
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
     endif
-    WRITE(1,"(I4,21f8.2)") mc%IND,& 
+    WRITE(1,"(I4,27f8.2)") mc%IND,& 
           REAL(mc%WINDOW(1)),mc%MCAMP(1),mc%PHIT(1), &
           REAL(mc%WINDOW(2)),mc%MCAMP(2),mc%PHIT(2), &
           REAL(mc%WINDOW(3)),mc%MCAMP(3),mc%PHIT(3), &
           REAL(mc%MOVEON(4)),mc%MCAMP(4),mc%PHIT(4), &
           REAL(mc%MOVEON(5)),mc%MCAMP(5),mc%PHIT(5), &
           REAL(mc%MOVEON(6)),mc%MCAMP(6),mc%PHIT(6), &
-          REAL(mc%MOVEON(7)),mc%MCAMP(7),mc%PHIT(7)
+          REAL(mc%MOVEON(7)),mc%MCAMP(7),mc%PHIT(7), &
+          REAL(mc%MOVEON(8)),mc%MCAMP(8),mc%PHIT(8), &
+          REAL(mc%MOVEON(9)),mc%MCAMP(9),mc%PHIT(9)
     Close(1)
 end subroutine
 Subroutine MCvar_writeBinary(mc,md,baceName)

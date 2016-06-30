@@ -178,7 +178,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               ((MCTYPE.eq.5).or.(MCTYPE.eq.6))) then
               CYCLE
           endif
-
+          
           call MC_move(md%R,md%U,md%RP,md%UP,mc%NT,mc%NB,mc%NP, &
                        IP,IB1,IB2,IT1,IT2,MCTYPE, & 
                        mc%MCAMP,mc%WINDOW,md%AB,md%ABP,mc%G,&
