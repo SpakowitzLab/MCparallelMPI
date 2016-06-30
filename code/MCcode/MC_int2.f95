@@ -26,11 +26,11 @@ INTEGER I1                ! Test bead position 1
 INTEGER I2                ! Test bead position 2
 INTEGER I3                ! Test bead, first bead of second section
 INTEGER I4                ! Test bead, second bead of second section
-INTEGER II                ! for looping over both sections
 
 !   Internal variables
 INTEGER I,J               ! For looping over bins
 INTEGER IB                ! Bead index
+INTEGER IB2               ! Index you are swapping with
 INTEGER rrdr ! -1 if r, 1 if r+dr
 DOUBLE PRECISION PHIPoly    ! Total fraction polymer
 INTEGER IX(2),IY(2),IZ(2)      
@@ -46,6 +46,7 @@ LOGICAL isA   ! The bead is of type A
 DOUBLE PRECISION LBOX(3)
 DOUBLE PRECISION DEL
 INTEGER NBINX(3)
+DOUBLE PRECISION temp    !for speeding up code
 LBOX=mc%LBOX
 DEL=mc%DEL
 NBINX=mC%NBINX
@@ -56,30 +57,19 @@ NBINX=mC%NBINX
 !
 !--------------------------------------------------------------
 if (initialize) then
-    do I=1,mc%NBIN
-       md%PHIA(I)=0.0_dp
-       md%DPHIA(I)=0.0_dp
-       md%PHIB(I)=0.0_dp
-       md%DPHIB(I)=0.0_dp
-       md%INDPHI(I)=0
-    enddo
-    mc%DEKap=0
-    mc%DECouple=0
-    mc%DEChi=0
+    print*,"Error, Don't use MC_int2 for initialization"
+    stop 1
 endif
 
 mc%NPHI=0
-do II=1,(I2-I1+1)+(I4-I3+1)
-  if (II.le.(I2-I1+1)) then
-      IB=I1+II-1
-  else
-      IB=I3+II-1-(I2-I1+1)
-  endif
+do IB=I1,I2
+  IB2=IB+I3-I1
+  !No need to do calculation if identities are the same
+  if (md%AB(IB).eq.md%ABP(IB2)) cycle
   do rrdr=-1,1,2
    ! on initialize only add current position
    ! otherwise subract current and add new
-   if (initialize.and.(rrdr.eq.-1)) CYCLE
-   if ((rrdr.eq.-1).or.initialize) then
+   if (rrdr.eq.-1) then
        RBIN(1)=md%R(IB,1)
        RBIN(2)=md%R(IB,2)
        RBIN(3)=md%R(IB,3)
@@ -240,27 +230,25 @@ do II=1,(I2-I1+1)+(I4-I3+1)
                 if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX(3)+1))) cycle
                 WTOT=WX(ISX)*WY(ISY)*WZ(ISZ)
                 INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX(1)+(IZ(ISZ)-1)*NBINX(1)*NBINX(2)
-                if (initialize) then
-                    ! Set all phi values on initialize
-                    md%PHIA(INDBIN)=md%PHIA(INDBIN)+WTOT*mc%V/md%Vol(INDBIN)
-                else
-                    ! Generate list of which phi's change and by how much
-                    I=mc%NPHI
-                    do 
-                       if (I.eq.0) then
-                          mc%NPHI=mc%NPHI+1
-                          md%INDPHI(mc%NPHI)=INDBIN
-                          md%DPHIA(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          md%DPHIB(mc%NPHI)=0.0_dp
-                          exit
-                       elseif (INDBIN.EQ.md%INDPHI(I)) then
-                          md%DPHIA(I)=md%DPHIA(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          exit
-                       else
-                          I=I-1
-                       endif                     
-                    enddo
-                endif
+                ! Generate list of which phi's change and by how much
+                I=mc%NPHI
+                do 
+                   if (I.eq.0) then
+                      mc%NPHI=mc%NPHI+1
+                      md%INDPHI(mc%NPHI)=INDBIN
+                      temp=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                      md%DPHIA(mc%NPHI)=temp
+                      md%DPHIB(mc%NPHI)=-temp
+                      exit
+                   elseif (INDBIN.EQ.md%INDPHI(I)) then
+                      temp=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                      md%DPHIA(I)=md%DPHIA(I)+temp
+                      md%DPHIB(I)=md%DPHIB(I)-temp
+                      exit
+                   else
+                      I=I-1
+                   endif                     
+                enddo
              enddo
           enddo
        enddo
@@ -273,27 +261,25 @@ do II=1,(I2-I1+1)+(I4-I3+1)
                 if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX(3)+1))) cycle
                 WTOT=WX(ISX)*WY(ISY)*WZ(ISZ)
                 INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX(1)+(IZ(ISZ)-1)*NBINX(1)*NBINX(2)
-                if (initialize) then
-                    ! Set all phi values on initialize
-                    md%PHIB(INDBIN)=md%PHIB(INDBIN)+WTOT*mc%V/md%Vol(INDBIN)
-                else
-                    ! Generate list of which phi's change and by how much
-                    I=mc%NPHI
-                    do 
-                       if (I.eq.0) then
-                          mc%NPHI=mc%NPHI+1
-                          md%INDPHI(mc%NPHI)=INDBIN
-                          md%DPHIA(mc%NPHI)=0.0_dp
-                          md%DPHIB(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          exit
-                       elseif (INDBIN.EQ.md%INDPHI(I)) then
-                          md%DPHIB(I)=md%DPHIB(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          exit
-                       else
-                          I=I-1
-                       endif                     
-                    enddo
-                endif
+                ! Generate list of which phi's change and by how much
+                I=mc%NPHI
+                do 
+                   if (I.eq.0) then
+                      mc%NPHI=mc%NPHI+1
+                      md%INDPHI(mc%NPHI)=INDBIN
+                      temp=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                      md%DPHIA(mc%NPHI)=-temp
+                      md%DPHIB(mc%NPHI)=temp
+                      exit
+                   elseif (INDBIN.EQ.md%INDPHI(I)) then
+                      temp=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                      md%DPHIA(I)=md%DPHIA(I)-temp
+                      md%DPHIB(I)=md%DPHIB(I)+temp
+                      exit
+                   else
+                      I=I-1
+                   endif                     
+                enddo
              enddo !ISZ
           enddo !ISY
        enddo !ISX 
@@ -308,64 +294,39 @@ enddo ! loop over IB  A.k.a. beads
 mc%DEChi=0.0_dp
 mc%DECouple=0.0_dp
 mc%DEKap=0.0_dp
-if (initialize) then  ! calculate absolute energy
-    if (mc%simType.eq.0) then ! Melt Hamiltonian
-        do I=1,mc%NBIN
-            VV=md%Vol(I)
-            if (VV.le.0.1_dp) CYCLE
-            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*(md%PHIA(I)*md%PHIB(I))
-            mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2)
-        enddo        
-    elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
-        do I=1,mc%NBIN
-            VV=md%Vol(I)
-            if (VV.le.0.1_dp) CYCLE
-            PHIPoly=md%PHIA(I)+md%PHIB(I)
-            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
-            mc%DECouple=mc%DECouple+VV*mc%HP1_Bind*(md%PHIA(I))**2
-            if(PHIPoly.GT.1.0_dp) then
-               mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
-            endif
-        enddo        
-    else
-        print*, "Error in MC_int, simType",mc%simType, &
-                " notdefined"
-    endif
-else ! Calculate change in energy
-    if (mc%simType.eq.0) then ! Melt Hamiltonian
-        do I=1,mc%NPHI
-            J=md%INDPHI(I)
-            VV=md%Vol(J)
-            if (VV.le.0.1_dp) CYCLE
-            ! new
-            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*((md%PHIA(J)+md%DPHIA(I))*(md%PHIB(J)+md%DPHIB(I)))
-            mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)-1.0_dp)**2)
-            ! minus old
-            mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*(md%PHIA(J)*md%PHIB(J))
-            mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
-            
-        enddo
-    elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
-        do I=1,mc%NPHI
-            J=md%INDPHI(I)
-            VV=md%Vol(J)
-            if (VV.le.0.1_dp) CYCLE
-            ! new ...
-            PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
-            mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
-            mc%DECouple=mc%DECouple+VV*mc%HP1_Bind*(md%PHIA(J)+md%DPHIA(I))**2
-            if(PHIPoly.GT.1.0_dp) then
-               mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
-            endif
-            ! minus old
-            PHIPoly=md%PHIA(J)+md%PHIB(J)
-            mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
-            mc%DECouple=mc%DECouple-VV*mc%HP1_Bind*(md%PHIA(J))**2
-            if(PHIPoly.GT.1.0_dp) then
-               mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
-            endif 
-        enddo
-    endif
+if (mc%simType.eq.0) then ! Melt Hamiltonian
+    do I=1,mc%NPHI
+        J=md%INDPHI(I)
+        VV=md%Vol(J)
+        if (VV.le.0.1_dp) CYCLE
+        ! new
+        mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*((md%PHIA(J)+md%DPHIA(I))*(md%PHIB(J)+md%DPHIB(I)))
+        mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)-1.0_dp)**2)
+        ! minus old
+        mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*(md%PHIA(J)*md%PHIB(J))
+        mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
+        
+    enddo
+elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
+    do I=1,mc%NPHI
+        J=md%INDPHI(I)
+        VV=md%Vol(J)
+        if (VV.le.0.1_dp) CYCLE
+        ! new ...
+        PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
+        mc%DEChi=mc%DEChi+VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
+        mc%DECouple=mc%DECouple+VV*mc%HP1_Bind*(md%PHIA(J)+md%DPHIA(I))**2
+        if(PHIPoly.GT.1.0_dp) then
+           mc%DEKap=mc%DEKap+VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
+        endif
+        ! minus old
+        PHIPoly=md%PHIA(J)+md%PHIB(J)
+        mc%DEChi=mc%DEChi-VV*(mc%CHI/mc%V)*PHIPoly*(1.0_dp-PHIPoly)
+        mc%DECouple=mc%DECouple-VV*mc%HP1_Bind*(md%PHIA(J))**2
+        if(PHIPoly.GT.1.0_dp) then
+           mc%DEKap=mc%DEKap-VV*(mc%KAP/mc%V)*(PHIPoly-1.0_dp)**2
+        endif 
+    enddo
 endif
 
 ! Discount if interaction are only partial on
