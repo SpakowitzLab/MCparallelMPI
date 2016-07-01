@@ -8,7 +8,7 @@ if FNUM<=2000  % use analytical wormlike chain statistics
     plot(XG,G.*power(XG,2)*(4*pi),'k-','LineWidth',2)
 else  % use Gaussian chain statistics
     DXG=XG(2)-XG(1);
-    G=exp(-1.5*N*XG.^2).*XG.*XG;
+    G=exp(-1.5*EPS*XG.^2).*XG.*XG;
     G=G./(sum(G).*DXG);
     plot(XG,G,'k-','LineWidth',2)
 end
