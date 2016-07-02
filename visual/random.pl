@@ -1,8 +1,7 @@
 #!/usr/bin/perl -w
 use POSIX qw(ceil floor);
 
-#my $filecount=202;        # File count for input
-
+my $savept =50;  # save point
 my $ratviz=0.85; # Ratio of visualization
 my $xlbox=20; # Box edge length
 my $ylbox=20; # Box edge length
@@ -25,8 +24,11 @@ my $gamma=2*$pi*$nbpbead/$nbpturn; # Twist angle per bead
 my $filein1;            # File with bead coordinates
 my $fileout1;           # Output file for pdb
 
-for (my $filecount=0; $filecount<=45; $filecount+=1) {
-$filein1 =sprintf("snap%03d", $filecount);
+#my $filecount=202;        # File count for input
+for (my $filecount=50; $filecount<=50; $filecount+=1) {
+#$filein1 =sprintf("snap%03d", $filecount);
+#$fileout1=sprintf(">snap%03d.pdb",$filecount);
+$filein1 =sprintf("r%dv%d", $savept, $filecount);
 $fileout1=sprintf(">snap%03d.pdb",$filecount);
 
 open(COORD1, $filein1) || die('cannot open file:'. $!);
