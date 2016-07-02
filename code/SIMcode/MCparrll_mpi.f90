@@ -530,6 +530,7 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     integer N_average
     integer nExchange
     integer IND
+    double precision dxdcof
 
 
     fullName=  'data/repHistory'
@@ -543,10 +544,15 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     write(1,*) "~~~~~~~~~~~exchange: ",nExchange,", IND:",IND,"~~~~~~~~~~~~~~~~~~~~"
     write(1,*) " rep |  cof  |   x    |  up  | down |node| dxdcof|"
     do rep=1,nPTReplicas
+        if (rep.ne.nPTReplicas) then
+            dxdcof=(x(rep)-x(rep+1))/(cof(rep+1)-cof(rep))
+        else
+            dxdcof=0.0_dp
+        endif
         write(1,"(I6,f8.3,f9.1,2f7.3,I5,f8.2)"), rep, cof(rep), x(rep), & 
                  real(upSuccess(rep))/real(N_average), &
                  real(downSuccess(rep))/real(N_average), nodeNumber(rep),&
-                 real(downSuccess(rep))*x(rep)/real(N_average)
+                 dxdcof
     enddo  
     Close(1)
 
