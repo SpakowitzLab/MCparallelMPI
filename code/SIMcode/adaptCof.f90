@@ -1,5 +1,7 @@
 Subroutine adaptCof(downSuccess,nPTReplicas,cof,N_average,&
-                     lowerRepExe,upperRepExe,lowerCofRail,upperCofRail)
+                     lowerRepExe,upperRepExe,&
+                     lowerCofRail,upperCofRail,&
+                     repAnnealSpeed)
 use setPrecision
 implicit none
 
@@ -11,6 +13,7 @@ double precision lowerRepExe
 double precision upperRepExe 
 double precision lowerCofRail
 double precision upperCofRail
+double precision repAnnealSpeed
 
 ! input/output
 double precision cof(nPTReplicas)
@@ -37,6 +40,13 @@ do rep=2,nPTReplicas
     else
         newCof(rep)=newCof(rep-1)+Cof(rep)-Cof(rep-1)
     endif
+    ! don't addapt too fast.  a.k.a. anneal
+    if (newCof(rep).gt.repAnnealSpeed+Cof(rep)) then
+        newCof(rep)=Cof(rep)+repAnnealSpeed
+    elseif(newCof(rep).lt.Cof(rep)-repAnnealSpeed) then
+        newCof(rep)=Cof(rep)-repAnnealSpeed
+    endif
+
     ! inforce limits on addaption
     if ((newCof(rep)-newCof(rep-1)).lt.lowerCofRail) then
         newCof(rep)=newCof(rep-1)+lowerCofRail

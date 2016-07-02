@@ -254,7 +254,9 @@ subroutine paraTemp ( p, id)
                 if ((mc%IND.ge.mc%indStartRepAdapt).and. &
                     (mc%IND.lt.mc%indEndRepAdapt)) then ! insert input defined location here
                     call adaptCof(downSuccess,nPTReplicas,cof,N_average,&
-                                   mc%lowerRepExe,mc%upperRepExe,mc%lowerCofRail,mc%upperCofRail)
+                                   mc%lowerRepExe,mc%upperRepExe,& 
+                                   mc%lowerCofRail,mc%upperCofRail,&
+                                   mc%RepAnnealSpeed)
                 endif
                 N_average=0
                 do rep=1,nPTReplicas
@@ -539,14 +541,25 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     endif
 
     write(1,*) "~~~~~~~~~~~exchange: ",nExchange,", IND:",IND,"~~~~~~~~~~~~~~~~~~~~"
-    write(1,*) " rep |  cof  |   x    |  up  | down |node"
+    write(1,*) " rep |  cof  |   x    |  up  | down |node| dxdcof|"
     do rep=1,nPTReplicas
-        write(1,"(I6,f8.3,f9.1,2f7.3,I4)"), rep, cof(rep), x(rep), & 
+        write(1,"(I6,f8.3,f9.1,2f7.3,I5,f8.2)"), rep, cof(rep), x(rep), & 
                  real(upSuccess(rep))/real(N_average), &
-                 real(downSuccess(rep))/real(N_average), nodeNumber(rep)
+                 real(downSuccess(rep))/real(N_average), nodeNumber(rep),&
+                 real(downSuccess(rep))*x(rep)/real(N_average)
     enddo  
-
     Close(1)
+
+    fullName=  'data/cofData'
+    inquire(file = fullName, exist=isfile)
+    if (isfile) then
+        OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
+    else 
+        OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
+    endif
+    write(1,*), IND, cof, nodeNumber
+    Close(1)
+
 end subroutine
 Subroutine PT_message(iostr) 
     use mpi

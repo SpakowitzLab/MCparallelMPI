@@ -118,6 +118,7 @@ Module simMod
     double precision upperCofRail ! maximum acceptable Cof
     integer indStartRepAdapt
     integer indEndRepAdapt
+    double precision repAnnealSpeed  ! for annealing
 
   end Type
 
@@ -208,6 +209,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%N_KAP_ON=0
     mc%N_CHI_ON=0
     mc%recenter_on=.TRUE.
+    mc%repAnnealSpeed=0.01
 
     call MCvar_defaultAmp(mc) 
 
@@ -376,6 +378,8 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READI(mc%indStartRepAdapt) ! ind to start rep. cof. adaptiation on
        CASE('IND_END_REP_ADAPT')
            Call READI(mc%indEndRepAdapt) ! turn off rep adapt
+       CASE('REP_ANNEAL_SPEED')
+           Call READF(mc%repAnnealSpeed)  ! max change in cof. every adjust
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
