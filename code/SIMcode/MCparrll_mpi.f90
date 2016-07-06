@@ -516,6 +516,7 @@ Subroutine replicaExchange(mc)
 end Subroutine
 Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
                            cof,x,nodeNumber,N_average,nExchange,IND)
+    use setPrecision
 ! Print Energy data
     IMPLICIT NONE
     LOGICAL isfile

@@ -166,11 +166,9 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     ISTEP=1
     DO WHILE (ISTEP.LE.NSTEP)
         
-       DO MCTYPE=1,9
+       DO MCTYPE=1,mc%moveTypes
 
           if (mc%MOVEON(MCTYPE).EQ.0) cycle
-
-          if ((mc%IND.gt.20).and.(MCTYPE.ne.9)) cycle
 
           ! Turn down poor moves
           if ((mc%PHit(MCTYPE).lt.0.01_dp).and. &
@@ -189,7 +187,8 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               (MCTYPE.NE.6) .and. &
               (MCTYPE.NE.7) .and. &
               (MCTYPE.NE.8) .and. &
-              (MCTYPE.NE.9) )then
+              (MCTYPE.NE.9) .and. &
+              (MCTYPE.NE.10) )then
               call MC_eelas(mc%DEELAS,md%R,md%U,md%RP,md%UP,&
                             mc%NT,mc%NB,IP,IB1,IB2, & 
                             IT1,IT2,EB,EPAR,EPERP,GAM,ETA)
@@ -226,7 +225,8 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                      print*, "DEKap", mc%DEKap
                      stop 1
                  endif
-                 !print*, mc%DECHi
+             elseif (MCTYPE.EQ.10) then
+                 call MC_int_rep(mc,md,IT1,IT2)
              else
                  call MC_int(mc,md,IT1,IT2,initialize)
              endif
@@ -249,7 +249,13 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               mc%ECon=0.0_dp;
           endif
 
-
+         ! if (MCTYPE.EQ.10) then
+         !     print*,"mc%DEELAS",mc%DEELAS
+         !     print*,"mc%DEKap",mc%DEKap 
+         !     print*,"mc%DEChi",mc%DEChi
+         !     print*,"mc%ECon",mc%ECon
+         !     call sleep(1)
+         ! endif
 !   Change the position if appropriate
           ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3) & 
                  +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon

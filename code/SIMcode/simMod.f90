@@ -11,7 +11,7 @@
 Module simMod
     use setPrecision
     IMPLICIT NONE
-    INTEGER, Parameter :: NmoveTypes = 9 ! ******* YOU MAY NEED TO CHAGE THIS ***
+    INTEGER, Parameter :: NmoveTypes = 10 ! ******* YOU MAY NEED TO CHAGE THIS ***
 
   Type MCvar   ! Structure for simulation variables of known size
 !     Simulation parameters
@@ -184,7 +184,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%LAM_METH=0.9_dp
     mc%Fpoly=0.025_dp
     mc%FRMMETH=.FALSE.
-    mc%moveTypes=9
+    mc%moveTypes=10
     mc%setType = 4 ! 4 for shereical
     mc%confineType = 3 ! 3 for sherical
     mc%simType=1
@@ -341,9 +341,11 @@ Subroutine MCvar_setParams(mc,fileName)
        CASE('BIND_MOVE_ON')
            Call READI(mc%MOVEON(7)) ! is bind/unbind move on 1/0
        CASE('CHAIN_FLIP_MOVE_ON')
-           Call READI(mc%MOVEON(8)) ! is bind/unbind move on 1/0
+           Call READI(mc%MOVEON(8)) ! is flip move move on 1/0
        CASE('CHAIN_SWAP_MOVE_ON')
-           Call READI(mc%MOVEON(9)) ! is bind/unbind move on 1/0
+           Call READI(mc%MOVEON(9)) ! is chain swap move on 1/0
+       CASE('REPTATION_MOVE_ON')
+           Call READI(mc%MOVEON(10)) ! is reptation move on 1/0
        CASE('WINTYPE')
            Call READI(mc%winType)  ! 0 for uniform, 1 for exponential
        CASE('MIN_CRANK_SHAFT_WIN') 
@@ -603,6 +605,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MCAMP(7)=NAND
     mc%MCAMP(8)=NAND
     mc%MCAMP(9)=NAND
+    mc%MCAMP(10)=NAND
     !switches to turn on various types of moves
     mc%MOVEON(1)=1  ! crank-shaft move
     mc%MOVEON(2)=1  ! slide move
@@ -611,8 +614,9 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MOVEON(5)=0  ! full chain rotation
     mc%MOVEON(6)=0  ! full chain slide
     mc%MOVEON(7)=1  ! Change in Binding state
-    mc%MOVEON(8)=0  ! Change in Binding state
-    mc%MOVEON(9)=0  ! Change in Binding state
+    mc%MOVEON(8)=0  ! Chain flip
+    mc%MOVEON(9)=0  ! Chain exchange
+    mc%MOVEON(10)=0 ! Reptation 
     
     !     Initial segment window for MC moves
     mc%WINDOW(1)=15.0_dp ! used to be N*G
@@ -624,6 +628,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%WINDOW(7)=15.0_dp ! used to be N*G
     mc%WINDOW(8)=dble(mc%N*mc%G)
     mc%WINDOW(9)=dble(mc%N*mc%G)
+    mc%WINDOW(9)=1.0_dp
 
     !    Maximum window size (large windows are expensive)
     mc%MAXWINDOW(1)=dble(min(150,mc%NB))
@@ -635,6 +640,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MAXWINDOW(7)=dble(min(4,mc%NB))
     mc%MAXWINDOW(8)=NAND
     mc%MAXWINDOW(9)=NAND
+    mc%MAXWINDOW(9)=NAND ! need to chaige code to allow >1
 
     mc%MINWINDOW(1)=dble(min(4,mc%NB))
     mc%MINWINDOW(2)=dble(min(4,mc%NB))
@@ -645,6 +651,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MINWINDOW(7)=dble(min(4,mc%NB))
     mc%MINWINDOW(8)=NAND
     mc%MINWINDOW(9)=NAND
+    mc%MINWINDOW(10)=NAND
     Do MCTYPE=1,mc%moveTypes
         mc%winTarget(MCTYPE)=8.0_dp
     enddo
@@ -658,6 +665,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MINAMP(7)=NAND
     mc%MINAMP(8)=NAND
     mc%MINAMP(9)=NAND
+    mc%MINAMP(10)=NAND
 
     mc%MAXAMP(1)=1.0_dp*PI
     mc%MAXAMP(2)=1.0_dp*mc%L0
@@ -667,6 +675,7 @@ Subroutine MCvar_defaultAmp(mc)
     mc%MAXAMP(6)=0.1*mc%LBOX(1)
     mc%MAXAMP(7)=NAND
     mc%MAXAMP(8)=NAND
+    mc%MAXAMP(9)=NAND
     mc%MAXAMP(9)=NAND
      
     DO MCTYPE=1,mc%moveTypes
@@ -899,17 +908,23 @@ Subroutine MCvar_appendAdaptData(mc,fileName)
         OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
+        WRITE(1,*), " WIN 1 | AMP 1 | SUC 1 | WIN 2 | AMP 2 | SUC 2 |",&
+                    " WIN 3 | AMP 3 | SUC 3 | ON  4 | AMP 4 | SUC 4 |",&
+                    " ON  5 | AMP 5 | SUC 5 | ON  6 | AMP 6 | SUC 6 |",&
+                    " ON  7 | SUC 7 | ON  8 | SUC 8 |", &
+                    " ON  9 | SUC 9 | ON 10 | SUC 10|"
     endif
-    WRITE(1,"(I4,27f8.2)") mc%IND,& 
+    WRITE(1,"(I4,26f8.3)") mc%IND,& 
           REAL(mc%WINDOW(1)),mc%MCAMP(1),mc%PHIT(1), &
           REAL(mc%WINDOW(2)),mc%MCAMP(2),mc%PHIT(2), &
           REAL(mc%WINDOW(3)),mc%MCAMP(3),mc%PHIT(3), &
           REAL(mc%MOVEON(4)),mc%MCAMP(4),mc%PHIT(4), &
           REAL(mc%MOVEON(5)),mc%MCAMP(5),mc%PHIT(5), &
           REAL(mc%MOVEON(6)),mc%MCAMP(6),mc%PHIT(6), &
-          REAL(mc%MOVEON(7)),mc%MCAMP(7),mc%PHIT(7), &
-          REAL(mc%MOVEON(8)),mc%MCAMP(8),mc%PHIT(8), &
-          REAL(mc%MOVEON(9)),mc%MCAMP(9),mc%PHIT(9)
+          REAL(mc%MOVEON(7)),mc%PHIT(7), &
+          REAL(mc%MOVEON(8)),mc%PHIT(8), &
+          REAL(mc%MOVEON(9)),mc%PHIT(9), &
+          REAL(mc%MOVEON(10)),mc%PHIT(10)
     Close(1)
 end subroutine
 Subroutine MCvar_writeBinary(mc,md,baceName)
