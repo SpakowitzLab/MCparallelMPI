@@ -656,7 +656,7 @@ elseif(MCTYPE.EQ.10) then
            UP(I,3)=U(I+1,3)
         enddo
 
-        call test_equiv_forward(U,R,UP,RP,NT,IT1,IT2,RparaMag,RperpMag)
+        !call test_equiv_forward(U,R,UP,RP,NT,IT1,IT2,RparaMag,RperpMag)
 
     else
         dR(1)=R(IT2,1)-R(IT2-1,1)
