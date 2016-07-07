@@ -101,6 +101,8 @@ Module simMod
     logical FRMCHEM           ! Initial chemical sequence
     logical FRMMETH           ! Read methalation from file
     logical FRMFILE           ! Read Initial condition R
+    logical saveU             ! save U vectors to file
+    logical savePhi           ! save Phi vectors to file
     integer simType           ! Melt vs. Solution, Choose hamiltonian
     logical recenter_on       ! recenter in periodic boundary
     integer winType           ! how to choose random section of polymer to move
@@ -161,6 +163,8 @@ Subroutine MCvar_setParams(mc,fileName)
 
     mc%PTON=.TRUE.
     mc%FRMFILE=.FALSE.
+    mc%saveU=.FALSE.
+    mc%savePhi=.FALSE.
     mc%NP  =1
     mc%N   =2000
     mc%G   =1
@@ -268,6 +272,10 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READO(mc%FRMMETH) ! Read methalation from file
        CASE('PTON')
            CALL READO(mc%PTON) ! Parallel Tempering on
+       CASE('SAVE_U')
+           Call READO(mc%saveU)  ! save u vectors to file (every savepoint)
+       CASE('SAVE_PHI')
+           Call READO(mc%savePhi) ! save Phi vectors to file (every savepoint)
        CASE('L0')
            Call READF(mc%L0)  ! Equilibrium segment length
        CASE('DEL')
