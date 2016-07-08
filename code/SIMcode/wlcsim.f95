@@ -163,6 +163,12 @@ Subroutine wlcsim(rand_stat)
     iostr='data/r' // trim(adjustL(iostr))
     call MCvar_saveR(mc,md,iostr,0)
     
+    !part 4 - U
+    write(iostr,"(I6)"), mc%IND
+    iostr='data/u' // trim(adjustL(iostr))
+    call MCvar_saveU(mc,md,iostr)
+
+
     PRINT*, '________________________________________'
     PRINT*, 'Time point ',mc%IND, ' out of', mc%INDMAX
     call MCvar_printEnergies(mc)
