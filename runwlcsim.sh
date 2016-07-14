@@ -5,7 +5,11 @@ echo "Compile"
 
 cd code
 # compile with mpi's fortran compiler
-mpifort -fbounds-check -O3 mersenne_twister.o SIMcode/* DATAcode/* MCcode/* -o MCparrll_out 
+
+mpifort -c DATAcode/* mersenne_twister.f90
+mpifort -c -fbounds-check -Wall -fmax-errors=5 -O3 SIMcode/*  MCcode/* 
+mpifort *.o -o MCparrll_out 
+rm *.o
 cd ..
 mv code/MCparrll_out .
 mv data/* trash/

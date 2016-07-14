@@ -18,15 +18,14 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
     DOUBLE PRECISION, PARAMETER :: PI=3.141592654 ! Value of pi
 
-    INTEGER NSTEP             ! Number of MC steps
-    INTEGER INTON             ! Include polymer interactions
+    INTEGER, intent(in) :: NSTEP             ! Number of MC steps
+    INTEGER, intent(in) :: INTON             ! Include polymer interactions
     
 !   Variables for the simulation
     
     INTEGER ISTEP             ! Current MC step index
     DOUBLE PRECISION PROB     ! Calculated test prob
     DOUBLE PRECISION TEST     ! Random test variable
-    INTEGER IB                ! Test bead 
     INTEGER IP                ! Test polymer 
     INTEGER IB1               ! Test bead position 1
     INTEGER IT1               ! Index of test bead 1
@@ -34,28 +33,25 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     INTEGER IT2               ! Index of test bead 2
     INTEGER IT3, IT4          ! second polymer for polymer swap
 
-    INTEGER I,J,K
-    DOUBLE PRECISION R0(3)
-     
+    INTEGER I,J
     
     INTEGER MCTYPE                    ! Type of MC move
-    logical initialize
     
     DOUBLE PRECISION EB,EPAR,EPERP
     DOUBLE PRECISION GAM,ETA
     DOUBLE PRECISION XIR,XIU
     DOUBLE PRECISION LHC      ! Length of HC int
     DOUBLE PRECISION VHC      ! HC strength
-    DOUBLE PRECISION phiTot, phiTot2 ! for testing
+    DOUBLE PRECISION phiTot  ! for testing
 
     DOUBLE PRECISION ENERGY
 
 ! Things for random number generator
     real urnd(1) ! single random number
-    type(random_stat) rand_stat
+    type(random_stat), intent(inout) :: rand_stat
 !   Load the input parameters
-    Type(MCvar) mc      ! system varibles 
-    Type(MCData) md     ! system allocated data
+    Type(MCvar), intent(inout) :: mc      ! system varibles 
+    Type(MCData), intent(inout) :: md     ! system allocated data
 
 
     EB=   mc%PARA(1)
@@ -77,14 +73,21 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     md%ABP=0 ! set entire array to zero
     !  Notide that ABP and AB are intensionally swapped below
     IT1=1; IT2=mc%NT
+   ! print*, "Before MC_bind ~~*$"
+   ! print*, "NT", mc%NT, " G", mc%G, " IT1",IT1," IT2", IT2," ABP", md%ABP
+   ! print*, "AB", md%AB, " METH", md%METH, " EU", mc%EU, " EM",mc%DEBind
+   ! print*, "mu", mc%mu, " dx_mu", mc%dx_mu
+   ! print*, "after prints"
     call MC_bind(mc%NT,mc%G,IT1,IT2,md%ABP,md%AB,md%METH, &
-                 mc%EU,mc%EM,mc%DEBind,mc%mu)
-    if(abs(mc%EBind-mc%DEBind).gt.0.0001) then
+                 mc%EU,mc%EM,mc%DEBind,mc%mu,mc%dx_mu)
+    if(abs(mc%EBind-mc%DEBind).gt.0.00001) then
         print*, "Warning. Integrated binding enrgy:", &
                 mc%EBind," while absolute binding energy:", &
                 mc%DEBind
     endif
     mc%EBind=mc%DEBind
+    mc%x_mu=mc%dx_mu
+
 
     ! --- Elastic Energy ---
     call energy_elas(mc%DEELAS,md%R,md%U,mc%NT,mc%NB,mc%NP,mc%Para)
@@ -102,12 +105,11 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
         ! initialize phi
         IT1=1
         IT2=mc%NT ! need to set up all beads
-        initialize=.TRUE.
         do I=1,mc%NBIN
              md%PHIA(I)=0.0_dp
              md%PHIB(I)=0.0_dp
         enddo
-        call MC_int(mc,md,IT1,IT2,initialize)
+        call MC_int(mc,md,IT1,IT2,.True.)
         do I=1,mc%NBIN
             phiTot=phiTot+(md%PHIA(I)+md%PHIB(I))*md%Vol(I)
         enddo
@@ -119,18 +121,30 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                      mc%DEChi
         endif
         mc%EChi=mc%DEChi
+        mc%x_chi=mc%dx_chi
         if(abs(mc%ECouple-mc%DECouple).gt. 0.0001_dp) then
              print*, "Warning. Intigrated couple energy:", & 
                      mc%ECouple,"  while absolute couple energy:", &
                      mc%DECouple
         endif
         mc%ECouple=mc%DECouple
+        mc%x_Couple=mc%dx_couple
         if(abs(mc%EKap-mc%DEKap).gt. 0.0001_dp) then
              print*, "Warning. Intigrated Kap energy:", & 
                      mc%EKap,"  while absolute Kap energy:", &
                      mc%DEKap
         endif
         mc%EKap=mc%DEKap
+        mc%x_Kap=mc%dx_Kap
+
+        if(abs(mc%EField-mc%DEField).gt.0.00001) then
+            print*, "Warning. Integrated field enrgy:", &
+                    mc%EField," while absolute field energy:", &
+                    mc%DEField
+        endif
+        mc%EField=mc%DEField
+        mc%x_Field=mc%dx_Field
+
         ! check for NaN
         do I=1,mc%NBIN
             if (md%Vol(I).eq.0.0) Cycle
@@ -190,7 +204,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               (MCTYPE.NE.9) .and. &
               (MCTYPE.NE.10) )then
               call MC_eelas(mc%DEELAS,md%R,md%U,md%RP,md%UP,&
-                            mc%NT,mc%NB,IP,IB1,IB2, & 
+                            mc%NT,mc%NB,IB1,IB2, & 
                             IT1,IT2,EB,EPAR,EPERP,GAM,ETA)
           else
               mc%DEELAS(1)=0.0
@@ -205,7 +219,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           if (MCTYPE.EQ.7) then
               !print*, 'MCsim says EM:',EM,'EU',EU
               call MC_bind(mc%NT,mc%G,IT1,IT2,md%AB,md%ABP,md%METH,mc%EU,mc%EM, &
-                           mc%DEBind,mc%mu)
+                           mc%DEBind,mc%mu,mc%dx_mu)
           else
               mc%DEBind=0.0
           endif
@@ -213,13 +227,12 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 !   Calculate the change in the self-interaction energy (actually all
 !   interation energy, not just self?)
           if (INTON.EQ.1) then
-             initialize=.FALSE.
              if (MCTYPE.EQ.9) then
                  !skip if doesn't do anything
                  if (mc%CHI_ON.eq.0.0_dp) then
                     CYCLE
                  endif
-                 call MC_int2(mc,md,IT1,IT2,IT3,IT4,initialize)
+                 call MC_int_swap(mc,md,IT1,IT2,IT3,IT4)
                  if (abs(mc%DEKap).gt.0.0001) then
                      print*, "Error in MCsim.  Kappa energy shouldn't change on move 9"
                      print*, "DEKap", mc%DEKap
@@ -228,12 +241,13 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
              elseif (MCTYPE.EQ.10) then
                  call MC_int_rep(mc,md,IT1,IT2)
              else
-                 call MC_int(mc,md,IT1,IT2,initialize)
+                 call MC_int(mc,md,IT1,IT2,.false.)
              endif
           else
               mc%DEKap=0.0_dp
               mc%DECouple=0.0_dp
               mc%DEChi=0.0_dp
+              mc%DEField=0.0_dp
           endif
           if ((MCTYPE.eq.8).and.(mc%DEKap.gt.0.00001)) then
               print*, "Error in MCsim. Kappa energy shouldn't change on move 8"
@@ -258,7 +272,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
          ! endif
 !   Change the position if appropriate
           ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3) & 
-                 +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon
+                 +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon+mc%DEField
           PROB=exp(-ENERGY)
           call random_number(urnd,rand_stat)
           TEST=urnd(1)
@@ -294,6 +308,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                  stop 1
              endif
              mc%EBind=mc%EBind+mc%DEBind
+             mc%x_mu=mc%x_mu+mc%dx_mu
              mc%EELAS(1)=mc%EELAS(1)+mc%DEELAS(1)
              mc%EELAS(2)=mc%EELAS(2)+mc%DEELAS(2)
              mc%EELAS(3)=mc%EELAS(3)+mc%DEELAS(3)
@@ -310,6 +325,12 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                 mc%ECouple=mc%ECouple+mc%DECouple
                 mc%EKap=mc%EKap+mc%DEKap
                 mc%EChi=mc%EChi+mc%DEChi
+                mc%EField=mc%EField+mc%DEField
+                mc%x_Couple=mc%x_couple+mc%dx_couple
+                mc%x_kap=mc%x_Kap+mc%dx_kap
+                mc%x_chi=mc%x_chi+mc%dx_chi
+                mc%x_field=mc%x_field+mc%dx_field
+
              endif
              mc%SUCCESS(MCTYPE)=mc%SUCCESS(MCTYPE)+1
           endif
@@ -317,7 +338,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
           !amplitude and window adaptations
           if (mod(ISTEP,mc%NADAPT(MCTYPE)).EQ.0) then  ! Addapt ever NADAPT moves
-             call MCvar_adapt(mc,MCTYPE,ISTEP)
+             call MCvar_adapt(mc,MCTYPE)
            
              ! move each chain back if drifted though repeated BC 
              if (mc%recenter_on) then

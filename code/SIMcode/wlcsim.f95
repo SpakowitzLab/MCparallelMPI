@@ -23,7 +23,7 @@ Subroutine wlcsim(rand_stat)
   DOUBLE PRECISION, PARAMETER :: PI=3.141592654_dp ! Value of pi
 
   !Inputs
-  type(random_stat) rand_stat ! state of random number generator
+  type(random_stat), intent(inout) :: rand_stat ! state of random number generator
 
   ! miscellaneous
   INTEGER I            
@@ -79,13 +79,22 @@ Subroutine wlcsim(rand_stat)
     
 !     Load methalation sequence
     IF (mc%FRMMETH) THEN
-        OPEN (UNIT = 2, FILE = 'input/meth', STATUS = 'OLD')
         ! more to come here ...
-        CLOSE(2)
+        print*, "wlcsim: FRMMETH not fininshed"
+        stop 1
     ELSE
         print*, "setting initial chemical condition..."
         call initchem(md%METH,mc%NT,mc%N,mc%G,mc%NP,mc%F_METH,mc%LAM_METH,rand_stat)        
     ENDIF
+
+!   Load External field
+    if (mc%FRMField) then
+        iostr='input/h_A'
+        print *, "loading h_A"
+        Call MCvar_LoadField(mc,md,iostr)
+    else
+        Call MCvar_MakeField(mc,md)
+    endif
 
 !      Get assignement from other threads
     if ( mc%PTON) then
@@ -111,7 +120,7 @@ Subroutine wlcsim(rand_stat)
  else
 
     PRINT*, '-----load simulation-----'
-    iostr='putBinaryFileNameHere'
+    iostr='BinaryFileName'
     stop 1
     call MCvar_readBindary(mc,md,iostr)
 
@@ -153,20 +162,21 @@ Subroutine wlcsim(rand_stat)
     iostr='data/out3'
     call MCvar_appendAdaptData(mc,iostr)
 
-    !print Phi
-    write(iostr,"(I6)"), mc%IND
-    iostr='data/phi' // trim(adjustL(iostr))
-    call MCVar_savePHI(mc,md,iostr)    
+    if (mc%savePhi) then
+        write(iostr,"(I6)"), mc%IND
+        iostr='data/phi' // trim(adjustL(iostr))
+        call MCVar_savePHI(mc,md,iostr)    
+    endif
 
-    !part 3 - R
     write(iostr,"(I6)"), mc%IND
     iostr='data/r' // trim(adjustL(iostr))
     call MCvar_saveR(mc,md,iostr,0)
-    
-    !part 4 - U
-    write(iostr,"(I6)"), mc%IND
-    iostr='data/u' // trim(adjustL(iostr))
-    call MCvar_saveU(mc,md,iostr)
+   
+    if (mc%saveU) then
+        write(iostr,"(I6)"), mc%IND
+        iostr='data/u' // trim(adjustL(iostr))
+        call MCvar_saveU(mc,md,iostr)
+    endif
 
 
     PRINT*, '________________________________________'

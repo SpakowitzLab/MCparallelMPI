@@ -3,36 +3,36 @@
 ! Calculate the change in the bending energy for a displacement.
      
 SUBROUTINE MC_eelas(DEELAS,R,U,RP,UP,&
-                    NT,NB,IP,IB1,IB2,&
+                    NT,NB,IB1,IB2,&
                     IT1,IT2,EB,EPAR,EPERP,GAM,ETA)
 
 use setPrecision
 IMPLICIT NONE
-DOUBLE PRECISION R(NT,3)  ! Bead positions
-DOUBLE PRECISION U(NT,3)  ! Tangent vectors
-DOUBLE PRECISION RP(NT,3)  ! Bead positions
-DOUBLE PRECISION UP(NT,3)  ! Tangent vectors
-INTEGER NB                ! Number of beads in a polymer
-INTEGER NT                ! Total number of beads
+DOUBLE PRECISION, intent(in) :: R(NT,3)  ! Bead positions
+DOUBLE PRECISION, intent(in) :: U(NT,3)  ! Tangent vectors
+DOUBLE PRECISION, intent(in) :: RP(NT,3)  ! Bead positions
+DOUBLE PRECISION, intent(in) :: UP(NT,3)  ! Tangent vectors
+INTEGER, intent(in) :: NB                ! Number of beads in a polymer
+INTEGER, intent(in) :: NT                ! Total number of beads
+INTEGER, intent(in) :: IB1               ! Test bead position 1
+INTEGER, intent(in) :: IT1               ! Index of test bead 1
+INTEGER, intent(in) :: IB2               ! Test bead position 2
+INTEGER, intent(in) :: IT2               ! Index of test bead 2
 
-INTEGER IP  ! not in use  ! Test polymer 
-INTEGER IB1               ! Test bead position 1
-INTEGER IT1               ! Index of test bead 1
-INTEGER IB2               ! Test bead position 2
-INTEGER IT2               ! Index of test bead 2
-
-DOUBLE PRECISION DEELAS(3)   ! Change in ECOM      
+DOUBLE PRECISION, intent(out) :: DEELAS(3)   ! Change in ECOM      
 
 !     Polymer properties
 
-DOUBLE PRECISION EB,EPAR,EPERP
-DOUBLE PRECISION GAM,ETA
+double precision, intent(in) :: EB
+double precision, intent(in) :: EPAR
+double precision, intent(in) :: EPERP
+double precision, intent(in) :: GAM
+double precision, intent(in) :: ETA
 
 !     Variables for force and torque calculations
 
-DOUBLE PRECISION DR(3),DRPAR,DRPERP(3),DRPERPM(3)
-DOUBLE PRECISION FI(3),TI(3)
-DOUBLE PRECISION U1U2,GI(3),DOTGU,HI(3)
+DOUBLE PRECISION DR(3),DRPAR,DRPERP(3)
+DOUBLE PRECISION GI(3)
 
 ! Setup parameters
 
@@ -52,7 +52,7 @@ if (IB1.NE.1) then
    DRPERP(1)=DR(1)-DRPAR*U(IT1-1,1)
    DRPERP(2)=DR(2)-DRPAR*U(IT1-1,2)
    DRPERP(3)=DR(3)-DRPAR*U(IT1-1,3)
-   U1U2=U(IT1-1,1)*U(IT1,1)+U(IT1-1,2)*U(IT1,2)+U(IT1-1,3)*U(IT1,3)
+   !U1U2=U(IT1-1,1)*U(IT1,1)+U(IT1-1,2)*U(IT1,2)+U(IT1-1,3)*U(IT1,3)
 
    GI(1)=(U(IT1,1)-U(IT1-1,1)-ETA*DRPERP(1))
    GI(2)=(U(IT1,2)-U(IT1-1,2)-ETA*DRPERP(2))
@@ -70,7 +70,7 @@ if (IB1.NE.1) then
    DRPERP(1)=DR(1)-DRPAR*U(IT1-1,1)
    DRPERP(2)=DR(2)-DRPAR*U(IT1-1,2)
    DRPERP(3)=DR(3)-DRPAR*U(IT1-1,3)
-   U1U2=U(IT1-1,1)*UP(IT1,1)+U(IT1-1,2)*UP(IT1,2)+U(IT1-1,3)*UP(IT1,3)
+   !U1U2=U(IT1-1,1)*UP(IT1,1)+U(IT1-1,2)*UP(IT1,2)+U(IT1-1,3)*UP(IT1,3)
 
    GI(1)=(UP(IT1,1)-U(IT1-1,1)-ETA*DRPERP(1))
    GI(2)=(UP(IT1,2)-U(IT1-1,2)-ETA*DRPERP(2))
@@ -92,7 +92,7 @@ if (IB2.NE.NB) then
    DRPERP(1)=DR(1)-DRPAR*U(IT2,1)
    DRPERP(2)=DR(2)-DRPAR*U(IT2,2)
    DRPERP(3)=DR(3)-DRPAR*U(IT2,3)
-   U1U2=U(IT2,1)*U(IT2+1,1)+U(IT2,2)*U(IT2+1,2)+U(IT2,3)*U(IT2+1,3)
+   !U1U2=U(IT2,1)*U(IT2+1,1)+U(IT2,2)*U(IT2+1,2)+U(IT2,3)*U(IT2+1,3)
 
    GI(1)=(U(IT2+1,1)-U(IT2,1)-ETA*DRPERP(1))
    GI(2)=(U(IT2+1,2)-U(IT2,2)-ETA*DRPERP(2))
@@ -110,7 +110,7 @@ if (IB2.NE.NB) then
    DRPERP(1)=DR(1)-DRPAR*UP(IT2,1)
    DRPERP(2)=DR(2)-DRPAR*UP(IT2,2)
    DRPERP(3)=DR(3)-DRPAR*UP(IT2,3)
-   U1U2=UP(IT2,1)*U(IT2+1,1)+UP(IT2,2)*U(IT2+1,2)+UP(IT2,3)*U(IT2+1,3)
+   !U1U2=UP(IT2,1)*U(IT2+1,1)+UP(IT2,2)*U(IT2+1,2)+UP(IT2,3)*U(IT2+1,3)
 
    GI(1)=(U(IT2+1,1)-UP(IT2,1)-ETA*DRPERP(1))
    GI(2)=(U(IT2+1,2)-UP(IT2,2)-ETA*DRPERP(2))

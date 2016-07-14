@@ -11,33 +11,23 @@
       SUBROUTINE energy_elas(EELAS,R,U,NT,NB,NP,PARA)
       use setPrecision
       IMPLICIT NONE 
-      DOUBLE PRECISION EELAS(3) ! Elastic force
-      DOUBLE PRECISION R(NT,3)  ! Bead positions
-      DOUBLE PRECISION U(NT,3)  ! Tangent vectors
-      DOUBLE PRECISION B(NT)  ! Tangent vectors
-      DOUBLE PRECISION UR(NT,3)  ! Tangent vectors
-      DOUBLE PRECISION KAP,EPS  ! Elastic props
-      DOUBLE PRECISION L0       ! Bead separation
-      DOUBLE PRECISION FCOM(3)  ! Compress force
-      DOUBLE PRECISION FBEND(3) ! Bend force
+      INTEGER, intent(in) :: NB           ! Number of beads in a polymer
+      INTEGER, intent(in) :: NT           ! Number of beads total
+      INTEGER, intent(in) :: NP           ! Number of polymers
+      DOUBLE PRECISION, intent(in) :: R(NT,3)  ! Bead positions
+      DOUBLE PRECISION, intent(in) :: U(NT,3)  ! Tangent vectors
+      DOUBLE PRECISION, intent(out):: EELAS(3) ! Elastic force
       INTEGER I,J,IB            ! Index holders
-      INTEGER NB           ! Number of beads in a polymer
-      INTEGER NT           ! Number of beads total
-      INTEGER NP           ! Number of polymers
 
 !     Polymer properties
 
-      DOUBLE PRECISION PARA(10)      
+      DOUBLE PRECISION, intent(in) :: PARA(10)      
       DOUBLE PRECISION EB,EPAR,EPERP
       DOUBLE PRECISION GAM,ETA
-      
-!     Variables for force and torque calculations
-      
-      DOUBLE PRECISION DR(3),DRPAR,DRPERP(3)
-      DOUBLE PRECISION FI(3),TI(3)
-      DOUBLE PRECISION U1U2,GI(3),DOTGU,HI(3)
 
-!     Calculate the forces and torques
+      DOUBLE PRECISION DR(3),DRPAR,DRPERP(3)
+      DOUBLE PRECISION GI(3)
+
 
       EB=PARA(1)
       EPAR=PARA(2)
@@ -71,7 +61,7 @@
             EELAS(3)=EELAS(3)+0.5_dp*EPERP*(DRPERP(1)**2 & 
                      +DRPERP(2)**2+DRPERP(3)**2)
 
-            IB=IB+1	 
+            IB=IB+1 
  40      CONTINUE
          IB=IB+1
  30   CONTINUE

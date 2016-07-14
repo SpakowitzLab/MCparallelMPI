@@ -29,6 +29,8 @@ Module simMod
     DOUBLE PRECISION EPS      ! Elasticity l0/(2lp)
     DOUBLE PRECISION CHI      ! Chi parameter value (solvent-polymer)        
     DOUBLE PRECISION KAP      ! Incompressibility parameter
+    DOUBLE PRECISION h_A      ! fild strength
+    Double Precision k_field  ! wave vector of template field
     DOUBLE PRECISION Fpoly    ! Fraction Polymer
     DOUBLE PRECISION EU       ! Energy of binding for unmethalated
     DOUBLE PRECISION EM       ! Energy of binding for methalated
@@ -64,6 +66,15 @@ Module simMod
     DOUBLE PRECISION EKAP     ! KAP energy
     DOUBLE PRECISION ECouple  ! Coupling 
     DOUBLE PRECISION EBind    ! binding energy
+    DOUBLE PRECISION EField   ! Field energy
+
+!   Congigate Energy variables (needed to avoid NaN when cof-> 0 in rep exchange)
+    DOUBLE PRECISION x_Chi,   dx_Chi
+    DOUBLE PRECISION x_Couple,dx_Couple
+    DOUBLE PRECISION x_Kap,   dx_Kap
+    DOUBLE PRECISION x_Field, dx_Field
+    DOUBLE PRECISION x_Mu,    dx_Mu
+
 
 
 !   Move Variables 
@@ -73,16 +84,9 @@ Module simMod
     DOUBLE PRECISION DEChi    ! chi interaction energy
     DOUBLE PRECISION DEKap    ! compression energy
     DOUBLE PRECISION DEBind   ! Change in binding energy
+    Double Precision DEField  ! Change in field energy
     DOUBLE PRECISION ECon     ! Confinement Energy
     INTEGER NPHI  ! NUMBER o phi values that change
-
-!   Parallel Tempering variables
-    Character*16 repSufix    ! prefix for writing files
-    integer rep  ! which replica am I
-    integer (kind = 4) error  ! MPI error
-    double precision M ! M=\sum_i \sigma_i   like ising magnitization
-    logical PTON
-    ! see Timing variables for NPT
 
 !   Timing variables
     INTEGER NADAPT(NmoveTypes) ! Nunber of steps between adapt
@@ -101,6 +105,7 @@ Module simMod
     logical FRMCHEM           ! Initial chemical sequence
     logical FRMMETH           ! Read methalation from file
     logical FRMFILE           ! Read Initial condition R
+    logical FRMField          ! Read field from file
     logical saveU             ! save U vectors to file
     logical savePhi           ! save Phi vectors to file
     integer simType           ! Melt vs. Solution, Choose hamiltonian
@@ -112,6 +117,15 @@ Module simMod
     double precision CHI_ON
     double precision Couple_ON
 
+!   Parallel Tempering variables
+    Character*16 repSufix    ! prefix for writing files
+    integer rep  ! which replica am I
+    integer id   ! which thread am I
+    integer (kind = 4) error  ! MPI error
+    double precision M ! M=\sum_i \sigma_i   like ising magnitization
+    logical PTON
+    ! see Timing variables for NPT
+
 !   Replica Dynamic Cof choice 
     integer NRepAdapt ! number of exchange attemts between adapt
     double precision lowerRepExe ! when to decrese cof spacing
@@ -121,6 +135,7 @@ Module simMod
     integer indStartRepAdapt
     integer indEndRepAdapt
     double precision repAnnealSpeed  ! for annealing
+    logical replicaBounds
 
   end Type
 
@@ -132,13 +147,14 @@ Module simMod
     REAL(dp), ALLOCATABLE, DIMENSION(:,:):: UP !Test target vectors - only valid from IT1 to IT2
     REAL(dp), ALLOCATABLE, DIMENSION(:):: PHIA ! Volume fraction of A
     REAL(dp), ALLOCATABLE, DIMENSION(:):: PHIB ! Volume fraction of B
+    REAL(dp), ALLOCATABLE, DIMENSION(:):: PHIH ! Applied Field
     REAL(dp), ALLOCATABLE, DIMENSION(:):: Vol ! Volume fraction of A
     INTEGER, ALLOCATABLE, DIMENSION(:):: AB            ! Chemical identity of beads
     INTEGER, ALLOCATABLE, DIMENSION(:):: ABP           ! Test Chemical identity of beads
     INTEGER, ALLOCATABLE, DIMENSION(:):: METH          ! Methalation state of beads
     REAl(dp), Allocatable, Dimension(:):: DPHIA    ! Change in phi A
     REAl(dp), Allocatable, Dimension(:):: DPHIB    ! Change in phi A
-    INTEGER, Allocatable, Dimension(:) :: INDPHI           ! Indices of the phi
+    INTEGER, Allocatable, Dimension(:) :: INDPHI   ! Indices of the phi
   end TYPE
 contains
 Subroutine MCvar_setParams(mc,fileName)
@@ -161,13 +177,20 @@ Subroutine MCvar_setParams(mc,fileName)
     !
     ! ----------------------------------------------------------
 
-    mc%PTON=.TRUE.
+    ! file IO
     mc%FRMFILE=.FALSE.
+    mc%FRMMETH=.FALSE.
+    mc%FRMFIELD=.false.
+    mc%k_field=0.3145_dp
     mc%saveU=.FALSE.
     mc%savePhi=.FALSE.
+    mc%FRMCHEM=.FALSE.
+
+    ! chain and box options
     mc%NP  =1
     mc%N   =2000
     mc%G   =1
+    mc%NB=mc%G*mc%N    
     mc%LBOX(1)=25.0_dp
     mc%LBOX(2)=25.0_dp
     mc%LBOX(3)=25.0_dp
@@ -176,33 +199,43 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%V   =0.1_dp
     mc%FA  =0.5_dp
     mc%LAM =0.0_dp
-    mc%FRMCHEM=.FALSE.
+    mc%F_METH=0.5_dp
+    mc%LAM_METH=0.9_dp
+    mc%Fpoly=0.025_dp
+
+    ! energy parameters
     mc%EPS =0.3_dp
     mc%CHI =0.0_dp
+    mc%h_A =0.0_dp
     mc%KAP =100.0_dp
     mc%EU  =-1.52_dp
     mc%EM  =0.01_dp
     mc%mu  =0.0_dp
     mc%HP1_Bind=-28.0_dp
-    mc%F_METH=0.5_dp
-    mc%LAM_METH=0.9_dp
-    mc%Fpoly=0.025_dp
-    mc%FRMMETH=.FALSE.
+
+    ! options
     mc%moveTypes=10
     mc%setType = 4 ! 4 for shereical
     mc%confineType = 3 ! 3 for sherical
     mc%simType=1
-    mc%winType=1    
-    mc%NPT=100
+    mc%winType=1
+
+    ! timing options    
     mc%NStep=400000
     mc%NNoInt=100
     mc%INDMAX=180   
-    mc%NB=mc%G*mc%N    
     mc%reduce_move=10
     mc%UseSchedule=.False.
     mc%KAP_ON=1.0_dp
     mc%CHI_ON=1.0_dp
     mc%Couple_ON=1.0_dp
+    mc%N_KAP_ON=1
+    mc%N_CHI_ON=1
+    mc%recenter_on=.TRUE.
+
+    ! replica options
+    mc%PTON=.TRUE.
+    mc%NPT=100
     mc%NRepAdapt=1000  
     mc%lowerRepExe=0.04
     mc%upperRepExe=0.8
@@ -210,10 +243,8 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%upperCofRail=0.1
     mc%indStartRepAdapt=10
     mc%indEndRepAdapt=20
-    mc%N_KAP_ON=0
-    mc%N_CHI_ON=0
-    mc%recenter_on=.TRUE.
     mc%repAnnealSpeed=0.01
+    mc%replicaBounds=.TRUE.
 
     call MCvar_defaultAmp(mc) 
 
@@ -320,6 +351,8 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READF(mc%EPS) ! Elasticity l0/(2lp) 
        CASE('CHI')
            Call READF(mc%CHI) ! CHI parameter (definition depends on  hamiltoniaon
+       CASE('H_A')
+           Call READF(mc%h_A) ! strength of externally applied field
        CASE('KAP')
            Call READF(mc%KAP) !  Incompressibility parameter 
        CASE('EU')
@@ -390,6 +423,12 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READI(mc%indEndRepAdapt) ! turn off rep adapt
        CASE('REP_ANNEAL_SPEED')
            Call READF(mc%repAnnealSpeed)  ! max change in cof. every adjust
+       CASE('FRMFIELD')
+           Call READO(mc%FRMFIELD)  ! read field from file
+       CASE('K_FIELD')
+           Call READF(mc%k_field)  ! wave mode for default field
+       CASE('REPLICA_BOUNDS')
+           Call READO(mc%replicaBounds) ! insure that 0 < s < 1
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
@@ -475,6 +514,12 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%EBind=0.0_dp
     mc%EKap=0.0_dp
     mc%ECHI=0.0_dp
+    mc%EField=0.0_dp
+    mc%x_mu=0.0_dp
+    mc%x_Field=0.0_dp
+    mc%x_couple=0.0_dp
+    mc%x_Kap=0.0_dp
+    mc%x_Chi=0.0_dp
 
     !-----------------------------
     !
@@ -547,6 +592,7 @@ Subroutine MCvar_printDescription(mc)
     print*, " elasticity EPS =", mc%EPS
     print*, " solvent-polymer CHI =",mc%CHI
     print*, " compression cof, KAP =", mc%KAP
+    print*, " field strength, h_A =", mc%h_A
 
     print*, " -energy of binding unmethalated ", mc%EU," more positive for favorable binding"
     print*, " -energy of binding methalated",mc%EM
@@ -588,6 +634,7 @@ Subroutine MCvar_allocate(mc,md)
     ALLOCATE(md%DPHIB(NBIN))
     ALLOCATE(md%Vol(NBIN))
     Allocate(md%INDPHI(NBIN))
+    Allocate(md%PhiH(NBIN))
 
 end subroutine
 Subroutine MCvar_defaultAmp(mc)
@@ -595,7 +642,6 @@ Subroutine MCvar_defaultAmp(mc)
     DOUBLE PRECISION, Parameter :: PI=3.141592654_dp
     TYPE(MCvar) mc
     INTEGER MCTYPE ! Type of move
-    INTEGER NSTEP ! number of steps per save point
     INTEGER NANI ! NaN
     DOUBLE PRECISION NAND !NAND
     NANI=0;NANI=NANI/NANI
@@ -714,17 +760,18 @@ Subroutine MCvar_recenter(mc,md)
       endif
     enddo
 end Subroutine
-Subroutine MCvar_printEnergies(this)
+Subroutine MCvar_printEnergies(mc)
 ! For realtime feedback on MC simulation
     IMPLICIT NONE
-    TYPE(MCvar) this
-    print*, "ECouple:", this%ECouple
-    print*, "Bending energy", this%EELAS(1)
-    print*, "Par compression energy", this%EELAS(2)
-    print*, "Shear energy", this%EELAS(3)
-    print*, "ECHI", this%ECHI
-    print*, "EKAP", this%EKAP
-    print*, "EBind", this%EBind
+    TYPE(MCvar) mc
+    print*, "ECouple:", mc%ECouple
+    print*, "Bending energy", mc%EELAS(1)
+    print*, "Par compression energy", mc%EELAS(2)
+    print*, "Shear energy", mc%EELAS(3)
+    print*, "ECHI", mc%ECHI
+    print*, "EField", mc%EField
+    print*, "EKAP", mc%EKAP
+    print*, "EBind", mc%EBind
 end subroutine
 Subroutine MCvar_printPhi(mc,md)
 ! Prints densities for trouble shooting
@@ -765,6 +812,38 @@ Subroutine MCvar_printWindowStats(mc)
             write(*,"(f8.5,2f8.2,1I8)"), mc%phit(i), mc%MCAMP(i),  mc%WINDOW(i), i
         endif
     enddo
+    return
+end subroutine
+Subroutine MCvar_LoadField(mc,md,fileName)
+    IMPLICIT NONE
+    TYPE(MCvar) mc
+    TYPE(MCData) md
+    Integer I
+    character*16 fileName ! file name to load from
+    OPEN (UNIT = 1, FILE = fileName, STATUS = 'OLD')      
+    Do I=1,mc%NBIN
+        READ(1,*) md%PHIH(I)
+    enddo
+    return
+end subroutine
+subroutine MCvar_MakeField(mc,md)
+    IMPLICIT NONE
+    TYPE(MCvar) mc
+    TYPE(MCData) md
+    integer INDBIN  ! index of bin
+    integer IX,IY,IZ ! bin corrdinates
+
+    do IX=1,mc%NBINX(1)
+        do IY=1,mc%NBINX(2)
+            do IZ=1,mc%NBINX(3)
+                INDBIN=IX+&
+                       (IY-1)*mc%NBINX(1)+&
+                       (IZ-1)*mc%NBINX(1)*mc%NBINX(2)
+                md%PHIH(INDBIN)=dsin(mc%k_field*mc%DEL*dble(IX))
+            enddo
+        enddo
+    enddo
+    return
 end subroutine
 Subroutine MCvar_loadAB(mc,md,fileName)
 ! Loads AB for file...has not been tested
@@ -896,11 +975,16 @@ Subroutine MCvar_appendEnergyData(mc,fileName)
         OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
+        WRITE(1,*), "IND | id |",&
+                    " EBend  | EParll | EShear | ECoupl | E Kap  | E Chi  |",&
+                    " EField | EBind  |   M    | Couple |  Chi   |  mu    |",&
+                    "  Kap   | Field  |"
     endif
-    WRITE(1,"(I5, 8f9.1,4f9.4)") mc%IND, &
+    WRITE(1,"(2I5, 9f9.1,5f9.4)") mc%IND, mc%id, &
            mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
-           mc%EKap, mc%ECHI, mc%EBind, mc%M, &
-           mc%HP1_Bind*mc%Couple_on, mc%CHI*mc%CHI_ON, mc%mu, mc%KAP*mc%KAP_ON
+           mc%EKap, mc%ECHI, mc%EField, mc%EBind, mc%M, &
+           mc%HP1_Bind*mc%Couple_on, mc%CHI*mc%CHI_ON, mc%mu, mc%KAP*mc%KAP_ON,&
+           mc%h_A
     Close(1)
 end subroutine
 Subroutine MCvar_appendAdaptData(mc,fileName)
@@ -916,13 +1000,14 @@ Subroutine MCvar_appendAdaptData(mc,fileName)
         OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
-        WRITE(1,*), " WIN 1 | AMP 1 | SUC 1 | WIN 2 | AMP 2 | SUC 2 |",&
+        WRITE(1,*), "IND| id|",&
+                    " WIN 1 | AMP 1 | SUC 1 | WIN 2 | AMP 2 | SUC 2 |",&
                     " WIN 3 | AMP 3 | SUC 3 | ON  4 | AMP 4 | SUC 4 |",&
                     " ON  5 | AMP 5 | SUC 5 | ON  6 | AMP 6 | SUC 6 |",&
                     " ON  7 | SUC 7 | ON  8 | SUC 8 |", &
                     " ON  9 | SUC 9 | ON 10 | SUC 10|"
     endif
-    WRITE(1,"(I4,26f8.3)") mc%IND,& 
+    WRITE(1,"(2I4,26f8.3)") mc%IND,mc%id,& 
           REAL(mc%WINDOW(1)),mc%MCAMP(1),mc%PHIT(1), &
           REAL(mc%WINDOW(2)),mc%MCAMP(2),mc%PHIT(2), &
           REAL(mc%WINDOW(3)),mc%MCAMP(3),mc%PHIT(3), &
@@ -950,13 +1035,12 @@ Subroutine MCvar_writeBinary(mc,md,baceName)
     TYPE(MCData) md             ! to be save or filled
     CHARACTER(LEN=16) baceName ! for example 'record/'
     CHARACTER(LEN=16) fileName ! fileName
-    CHARACTER(LEN=16) rw       ! either 'read' or 'write'
     CHARACTER(LEN=16) sufix    ! end of file name
     LOGICAL exists    ! Does file already exist?
 
     !  ------parameters -----
 
-    sizeOfType=SIZEOF(mc)
+    sizeOfType=int(SIZEOF(mc))
     sufix='parameters'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)
@@ -972,7 +1056,7 @@ Subroutine MCvar_writeBinary(mc,md,baceName)
 
     ! -------- R --------
 
-    sizeOfType=SIZEOF(md%R)
+    sizeOfType=int(SIZEOF(md%R))
     sufix='R'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)
@@ -988,7 +1072,7 @@ Subroutine MCvar_writeBinary(mc,md,baceName)
 
     ! -------- U --------
 
-    sizeOfType=SIZEOF(md%U)
+    sizeOfType=int(SIZEOF(md%U))
     sufix='U'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)
@@ -1004,7 +1088,7 @@ Subroutine MCvar_writeBinary(mc,md,baceName)
 
     ! -------- AB --------
 
-    sizeOfType=SIZEOF(md%AB)
+    sizeOfType=int(SIZEOF(md%AB))
     sufix='AB'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)
@@ -1020,7 +1104,7 @@ Subroutine MCvar_writeBinary(mc,md,baceName)
 
     ! -------- Vol --------
 
-    sizeOfType=SIZEOF(md%Vol)
+    sizeOfType=int(SIZEOF(md%Vol))
     sufix='Vol'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)
@@ -1050,7 +1134,7 @@ Subroutine MCvar_readBindary(mc,md,baceName)
 
     !  ------parameters -----
 
-    sizeOfType=SIZEOF(mc)
+    sizeOfType=int(SIZEOF(mc))
     sufix='parameters'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)
@@ -1066,7 +1150,7 @@ Subroutine MCvar_readBindary(mc,md,baceName)
 
     ! -------- R --------
 
-    sizeOfType=SIZEOF(md%R)
+    sizeOfType=int(SIZEOF(md%R))
     sufix='R'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)
@@ -1082,7 +1166,7 @@ Subroutine MCvar_readBindary(mc,md,baceName)
 
     ! -------- U --------
 
-    sizeOfType=SIZEOF(md%U)
+    sizeOfType=int(SIZEOF(md%U))
     sufix='U'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)
@@ -1098,7 +1182,7 @@ Subroutine MCvar_readBindary(mc,md,baceName)
 
     ! -------- AB --------
 
-    sizeOfType=SIZEOF(md%AB)
+    sizeOfType=int(SIZEOF(md%AB))
     sufix='AB'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)
@@ -1114,7 +1198,7 @@ Subroutine MCvar_readBindary(mc,md,baceName)
 
     ! -------- Vol --------
 
-    sizeOfType=SIZEOF(md%Vol)
+    sizeOfType=int(SIZEOF(md%Vol))
     sufix='Vol'
     fileName=trim(baceName) // trim(sufix)
     inquire(file=fileName,exist=exists)

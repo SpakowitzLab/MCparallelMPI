@@ -29,7 +29,7 @@ DOUBLE PRECISION GAM      ! Equil bead separation
 DOUBLE PRECISION LBOX(3)  ! Box edge length
 INTEGER I,J,IB            ! Index Holders
 LOGICAL FRMFILE           ! Is conformation in file?
-DOUBLE PRECISION RMIN
+!DOUBLE PRECISION RMIN
 DOUBLE PRECISION R0(3)
 DOUBLE PRECISION PARA(10)
 INTEGER setType           ! select what type of configurateion
@@ -46,10 +46,6 @@ DOUBLE PRECISION test(3) ! test position for inside confinment
 DOUBLE PRECISION Rc      ! radius of confinement
 INTEGER ii !for testing
 
-!     Variables in the simulation
-
-DOUBLE PRECISION KAP,EPS  ! Elastic properties
-DOUBLE PRECISION XI       ! Drag coefficients
 
 !      Random number generator initiation
 type(random_stat) rand_stat

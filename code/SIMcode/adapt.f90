@@ -5,16 +5,13 @@
 !           Quinn MacPherson
 !
 
-Subroutine MCvar_adapt(mc,MCTYPE,ISTEP)
+Subroutine MCvar_adapt(mc,MCTYPE)
 ! Run this after say 1000 move in order to improve performance
     !use mt19937, only : grnd
     use simMod
     IMPLICIT NONE
-    INTEGER ISTEP    ! Step number, need to initialize if 1
-    TYPE(MCvar) mc
-    INTEGER MCTYPE   ! Type of move
-    Double Precision floatWindow  !like window but a floating point
-    real urand(1)
+    TYPE(MCvar), intent(inout) :: mc
+    INTEGER, intent(in) :: MCTYPE   ! Type of move
 
     ! Correct for turned down poor moves
     if ((mc%PHit(MCTYPE).lt.0.01_dp)) then

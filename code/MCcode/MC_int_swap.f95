@@ -4,8 +4,6 @@
 !     This subroutine calculates the change in the self energy for
 !     a small Monte Carlo move in the position.
 !     
-!     Corrections to force magnitude made 6-3-04.
-!     
 !     Andrew Spakowitz
 !     Written 6-29-04
 !
@@ -13,21 +11,22 @@
 !
 !     Edited by Quinn in 2016
       
-SUBROUTINE MC_int(mc,md,I1,I2,initialize)
+SUBROUTINE MC_int_swap(mc,md,I1,I2,I3,I4)
 use simMod
 use setPrecision
 IMPLICIT NONE
 
-!   iputs
 TYPE(MCvar), intent(inout) :: mc   ! <---- Contains output
 TYPE(MCData), intent(inout) :: md
-LOGICAL, intent(in) :: initialize        ! if true calculate absolute energy
-INTEGER, intent(in) :: I1                ! Test bead position 1
-INTEGER, intent(in) :: I2                ! Test bead position 2
+INTEGER, intent(in) :: I1      ! Test bead position 1
+INTEGER, intent(in) :: I2      ! Test bead position 2
+INTEGER, intent(in) :: I3      ! Test bead, first bead of second section
+INTEGER, intent(in) :: I4      ! Test bead, second bead of second section
 
 !   Internal variables
 INTEGER I                 ! For looping over bins
 INTEGER IB                ! Bead index
+INTEGER IB2               ! Index you are swapping with
 INTEGER rrdr ! -1 if r, 1 if r+dr
 INTEGER IX(2),IY(2),IZ(2)      
 DOUBLE PRECISION WX(2),WY(2),WZ(2)
@@ -39,42 +38,44 @@ LOGICAL isA   ! The bead is of type A
 
 ! Copy so I don't have to type mc% everywhere
 INTEGER NBINX(3)
-NBINX=mc%NBINX
+DOUBLE PRECISION temp    !for speeding up code
+NBINX=mC%NBINX
+
+
+if (I2-I1+1.ne.mc%NB) then 
+    print*, "Error in MC_int_swap. I2-I1+1.ne.NB"
+    stop 1
+endif 
+if (I4-I3+1.ne.mc%NB) then 
+    print*, "Error in MC_int_swap. I2-I1+1.ne.NB"
+    stop 1
+endif 
 
 ! -------------------------------------------------------------
 !
-!  Calculate change (or value if initialize) of phi for A and B
+!  Calculate change of phi for A and B
 !
 !--------------------------------------------------------------
-if (initialize) then
-    do I=1,mc%NBIN
-       md%PHIA(I)=0.0_dp
-       md%DPHIA(I)=0.0_dp
-       md%PHIB(I)=0.0_dp
-       md%DPHIB(I)=0.0_dp
-       md%INDPHI(I)=0
-    enddo
-    mc%DEKap=0
-    mc%DECouple=0
-    mc%DEChi=0
-endif
 
 mc%NPHI=0
 do IB=I1,I2
+  IB2=IB+I3-I1
+  !No need to do calculation if identities are the same
+  if (md%AB(IB).eq.md%ABP(IB2)) cycle
   do rrdr=-1,1,2
    ! on initialize only add current position
    ! otherwise subract current and add new
-   if (initialize.and.(rrdr.eq.-1)) CYCLE
-   if ((rrdr.eq.-1).or.initialize) then
+   if (rrdr.eq.-1) then
        RBIN(1)=md%R(IB,1)
        RBIN(2)=md%R(IB,2)
        RBIN(3)=md%R(IB,3)
+       isA=md%AB(IB).eq.1
    else     
        RBIN(1)=md%RP(IB,1)
        RBIN(2)=md%RP(IB,2)
        RBIN(3)=md%RP(IB,3)
+       isA=md%ABP(IB).eq.1
    endif
-   isA=md%AB(IB).eq.1
    ! --------------------------------------------------
    !
    !  Interpolate beads into bins
@@ -99,27 +100,25 @@ do IB=I1,I2
                 if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX(3)+1))) cycle
                 WTOT=WX(ISX)*WY(ISY)*WZ(ISZ)
                 INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX(1)+(IZ(ISZ)-1)*NBINX(1)*NBINX(2)
-                if (initialize) then
-                    ! Set all phi values on initialize
-                    md%PHIA(INDBIN)=md%PHIA(INDBIN)+WTOT*mc%V/md%Vol(INDBIN)
-                else
-                    ! Generate list of which phi's change and by how much
-                    I=mc%NPHI
-                    do 
-                       if (I.eq.0) then
-                          mc%NPHI=mc%NPHI+1
-                          md%INDPHI(mc%NPHI)=INDBIN
-                          md%DPHIA(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          md%DPHIB(mc%NPHI)=0.0_dp
-                          exit
-                       elseif (INDBIN.EQ.md%INDPHI(I)) then
-                          md%DPHIA(I)=md%DPHIA(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          exit
-                       else
-                          I=I-1
-                       endif                     
-                    enddo
-                endif
+                ! Generate list of which phi's change and by how much
+                I=mc%NPHI
+                do 
+                   if (I.eq.0) then
+                      mc%NPHI=mc%NPHI+1
+                      md%INDPHI(mc%NPHI)=INDBIN
+                      temp=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                      md%DPHIA(mc%NPHI)=temp
+                      md%DPHIB(mc%NPHI)=-temp
+                      exit
+                   elseif (INDBIN.EQ.md%INDPHI(I)) then
+                      temp=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                      md%DPHIA(I)=md%DPHIA(I)+temp
+                      md%DPHIB(I)=md%DPHIB(I)-temp
+                      exit
+                   else
+                      I=I-1
+                   endif                     
+                enddo
              enddo
           enddo
        enddo
@@ -132,39 +131,32 @@ do IB=I1,I2
                 if ((IZ(ISZ).le.0).OR.(IZ(ISZ).ge.(NBINX(3)+1))) cycle
                 WTOT=WX(ISX)*WY(ISY)*WZ(ISZ)
                 INDBIN=IX(ISX)+(IY(ISY)-1)*NBINX(1)+(IZ(ISZ)-1)*NBINX(1)*NBINX(2)
-                if (initialize) then
-                    ! Set all phi values on initialize
-                    md%PHIB(INDBIN)=md%PHIB(INDBIN)+WTOT*mc%V/md%Vol(INDBIN)
-                else
-                    ! Generate list of which phi's change and by how much
-                    I=mc%NPHI
-                    do 
-                       if (I.eq.0) then
-                          mc%NPHI=mc%NPHI+1
-                          md%INDPHI(mc%NPHI)=INDBIN
-                          md%DPHIA(mc%NPHI)=0.0_dp
-                          md%DPHIB(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          exit
-                       elseif (INDBIN.EQ.md%INDPHI(I)) then
-                          md%DPHIB(I)=md%DPHIB(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          exit
-                       else
-                          I=I-1
-                       endif                     
-                    enddo
-                endif
+                ! Generate list of which phi's change and by how much
+                I=mc%NPHI
+                do 
+                   if (I.eq.0) then
+                      mc%NPHI=mc%NPHI+1
+                      md%INDPHI(mc%NPHI)=INDBIN
+                      temp=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                      md%DPHIA(mc%NPHI)=-temp
+                      md%DPHIB(mc%NPHI)=temp
+                      exit
+                   elseif (INDBIN.EQ.md%INDPHI(I)) then
+                      temp=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                      md%DPHIA(I)=md%DPHIA(I)-temp
+                      md%DPHIB(I)=md%DPHIB(I)+temp
+                      exit
+                   else
+                      I=I-1
+                   endif                     
+                enddo
              enddo !ISZ
           enddo !ISY
        enddo !ISX 
    endif
  enddo ! loop over rrdr.  A.k.a new and old
 enddo ! loop over IB  A.k.a. beads
-! ---------------------------------------------------------------------
-!
-! Calcualte change in (or abosolute) energy
-!
-!---------------------------------------------------------------------
-call hamiltonian(mc,md,initialize)
+call hamiltonian(mc,md,.false.)
 
 RETURN
 END

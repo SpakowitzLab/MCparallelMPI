@@ -1,22 +1,22 @@
 Subroutine adaptCof(downSuccess,nPTReplicas,cof,N_average,&
                      lowerRepExe,upperRepExe,&
                      lowerCofRail,upperCofRail,&
-                     repAnnealSpeed)
+                     repAnnealSpeed,replicaBounds)
 use setPrecision
 implicit none
 
 ! inputs
-integer nPTReplicas
-integer downSuccess(nPTReplicas)
-integer N_average
-double precision lowerRepExe 
-double precision upperRepExe 
-double precision lowerCofRail
-double precision upperCofRail
-double precision repAnnealSpeed
-
+integer, intent(in) :: nPTReplicas
+integer, intent(in) :: downSuccess(nPTReplicas)
+integer, intent(in) :: N_average
+double precision, intent(in) :: lowerRepExe 
+double precision, intent(in) :: upperRepExe 
+double precision, intent(in) :: lowerCofRail
+double precision, intent(in) :: upperCofRail
+double precision, intent(in) :: repAnnealSpeed
+logical, intent(in) :: replicaBounds ! output between 0 and 1
 ! input/output
-double precision cof(nPTReplicas)
+double precision, intent(inout) :: cof(nPTReplicas)
 
 ! internal variables
 double precision, allocatable :: newCof(:)
@@ -57,6 +57,11 @@ do rep=2,nPTReplicas
     if (newCof(rep).lt.newCof(rep-1)) then
         print*, "Error in adaptCof!!!"
         stop 1
+    endif
+
+    if (replicaBounds) then
+        if(newCof(rep).lt.0.0_dp) newCof(rep)=0.0_dp
+        if(newCof(rep).gt.1.0_dp) newCof(rep)=1.0_dp
     endif
 enddo
 do rep=1,nPTReplicas

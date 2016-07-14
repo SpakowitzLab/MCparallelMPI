@@ -3,7 +3,7 @@
       SUBROUTINE getpara(PARA,EPS,L0,LBOX)
       
       PARAMETER (PI=3.141593)
-	  
+
       DOUBLE PRECISION PARA(10)
       DOUBLE PRECISION DEL
       DOUBLE PRECISION PVEC(679,8)
@@ -12,26 +12,26 @@
       DOUBLE PRECISION GAM,ETA
       DOUBLE PRECISION XIR,XIU
       DOUBLE PRECISION L0       ! Equilibrium segment length
-	  DOUBLE PRECISION LHC      ! Length of HC int
+      !DOUBLE PRECISION LHC      ! Length of HC int
       DOUBLE PRECISION VHC      ! HC strength
       DOUBLE PRECISION M
-      DOUBLE PRECISION DT
-      INTEGER I,N
-	  DOUBLE PRECISION LBOX		! Box length (approximate)
-      DOUBLE PRECISION L,LP
-	  DOUBLE PRECISION EPS		! Elasticity l0/(2lp)
+      !DOUBLE PRECISION DT
+      INTEGER I
+      DOUBLE PRECISION LBOX   ! Box length (approximate)
+      !DOUBLE PRECISION L, LP
+      DOUBLE PRECISION EPS   ! Elasticity l0/(2lp)
       
 !     Load in the parameters for the simulation
 
       DEL=2.*EPS
-	  
-	  VHC=0.
-	  XIU=0.
-	  XIR=0.
-	  
+  
+      VHC=0.
+      XIU=0.
+      XIR=0.
+  
 
 !     Load the tabulated parameters
-	  
+  
       OPEN (UNIT=5,FILE='input/dssWLCparams',STATUS='OLD')
       DO 10 I=1,679
          READ(5,*) PVEC(I,1),PVEC(I,2),PVEC(I,3),PVEC(I,4),PVEC(I,5),PVEC(I,6),PVEC(I,7),PVEC(I,8)
@@ -86,7 +86,7 @@
       EB=EB/DEL
       EPAR=EPAR*DEL/L0**2.
       EPERP=EPERP*DEL/L0**2.
-	  ETA=ETA*DEL/L0
+      ETA=ETA*DEL/L0
       GAM=L0*GAM
             
       PARA(1)=EB

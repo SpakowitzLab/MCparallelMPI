@@ -27,11 +27,11 @@ SUBROUTINE initchem(AB,NT,N,G,NP,FA,LAM,rand_stat)
   INTEGER I,J,K,IB
   real TEST(1)   ! changed to real by Quinn
   type(random_stat) rand_stat    ! status of random number generator
-  INTEGER ABVAL
+  !INTEGER ABVAL
 
-  DOUBLE PRECISION FA		! Fraction of A beads
-  DOUBLE PRECISION LAM		! Chemical correlation parameter
-  DOUBLE PRECISION PAA,PBB,PAB,PBA	! Chemical identity statistics
+  DOUBLE PRECISION FA   ! Fraction of A beads
+  DOUBLE PRECISION LAM  ! Chemical correlation parameter
+  DOUBLE PRECISION PAA,PBB,PAB,PBA ! Chemical identity statistics
 
 
   !		Translate LAM and FA to probabilities
