@@ -237,8 +237,8 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%PTON=.TRUE.
     mc%NPT=100
     mc%NRepAdapt=1000  
-    mc%lowerRepExe=0.04
-    mc%upperRepExe=0.8
+    mc%lowerRepExe=0.09
+    mc%upperRepExe=0.18
     mc%lowerCofRail=0.005
     mc%upperCofRail=0.1
     mc%indStartRepAdapt=10

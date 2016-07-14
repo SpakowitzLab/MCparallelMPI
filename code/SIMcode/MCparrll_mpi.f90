@@ -272,7 +272,7 @@ subroutine paraTemp ( p, id)
             N_average=N_average+1
             if (N_average.ge.mc%NRepAdapt) then
                 call save_repHistory(upSuccess,downSuccess,nPTReplicas, &
-                                     cof,x,nodeNumber,N_average,nExchange,mc%IND)
+                                     cofMtrx,x,nodeNumber,N_average,nExchange,mc%IND)
 
                 if ((mc%IND.ge.mc%indStartRepAdapt).and. &
                     (mc%IND.lt.mc%indEndRepAdapt)) then ! insert input defined location here
@@ -346,7 +346,7 @@ function chi_path(s) result(chi)
             chi=chi_max*2.0_dp*(s-0.5_dp)
         endif
     else
-        chi=0.0_dp
+        chi=s
     endif
 end function chi_path
 function h_path(s) result(h)
