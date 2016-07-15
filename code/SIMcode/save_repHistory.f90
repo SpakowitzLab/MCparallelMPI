@@ -1,21 +1,21 @@
 Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
-                           cof,x,nodeNumber,N_average,nExchange,IND)
+                           cofMtrx,xMtrx,nodeNumber,N_average,nExchange,IND,nTerms)
     use setPrecision
 ! Print Energy data
     IMPLICIT NONE
+    integer, intent(in) :: nTerms
+    integer, intent(in) :: nPTReplicas
+    integer, intent(in) :: upSuccess(nPTReplicas)
+    integer, intent(in) :: downSuccess(nPTReplicas)
+    integer, intent(in) :: nodeNumber(nPTReplicas)
+    integer, intent(in) :: N_average
+    integer, intent(in) :: nExchange
+    integer, intent(in) :: IND
+    double precision, intent(in) :: cofMtrx(nPTReplicas,nTerms)
+    double precision, intent(in) :: xMtrx(nPTReplicas,nTerms)
+    integer rep
     LOGICAL isfile
     character*32 fullName
-    integer nPTReplicas
-    integer rep
-    integer upSuccess(nPTReplicas)
-    integer downSuccess(nPTReplicas)
-    integer nodeNumber(nPTReplicas)
-    double precision cof(nPTReplicas)
-    double precision x(nPTReplicas)
-    integer N_average
-    integer nExchange
-    integer IND
-    double precision dxdcof
     fullName=  'data/repHistory'
     inquire(file = fullName, exist=isfile)
     if (isfile) then
@@ -25,26 +25,58 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     endif
 
     write(1,*) "~~~~~~~~~~~exchange: ",nExchange,", IND:",IND,"~~~~~~~~~~~~~~~~~~~~"
-    write(1,*) " rep |  cof  |   x    |  up  | down |node| dxdcof|"
+    write(1,*) " rep | node|  up  | down |",&
+               " chi  |  x_chi |",&
+               " h_A  |  x_h_A |",&
+               " mu   |  x_mu  |"
     do rep=1,nPTReplicas
-        if (rep.ne.nPTReplicas) then
-            dxdcof=(x(rep)-x(rep+1))*(cof(rep+1)-cof(rep))
-        else
-            dxdcof=0.0_dp
-        endif
-        write(1,"(I6,f8.3,f9.1,2f7.3,I5,f8.2)"), rep, cof(rep), x(rep), & 
+        write(1,"(2I6,2f7.4,f7.4,f9.1,f7.4,f9.1,f7.4,f9.1)"),&
+                 rep, nodeNumber(rep), &
                  real(upSuccess(rep))/real(N_average), &
-                 real(downSuccess(rep))/real(N_average), nodeNumber(rep),&
-                 dxdcof
+                 real(downSuccess(rep))/real(N_average),& 
+                 cofMtrx(rep,1), xMtrx(rep,1),&
+                 cofMtrx(rep,3), xMtrx(rep,3),&
+                 cofMtrx(rep,2), xMtrx(rep,2)
     enddo  
     Close(1)
-    fullName=  'data/cofData'
+    ! save which node each replica is running on
+    fullName=  'data/nodeNumber'
     inquire(file = fullName, exist=isfile)
     if (isfile) then
         OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
     endif
-    write(1,*), IND, cof, nodeNumber
+    write(1,*), IND, nodeNumber
+    Close(1)
+    ! save chi values
+    fullName=  'data/chi'
+    inquire(file = fullName, exist=isfile)
+    if (isfile) then
+        OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
+    else 
+        OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
+    endif
+    write(1,*), IND, cofMtrx(:,1)
+    Close(1)
+    ! save field strength
+    fullName=  'data/h_A'
+    inquire(file = fullName, exist=isfile)
+    if (isfile) then
+        OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
+    else 
+        OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
+    endif
+    write(1,*), IND, cofMtrx(:,3)
+    Close(1)
+    ! save mu
+    fullName=  'data/mu'
+    inquire(file = fullName, exist=isfile)
+    if (isfile) then
+        OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
+    else 
+        OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
+    endif
+    write(1,*), IND, cofMtrx(:,3)
     Close(1)
 end subroutine

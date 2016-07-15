@@ -18,7 +18,7 @@ sleep 2
 echo "Now run"
 # now run the output
 # --prefix used to avoid changing path
-mpirun --prefix ~/openmpi/ -np 3 MCparrll_out
+mpirun --prefix ~/openmpi/ -np 8 MCparrll_out
 
 
 # cd code
