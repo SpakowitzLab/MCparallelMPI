@@ -101,7 +101,7 @@ mc%dx_Kap=mc%dx_Kap*mc%KAP_ON
 
 mc%DEChi=mc%Chi*        mc%dx_chi
 mc%DECouple=mc%HP1_Bind*mc%dx_couple
-mc%DEKap=mc%DEKap*      mc%dx_Kap
+mc%DEKap=mc%Kap*        mc%dx_Kap
 mc%DEField=mc%h_A*      mc%dx_Field
 RETURN
 END subroutine

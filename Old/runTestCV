@@ -1,2 +1,0 @@
-gfortran -fbounds-check -o test.out code/MCcode/test_calcVolume.f95 code/MCcode/MC_calcVolume.f95 mt19937.f90 
-./test.out

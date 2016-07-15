@@ -202,7 +202,7 @@ subroutine paraTemp ( p, id)
             cofMtrx(rep,2)=mc%mu     
             cofMtrx(rep,3)=h_path(s_vals(rep))     
             cofMtrx(rep,4)=mc%HP1_Bind
-            cofMtrx(rep,5)=mc%EKap    
+            cofMtrx(rep,5)=mc%Kap    
             cofMtrx(rep,6)=mc%Para(1)
             cofMtrx(rep,7)=mc%Para(2)
             cofMtrx(rep,8)=mc%Para(3) 
@@ -436,7 +436,7 @@ Subroutine PT_override(mc,md)
     mc%mu       =cof(2)
     mc%h_A      =cof(3)
     mc%HP1_Bind =cof(4)
-    mc%EKap     =cof(5)
+    mc%Kap      =cof(5)
     !mc%Para(1)  =cof(6)
     !mc%Para(2)  =cof(7)
     !mc%Para(3)  =cof(8)
@@ -487,13 +487,13 @@ Subroutine replicaExchange(mc)
     test(2)=mc%EBind/mc%mu
     test(3)=mc%EField/mc%h_A
     test(4)=mc%ECouple/mc%HP1_Bind
-    test(5)=mc%EKap/mc%EKap
+    test(5)=mc%EKap/mc%Kap
 
     cofOld(1)=mc%chi      
     cofOld(2)=mc%mu     
     cofOld(3)=mc%h_A     
     cofOld(4)=mc%HP1_Bind
-    cofOld(5)=mc%EKap    
+    cofOld(5)=mc%Kap    
     cofOld(6)=mc%Para(1)
     cofOld(7)=mc%Para(2)
     cofOld(8)=mc%Para(3) 
@@ -528,7 +528,7 @@ Subroutine replicaExchange(mc)
     mc%mu       =cof(2)
     mc%h_A      =cof(3)
     mc%HP1_Bind =cof(4)
-    mc%EKap     =cof(5)
+    mc%Kap      =cof(5)
     !mc%Para(1)  =cof(6)
     !mc%Para(2)  =cof(7)
     !mc%Para(3)  =cof(8)

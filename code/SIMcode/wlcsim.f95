@@ -137,14 +137,9 @@ Subroutine wlcsim(rand_stat)
 
   DO WHILE ((mc%IND).LE.mc%INDMAX) 
 
-     if (mc%IND.LE.mc%NNOINT) then
-         INTON=0
-     else
-         INTON=1
-     endif
-     ! for coupling schedule
+     ! for changing constants durring run
      if (mc%UseSchedule) then
-         call strength_schedule(mc)
+         call strength_schedule(mc,INTON)
      endif
      
 

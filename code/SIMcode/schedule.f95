@@ -1,10 +1,16 @@
 !---------------------------------------------------------------*
-Subroutine strength_schedule(mc)
+Subroutine strength_schedule(mc,inton)
     use setPrecision
     use simMod
     implicit none
-    TYPE(MCvar) mc
+    TYPE(MCvar), intent(inout) :: mc
+    integer, intent(inout) :: inton
 
+    if (mc%IND.LE.mc%NNOINT) then
+        INTON=0
+    else
+        INTON=1
+    endif
     if(mc%ind.lt.mc%N_KAP_ON) then
         mc%KAP_ON=0.0_dp
     else
