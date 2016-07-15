@@ -12,6 +12,7 @@ mpifort *.o -o MCparrll_out
 rm *.o
 cd ..
 mv code/MCparrll_out .
+mkdir -p data
 mv data/* trash/
 
 sleep 2
