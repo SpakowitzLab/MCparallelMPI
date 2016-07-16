@@ -112,6 +112,7 @@ Module simMod
     logical recenter_on       ! recenter in periodic boundary
     integer winType           ! how to choose random section of polymer to move
     integer reduce_move       ! only exicute unlikely movetypes every ____ cycles
+    double precision min_accept
     logical UseSchedule       ! use scheduled change in interactions strength(s)
     double precision KAP_ON   
     double precision CHI_ON
@@ -219,6 +220,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%confineType = 3 ! 3 for sherical
     mc%simType=1
     mc%winType=1
+    mc%min_accept=0.05
 
     ! timing options    
     mc%NStep=400000
@@ -429,6 +431,8 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READF(mc%k_field)  ! wave mode for default field
        CASE('REPLICA_BOUNDS')
            Call READO(mc%replicaBounds) ! insure that 0 < s < 1
+       CASE('MIN_ACCEPT')
+           Call READF(mc%MIN_ACCEPT) ! below which moves are turned off
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)

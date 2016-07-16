@@ -45,7 +45,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     DOUBLE PRECISION phiTot  ! for testing
 
     DOUBLE PRECISION ENERGY
-
+    logical isfile
 ! Things for random number generator
     real urnd(1) ! single random number
     type(random_stat), intent(inout) :: rand_stat
@@ -73,15 +73,21 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     md%ABP=0 ! set entire array to zero
     !  Notide that ABP and AB are intensionally swapped below
     IT1=1; IT2=mc%NT
-   ! print*, "Before MC_bind ~~*$"
-   ! print*, "NT", mc%NT, " G", mc%G, " IT1",IT1," IT2", IT2," ABP", md%ABP
-   ! print*, "AB", md%AB, " METH", md%METH, " EU", mc%EU, " EM",mc%DEBind
-   ! print*, "mu", mc%mu, " dx_mu", mc%dx_mu
-   ! print*, "after prints"
     call MC_bind(mc%NT,mc%G,IT1,IT2,md%ABP,md%AB,md%METH, &
                  mc%EU,mc%EM,mc%DEBind,mc%mu,mc%dx_mu)
+
+    inquire(file = "data/error", exist=isfile)
+    if (isfile) then
+        OPEN (UNIT = 3, FILE = "data/error", STATUS ='OLD', POSITION="append")
+    else 
+        OPEN (UNIT = 3, FILE = "data/error", STATUS = 'new')
+    endif
+
     if(abs(mc%EBind-mc%DEBind).gt.0.00001) then
         print*, "Warning. Integrated binding enrgy:", &
+                mc%EBind," while absolute binding energy:", &
+                mc%DEBind
+        write(3,*), "Warning. Integrated binding enrgy:", &
                 mc%EBind," while absolute binding energy:", &
                 mc%DEBind
     endif
@@ -94,6 +100,10 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     if(abs((mc%EElas(1)+  mc%EElas(2)+ mc%EElas(3))-& 
            (mc%DEElas(1)+mc%DEElas(2)+mc%DEElas(3))).gt.0.0001) then
         print*, "Warning. Integrated elastic enrgy:", &
+                (mc%EElas(1)+mc%EElas(2)+mc%EElas(3)),&
+                " while absolute elastic energy:", &
+                (mc%DEElas(1)+mc%DEElas(2)+mc%DEElas(3))
+        write(3,*), "Warning. Integrated elastic enrgy:", &
                 (mc%EElas(1)+mc%EElas(2)+mc%EElas(3)),&
                 " while absolute elastic energy:", &
                 (mc%DEElas(1)+mc%DEElas(2)+mc%DEElas(3))
@@ -119,11 +129,17 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
              print*, "Warning. Intigrated chi energy:", & 
                      mc%EChi,"  while absolute chi energy:", &
                      mc%DEChi
+             write(3,*), "Warning. Intigrated chi energy:", & 
+                     mc%EChi,"  while absolute chi energy:", &
+                     mc%DEChi
         endif
         mc%EChi=mc%DEChi
         mc%x_chi=mc%dx_chi
         if(abs(mc%ECouple-mc%DECouple).gt. 0.0001_dp) then
              print*, "Warning. Intigrated couple energy:", & 
+                     mc%ECouple,"  while absolute couple energy:", &
+                     mc%DECouple
+             write(3,*), "Warning. Intigrated couple energy:", & 
                      mc%ECouple,"  while absolute couple energy:", &
                      mc%DECouple
         endif
@@ -133,12 +149,18 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
              print*, "Warning. Intigrated Kap energy:", & 
                      mc%EKap,"  while absolute Kap energy:", &
                      mc%DEKap
+             write(3,*), "Warning. Intigrated Kap energy:", & 
+                     mc%EKap,"  while absolute Kap energy:", &
+                     mc%DEKap
         endif
         mc%EKap=mc%DEKap
         mc%x_Kap=mc%dx_Kap
 
         if(abs(mc%EField-mc%DEField).gt.0.00001) then
             print*, "Warning. Integrated field enrgy:", &
+                    mc%EField," while absolute field energy:", &
+                    mc%DEField
+            write(3,*), "Warning. Integrated field enrgy:", &
                     mc%EField," while absolute field energy:", &
                     mc%DEField
         endif
@@ -171,7 +193,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
         enddo
     endif
     print*, "done initializing"
-  
+    close (3) 
 ! -------------------------------------
 !
 !   Begin Monte Carlo simulation
@@ -185,7 +207,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           if (mc%MOVEON(MCTYPE).EQ.0) cycle
 
           ! Turn down poor moves
-          if ((mc%PHit(MCTYPE).lt.0.01_dp).and. &
+          if ((mc%PHit(MCTYPE).lt.mc%MIN_ACCEPT).and. &
               (mod(ISTEP,mc%reduce_move).ne.0).and. &
               ((MCTYPE.eq.5).or.(MCTYPE.eq.6))) then
               CYCLE

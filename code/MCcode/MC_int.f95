@@ -39,7 +39,14 @@ LOGICAL isA   ! The bead is of type A
 
 ! Copy so I don't have to type mc% everywhere
 INTEGER NBINX(3)
+double precision temp
 NBINX=mc%NBINX
+
+if ((mc%simType.ne.0).or.(mc%confineType.ne.0)) then
+    print*, "change back to not using temp"
+    stop 1
+endif
+
 
 ! -------------------------------------------------------------
 !
@@ -75,6 +82,7 @@ do IB=I1,I2
        RBIN(3)=md%RP(IB,3)
    endif
    isA=md%AB(IB).eq.1
+   temp=rrdr*mc%V*mc%DEL**3
    ! --------------------------------------------------
    !
    !  Interpolate beads into bins
@@ -109,11 +117,13 @@ do IB=I1,I2
                        if (I.eq.0) then
                           mc%NPHI=mc%NPHI+1
                           md%INDPHI(mc%NPHI)=INDBIN
-                          md%DPHIA(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          !md%DPHIA(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          md%DPHIA(mc%NPHI)=temp*WTOT
                           md%DPHIB(mc%NPHI)=0.0_dp
                           exit
                        elseif (INDBIN.EQ.md%INDPHI(I)) then
-                          md%DPHIA(I)=md%DPHIA(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          !md%DPHIA(I)=md%DPHIA(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          md%DPHIA(I)=md%DPHIA(I)+temp*WTOT
                           exit
                        else
                           I=I-1
@@ -143,10 +153,12 @@ do IB=I1,I2
                           mc%NPHI=mc%NPHI+1
                           md%INDPHI(mc%NPHI)=INDBIN
                           md%DPHIA(mc%NPHI)=0.0_dp
-                          md%DPHIB(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          !md%DPHIB(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          md%DPHIB(mc%NPHI)=temp*WTOT
                           exit
                        elseif (INDBIN.EQ.md%INDPHI(I)) then
-                          md%DPHIB(I)=md%DPHIB(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          !md%DPHIB(I)=md%DPHIB(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          md%DPHIB(I)=md%DPHIB(I)+temp*WTOT
                           exit
                        else
                           I=I-1

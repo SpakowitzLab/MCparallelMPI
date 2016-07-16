@@ -7,7 +7,7 @@ echo "Compile"
 cd code
 # compile with mpi's fortran compiler
 mpifort -c mersenne_twister.f90
-mpifort -fbounds-check -O3 -g -pg  mersenne_twister.o SIMcode/* DATAcode/* MCcode/* -o MCparrll_out 
+mpifort -fbounds-check -O5 -g -pg  mersenne_twister.o SIMcode/* DATAcode/* MCcode/* -o MCparrll_out 
 cd ..
 mv code/MCparrll_out .
 mv data/* trash/

@@ -7,7 +7,7 @@ cd code
 # compile with mpi's fortran compiler
 
 mpifort -c DATAcode/* mersenne_twister.f90
-mpifort -c -fbounds-check -Wall -fmax-errors=5 -O3 SIMcode/*  MCcode/* 
+mpifort -c -fbounds-check -Wall -fmax-errors=5 -O5 SIMcode/*  MCcode/* 
 mpifort *.o -o MCparrll_out 
 rm *.o
 cd ..

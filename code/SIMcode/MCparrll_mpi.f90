@@ -111,8 +111,8 @@ subroutine paraTemp ( p, id)
     integer ( kind = 4 ) dest   !destination id for messages
     integer ( kind = 4 ) source  !source id for messages
     integer ( kind = 4 ) error  ! error id for MIP functions
-    integer ( kind = 4 ) id     ! which processor I am
-    integer ( kind = 4 ) p ! number of threads
+    integer ( kind = 4 ), intent(in) :: id     ! which processor I am
+    integer ( kind = 4 ), intent(in) :: p ! number of threads
     integer ( kind = 4 ) status(MPI_STATUS_SIZE) ! MPI stuff
     integer nPTReplicas     ! number of replicas.
 
@@ -372,8 +372,8 @@ Subroutine PT_override(mc,md)
     use mpi
     use simMod
     Implicit none
-    TYPE(MCvar) mc
-    TYPE(MCData) md
+    TYPE(MCvar), intent(inout) :: mc
+    TYPE(MCData), intent(inout) :: md
     integer (kind=4) dest ! message destination
     integer (kind=4) source ! message source
     integer (kind=4) id, nThreads,ierror
@@ -463,7 +463,7 @@ Subroutine replicaExchange(mc)
     IMPLICIT NONE
     integer, parameter :: nTerms=8  ! number of energy terms 
     integer (kind=4) id, ierror
-    TYPE(MCvar) mc
+    TYPE(MCvar), intent(inout) :: mc
     integer i  ! working intiger
     integer (kind=4) dest ! message destination
     integer (kind=4) source ! message source
@@ -473,6 +473,7 @@ Subroutine replicaExchange(mc)
     double precision cofOld(nTerms)
     double precision x(nTerms)
     double precision test(5)
+    logical isfile
 
     x(1)=mc%x_Chi
     x(2)=mc%x_mu
@@ -499,12 +500,19 @@ Subroutine replicaExchange(mc)
     cofOld(8)=mc%Para(3) 
 
     do i=1,5
-        if (isnan(test(I))) cycle
-        if (abs(cofOld(I)).lt.0.0000001) cycle
-        if (abs(test(I)-x(I)).lt.0.0000001) cycle
+        if (abs(cofOld(I)*(test(I)-x(I))).lt.0.0001) cycle
+        if (abs(cofOld(I)).lt.0.00000001) cycle
+        inquire(file = "data/error", exist=isfile)
+        if (isfile) then
+            OPEN (UNIT = 1, FILE = "data/error", STATUS ='OLD', POSITION="append")
+        else 
+            OPEN (UNIT = 1, FILE = "data/error", STATUS = 'new')
+        endif
+        write(1,*), "Error in replicaExchange"
+        write(1,*), "I",I," test",test(I)," x",x(I)," cof",cofOld(I)    
         print*, "Error in replicaExchange"
         print*, "I",I," test",test(I)," x",x(I)," cof",cofOld(I)
-        stop 1
+        close (1)
     enddo
 
     ! send number bound to head node
