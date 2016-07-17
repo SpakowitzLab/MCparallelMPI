@@ -1,67 +1,87 @@
-clear; close all
+clear;close all
 
-% plot structure factors
-addpath('misc/');
-addpath('../utility/');
-
-% simulation parameters
-dir = '../../data/';  % data directory
-boxl = 20;
-Ree = 2;
-EPS = 0.01;
-LAM = -0.75;
-G = 5;
+% OPTIONS
+PLOTSIM = 1;    % plot simulation structure factor
+PLOTMF = 1;     % plot mean-field structure factor
+SAVESIM = 0;    % save simulation structure factor to file
 
 % plot parameters
+NREP = [1,30,60];  % number of replicas
+NSNAP = 30:35;  % snapshots to average
+
+% add/define paths
+addpath('misc/');
+addpath('../utility/');
+dir = '../data/';       % data directory
+savedir = 'savedata/';   % save directory
+
+% simulation parameters
+boxl = 20;   % edge size of simulation
+Ree = 1.5;   % average end-to-end distance of a monomer
+EPS = 0.04;  % inter-bead segment rigidity (in unit of 2lp)
+LAM = 0;     % degree of chemical correlation
+G = 5;       % number of beads per monomer
+FA = 0.16;   % chemical fraction of A species
 lksample = 20;
-NREP = [1:39];  % number of replicas
-NSNAP = 10:1:15;  % snapshots to average
 
-% data to save
-KS = zeros(length(NREP),1);
-SINV = zeros(length(NREP),1);
-D2S = zeros(length(NREP),1);
-ERR = zeros(length(NREP),3);
+% load CHI parameters
+CHI = load(strcat(dir,'chi'));  % adjusted CHI values
+CHI = CHI(end,2:end);
 
-%% Figure 1
-figure;hold;cnt=1;
-% plot simulation results
-for REP=NREP
-    col = (REP-1)/(max(NREP)-1)
-    savg = [];
-    for SNAP=NSNAP
-        r=dlmread(strcat(dir,sprintf('r%dv%d',SNAP,REP)));
-        [k,s]=scalc(r,boxl,lksample);
-        savg = [savg,s];
-    end
-    K = k*Ree; S = mean(savg,2);
-    plot(K,S,'color',[col 0 1-col]);
-    
-    % fit to Lorentzian
-    [KS(cnt),SINV(cnt),D2S(cnt),ERR(cnt,1:3)]=calcserr(K,S,G);
-    cnt = cnt+1;
+%% (Structure factors)
+if (PLOTSIM || PLOTMF)
+    figure;hold;cnt=1;
 end
 
-% plot mean-field theory
-CHI = load(strcat(dir,'cof'));
-filename = sprintf('../utility/sdata/Seps%.3flam%.2f',EPS,LAM);
-spinodal = load('../utility/sdata/chivals');
-CHIS = spinodal(spinodal(:,1)==EPS & spinodal(:,2)==LAM,3);
-S = load(filename);
-KT = S(:,1);
-for REP=NREP
-    col = (REP-1)/(max(NREP)-1);
-    
-    if CHI(REP) < CHIS/G
-        ST = 1./(-2*CHI(REP)+1./S(:,2));
-        plot(KT,ST,'--','color',[col 0 1-col]);
+if (PLOTSIM)
+    % plot simulation results
+    for REP=NREP
+        col = (REP-1)/(max(NREP)-1)
+        savg = [];
+        for SNAP=NSNAP
+            r=dlmread(strcat(dir,sprintf('r%dv%d',SNAP,REP)));
+            [k,s]=scalc(r,boxl,lksample);
+            savg = [savg,s];
+        end
+        K = k*Ree; S = mean(savg,2);
+        plot(K,S,'color',[col 0 1-col]);
+
+        % save to file
+        if (SAVESIM)
+            SAVEFILENAME = sprintf('SSIM_CHIG%.3fLAM%.2fEPS%.2fFA%.2f',CHI(REP)*G,LAM,EPS,FA);
+            dlmwrite(strcat(savedir,SAVEFILENAME),[K,S]);
+        end
+        
+        % fit to Lorentzian
+        %[KS,SINV,D2S,ERR]=calcserr(K,S,G);
+        
+        % find peak location
+        %[pks,locs] = findpeaks(S);
+        cnt = cnt+1;
+    end
+end
+
+if (PLOTMF)
+    % Plot mean-field theory
+    % load MF results
+    filename = sprintf('../utility/sdata/S_EPS%.3fLAM%.2fFA%.2f',EPS,LAM,FA);
+    MF = load(filename);
+    CHIS = MF(1,1);   %spinodal
+    for REP=NREP
+        if max(NREP)==1
+            col = 1;
+        else
+            col = (REP-1)/(max(NREP)-1);
+        end
+
+        if CHI(REP) < CHIS/G
+            K = MF(2:end,1); %wavevectors
+            S = 1./(-2*CHI(REP)+EPS*MF(2:end,2));
+            plot(K,S,'--','color',[col 0 1-col],'linewidth',2);
+        end
     end
 end
 
 % plot processing
+xlabel('R_Mq');ylabel('S(q)');box on
 set(gca,'xscale','log');set(gca,'yscale','log')
-
-%% Figure 2
-figure;hold;
-errorbar(CHI(NREP)*G,SINV,ERR(:,2),'o-')
-plot(CHI*G,2*(CHIS/G-CHI))

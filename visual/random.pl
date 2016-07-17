@@ -1,8 +1,13 @@
 #!/usr/bin/perl -w
 use POSIX qw(ceil floor);
 
-my $savept =50;  # save point
-my $ratviz=0.85; # Ratio of visualization
+my $savept =35;  # save point
+my $file0 =1;    # replica index 1
+my $filef =1;   # replica index final
+
+my $ratviz=0.5; # Ratio of visualization
+my $cut = 0;    # Whether show cross-section
+
 my $xlbox=20; # Box edge length
 my $ylbox=20; # Box edge length
 my $zlbox=20; # Box edge length
@@ -24,10 +29,7 @@ my $gamma=2*$pi*$nbpbead/$nbpturn; # Twist angle per bead
 my $filein1;            # File with bead coordinates
 my $fileout1;           # Output file for pdb
 
-#my $filecount=202;        # File count for input
-for (my $filecount=50; $filecount<=50; $filecount+=1) {
-#$filein1 =sprintf("snap%03d", $filecount);
-#$fileout1=sprintf(">snap%03d.pdb",$filecount);
+for (my $filecount=$file0; $filecount<=$filef; $filecount+=1) {
 $filein1 =sprintf("r%dv%d", $savept, $filecount);
 $fileout1=sprintf(">snap%03d.pdb",$filecount);
 
@@ -58,19 +60,30 @@ my $count=1;
       $ab[$count]=$info[3];
       
       $viz[$count]=0;
-#      if (($atomx1[$count] > $ratviz*$xlbox) || ($atomx1[$count] < (1-$ratviz)*$xlbox))
-      if (($atomx1[$count] > $ratviz*$xlbox) || ($atomx1[$count] < (1-$ratviz)*$xlbox) || ($atomx1[$count] < 1*$xlbox))
+      if (($atomx1[$count] > $ratviz*$xlbox) || ($atomx1[$count] < (1-$ratviz)*$xlbox))
       {	 
 	  $viz[$count]=1;
       }
-      if (($atomy1[$count] > $ratviz*$ylbox) || ($atomy1[$count] < (1-$ratviz)*$ylbox) || ($atomy1[$count] > 1*$ylbox))
+      if (($atomy1[$count] > $ratviz*$ylbox) || ($atomy1[$count] < (1-$ratviz)*$ylbox))
       {
 	  $viz[$count]=1;
       }
-      if (($atomz1[$count] > $ratviz*$zlbox) || ($atomz1[$count] < (1-$ratviz)*$zlbox) || ($atomz1[$count] > 1*$zlbox))
+      if (($atomz1[$count] > $ratviz*$zlbox) || ($atomz1[$count] < (1-$ratviz)*$zlbox))
       { 
 	  $viz[$count]=1;
       } 
+
+      if ($cut == 1){
+	  if (-3/4*$atomx1[$count] + $atomy1[$count] > 3.0 )
+	  {
+	      $viz[$count]=1;
+	  }
+	  
+	  if (-3/4*$atomx1[$count] + $atomy1[$count] > 5 )
+	  {
+	      $viz[$count]=0;
+	  }
+      }
 
       $atomx1[$count] = $atomx1[$count]-floor($atomx1[$count]/$xlbox)*$xlbox;
       $atomy1[$count] = $atomy1[$count]-floor($atomy1[$count]/$ylbox)*$ylbox;
