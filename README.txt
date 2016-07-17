@@ -85,9 +85,3 @@ vi ~/.bash_profile
 PATH=$PATH:/usr/local/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 alis ls='ls --color'
-
-
-old MCdonald had a farm
-
-
-
