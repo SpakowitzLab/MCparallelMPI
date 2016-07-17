@@ -16,21 +16,21 @@ SUBROUTINE initchem(AB,NT,N,G,NP,FA,LAM,rand_stat)
     use mersenne_twister
     use setPrecision
 
-  PARAMETER (PI=3.141593_dp)
+  DOUBLE PRECISION, PARAMETER :: PI=3.141592653589793_dp ! Value of pi 
   
-  INTEGER AB(NT)            ! Chemical identity of beads
-  INTEGER N                 ! Number of monomers per polymer
-  INTEGER G                 ! Number of beads per monomer
-  INTEGER NP                ! Number of polymer chains
-  INTEGER NT                ! Total number of beads
+  INTEGER, intent(out) :: AB(NT)     ! Chemical identity of beads
+  INTEGER, intent(in) :: N           ! Number of monomers per polymer
+  INTEGER, intent(in) :: G           ! Number of beads per monomer
+  INTEGER, intent(in) :: NP          ! Number of polymer chains
+  INTEGER, intent(in) :: NT          ! Total number of beads
   
   INTEGER I,J,K,IB
   real TEST(1)   ! changed to real by Quinn
-  type(random_stat) rand_stat    ! status of random number generator
+  type(random_stat), intent(inout) ::rand_stat    ! status of random number generator
   !INTEGER ABVAL
 
-  DOUBLE PRECISION FA   ! Fraction of A beads
-  DOUBLE PRECISION LAM  ! Chemical correlation parameter
+  DOUBLE PRECISION, intent(in) :: FA   ! Fraction of A beads
+  DOUBLE PRECISION, intent(in) :: LAM  ! Chemical correlation parameter
   DOUBLE PRECISION PAA,PBB,PAB,PBA ! Chemical identity statistics
 
 

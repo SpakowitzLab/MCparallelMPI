@@ -13,7 +13,7 @@ SUBROUTINE MC_move(R,U,RP,UP,NT,NB,NP,IP,IB1,IB2,IT1,IT2,MCTYPE &
 use mersenne_twister      
 use setPrecision
 IMPLICIT NONE
-DOUBLE PRECISION, PARAMETER :: PI=3.141592654 ! Value of pi 
+DOUBLE PRECISION, PARAMETER :: PI=3.141592653589793_dp ! Value of pi 
 
 DOUBLE PRECISION, intent(in) :: R(NT,3)  ! Bead positions
 DOUBLE PRECISION, intent(in) :: U(NT,3)  ! Tangent vectors
