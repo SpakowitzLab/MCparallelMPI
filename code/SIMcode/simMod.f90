@@ -137,6 +137,7 @@ Module simMod
     integer indEndRepAdapt
     double precision repAnnealSpeed  ! for annealing
     logical replicaBounds
+    double precision INITIAL_MAX_S
 
   end Type
 
@@ -163,8 +164,8 @@ Subroutine MCvar_setParams(mc,fileName)
     USE INPUTPARAMS, ONLY : READLINE, READA, READF, READI, READO
     IMPLICIT NONE
     DOUBLE PRECISION, Parameter :: PI=3.141592654_dp
-    TYPE(MCvar) mc
-    character*16 fileName  ! file with parameters
+    TYPE(MCvar), intent(out) :: mc
+    character*16, intent(in) :: fileName  ! file with parameters
     INTEGER :: PF   ! input file unit
     LOGICAL :: FILEEND=.FALSE. ! done reading file?
     CHARACTER*100 :: WORD ! keyword
@@ -234,6 +235,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%N_KAP_ON=1
     mc%N_CHI_ON=1
     mc%recenter_on=.TRUE.
+    mc%INITIAL_MAX_S=0.1
 
     ! replica options
     mc%PTON=.TRUE.
@@ -433,6 +435,8 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READO(mc%replicaBounds) ! insure that 0 < s < 1
        CASE('MIN_ACCEPT')
            Call READF(mc%MIN_ACCEPT) ! below which moves are turned off
+       CASE('INITIAL_MAX_S')
+           call READF(mc%INITIAL_MAX_S) ! inital chi of rep with highest chi
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
@@ -572,7 +576,7 @@ Subroutine MCvar_setParams(mc,fileName)
 end Subroutine
 Subroutine MCvar_printDescription(mc)
     IMPLICIT NONE
-    TYPE(MCvar) mc
+    TYPE(MCvar), intent(in) :: mc
     print*, "---------------System Description---------------"
     print*, "Bead variables:"
     print*, " Total number of beads, NT=", mc%NT
@@ -610,8 +614,8 @@ Subroutine MCvar_printDescription(mc)
 end Subroutine
 Subroutine MCvar_allocate(mc,md)
     IMPLICIT NONE
-    TYPE(MCvar) mc
-    TYPE(MCData) md
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(out) :: md
     INTEGER NT  ! total number of beads
     INTEGER NBIN ! total number of bins
     NT=mc%NT
@@ -644,7 +648,7 @@ end subroutine
 Subroutine MCvar_defaultAmp(mc)
     IMPLICIT NONE
     DOUBLE PRECISION, Parameter :: PI=3.141592654_dp
-    TYPE(MCvar) mc
+    TYPE(MCvar), intent(inout) :: mc
     INTEGER MCTYPE ! Type of move
     INTEGER NANI ! NaN
     DOUBLE PRECISION NAND !NAND
@@ -745,8 +749,8 @@ end subroutine
 Subroutine MCvar_recenter(mc,md)
 !  Prevents drift in periodic BC
     IMPLICIT NONE
-    TYPE(MCvar) mc
-    TYPE(MCData) md
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(inout) :: md
     INTEGER IB, I, J   ! Couners
     DOUBLE PRECISION R0(3)  ! Offset to move by
     IB=1
@@ -767,7 +771,7 @@ end Subroutine
 Subroutine MCvar_printEnergies(mc)
 ! For realtime feedback on MC simulation
     IMPLICIT NONE
-    TYPE(MCvar) mc
+    TYPE(MCvar), intent(in) :: mc
     print*, "ECouple:", mc%ECouple
     print*, "Bending energy", mc%EELAS(1)
     print*, "Par compression energy", mc%EELAS(2)
@@ -780,8 +784,8 @@ end subroutine
 Subroutine MCvar_printPhi(mc,md)
 ! Prints densities for trouble shooting
     IMPLICIT NONE
-    TYPE(MCvar) mc
-    TYPE(MCData) md
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(in) :: md
     Integer I
     DOUBLE PRECISION EKap, ECouple, EChi,VV, PHIPOly
     print*,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -807,7 +811,7 @@ end subroutine
 Subroutine MCvar_printWindowStats(mc)
 ! For realtime feedback on adaptation
     IMPLICIT NONE
-    TYPE(MCvar) mc
+    TYPE(MCvar), intent(in) :: mc
     INTEGER I ! counter
     I=0
     print*, "Succes | MCAMP | WINDOW| Type "
@@ -820,8 +824,8 @@ Subroutine MCvar_printWindowStats(mc)
 end subroutine
 Subroutine MCvar_LoadField(mc,md,fileName)
     IMPLICIT NONE
-    TYPE(MCvar) mc
-    TYPE(MCData) md
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(inout) :: md
     Integer I
     character*16 fileName ! file name to load from
     OPEN (UNIT = 1, FILE = fileName, STATUS = 'OLD')      
@@ -832,8 +836,8 @@ Subroutine MCvar_LoadField(mc,md,fileName)
 end subroutine
 subroutine MCvar_MakeField(mc,md)
     IMPLICIT NONE
-    TYPE(MCvar) mc
-    TYPE(MCData) md
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(inout) :: md
     integer INDBIN  ! index of bin
     integer IX,IY,IZ ! bin corrdinates
 
@@ -852,9 +856,9 @@ end subroutine
 Subroutine MCvar_loadAB(mc,md,fileName)
 ! Loads AB for file...has not been tested
     IMPLICIT NONE
-    TYPE(MCvar) mc
-    TYPE(MCData) md
-    character*16 fileName ! file name to load from
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(inout) :: md
+    character*16, intent(in) :: fileName ! file name to load from
     INTEGER IB, I, J ! counters
     OPEN (UNIT = 1, FILE = fileName, STATUS = 'OLD')      
     IB=1
@@ -870,11 +874,11 @@ Subroutine MCvar_saveR(mc,md,fileName,repeatingBC)
 ! Writes R and AB to file for analysis
 ! Rx  Ry  Rz AB
     IMPLICIT NONE
-    INTEGER repeatingBC  ! 1 for reapeating boundary conditions
+    INTEGER, intent(in) :: repeatingBC  ! 1 for reapeating boundary conditions
     INTEGER I,J,IB  ! counters
-    TYPE(MCvar) mc
-    TYPE(MCData) md
-    character*16 fileName
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(in) :: md
+    character*16, intent(in) :: fileName
     character*32 fullName
     fullName=  trim(fileName) // trim(mc%repSufix) 
     fullName=trim(fullName)
@@ -908,9 +912,9 @@ Subroutine MCVar_savePHI(mc,md,fileName)
 ! Saves PHIA and PHIB to file for analysis
     IMPLICIT NONE
     INTEGER I  ! counters
-    TYPE(MCvar) mc
-    TYPE(MCData) md
-    character*16 fileName 
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(in) :: md
+    character*16, intent(in) :: fileName 
     character*32 fullName
     fullName=  trim(fileName) // trim(mc%repSufix) 
     OPEN (UNIT = 1, FILE = fullName, STATUS = 'NEW')
@@ -923,9 +927,9 @@ Subroutine MCvar_saveU(mc,md,fileName)
 ! Saves U to ASCII file for analisys
     IMPLICIT NONE
     INTEGER I,J,IB  ! counters
-    TYPE(MCvar) mc
-    TYPE(MCData) md
-    character*16 fileName
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(in) :: md
+    character*16, intent(in) :: fileName
     character*32 fullName
     fullName=  trim(fileName) // trim(mc%repSufix) 
     OPEN (UNIT = 1, FILE = fullName, STATUS = 'NEW')
@@ -941,8 +945,8 @@ end subroutine
 Subroutine MCvar_saveParameters(mc,fileName)
 ! Write a number of parameters ASCII variables to file for reccords
     IMPLICIT NONE
-    TYPE(MCvar) mc
-    character*16 fileName
+    TYPE(MCvar), intent(in) :: mc
+    character*16, intent(in) :: fileName
     character*32 fullName
     fullName=  trim(fileName) // trim(mc%repSufix) 
     OPEN (UNIT =1, FILE = fullName, STATUS = 'NEW')
@@ -969,9 +973,9 @@ end subroutine
 Subroutine MCvar_appendEnergyData(mc,fileName)
 ! Print Energy data
     IMPLICIT NONE
-    TYPE(MCvar) mc
+    TYPE(MCvar), intent(in) :: mc
     LOGICAL isfile
-    character*16 fileName
+    character*16, intent(in) :: fileName
     character*32 fullName
     fullName=  trim(fileName) // trim(mc%repSufix) 
     inquire(file = fullName, exist=isfile)
@@ -994,9 +998,9 @@ end subroutine
 Subroutine MCvar_appendAdaptData(mc,fileName)
 ! Appends MC move adaptation data to the file  
     IMPLICIT NONE
-    TYPE(MCvar) mc
+    TYPE(MCvar), intent(in) :: mc
     LOGICAL isfile
-    character*16 fileName
+    character*16, intent(in) :: fileName
     character*32 fullName
     fullName=  trim(fileName) // trim(mc%repSufix) 
     inquire(file = fullName, exist=isfile)
@@ -1035,9 +1039,9 @@ Subroutine MCvar_writeBinary(mc,md,baceName)
 !     etc.
     IMPLICIT NONE
     INTEGER sizeOfType         ! for binary saving
-    TYPE(MCvar) mc             ! to be save or filled
-    TYPE(MCData) md             ! to be save or filled
-    CHARACTER(LEN=16) baceName ! for example 'record/'
+    TYPE(MCvar), intent(in) :: mc             ! to be save or filled
+    TYPE(MCData), intent(in) :: md             ! to be save or filled
+    CHARACTER(LEN=16), intent(in) :: baceName ! for example 'record/'
     CHARACTER(LEN=16) fileName ! fileName
     CHARACTER(LEN=16) sufix    ! end of file name
     LOGICAL exists    ! Does file already exist?

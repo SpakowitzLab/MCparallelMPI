@@ -96,6 +96,7 @@ subroutine singleCall()
     call random_setseed(Irand,rand_stat) ! random seed for head node
     print*, "calling single wlcsim"
     call wlcsim(rand_stat)
+   !call simpleSim(rand_stat)
 end subroutine
 subroutine paraTemp ( p, id)
 
@@ -194,7 +195,7 @@ subroutine paraTemp ( p, id)
         do rep=1,nPTReplicas
             upSuccess(rep)=0
             downSuccess(rep)=0
-            s_vals(rep)=0.01_dp*dble(rep)/dble(nPTReplicas)
+            s_vals(rep)=mc%INITIAL_MAX_S*dble(rep)/dble(nPTReplicas)
         enddo
 
         do rep=1,nPTReplicas
@@ -322,6 +323,7 @@ subroutine paraTemp ( p, id)
         !
         !  --------------------------------
         call wlcsim(rand_stat)
+        !call simpleSim(rand_stat)
         nan_dp=0; nan_dp=nan_dp/nan_dp !NaN
         x(1)=nan_dp
         print*, "Node ",id," sending normal exit code."
@@ -485,7 +487,6 @@ Subroutine replicaExchange(mc)
     x(8)=0.0_dp !x(8)=mc%EElas(3)/mc%Para(3)
 
     test(1)=mc%EChi/mc%Chi
-    test(2)=mc%EBind/mc%mu
     test(3)=mc%EField/mc%h_A
     test(4)=mc%ECouple/mc%HP1_Bind
     test(5)=mc%EKap/mc%Kap
@@ -500,6 +501,7 @@ Subroutine replicaExchange(mc)
     cofOld(8)=mc%Para(3) 
 
     do i=1,5
+        if (i.eq.2) cycle ! doesn't work for mu
         if (abs(cofOld(I)*(test(I)-x(I))).lt.0.0001) cycle
         if (abs(cofOld(I)).lt.0.00000001) cycle
         inquire(file = "data/error", exist=isfile)
@@ -541,6 +543,12 @@ Subroutine replicaExchange(mc)
     !mc%Para(2)  =cof(7)
     !mc%Para(3)  =cof(8)
 
+    if (abs(mc%EChi-x(1)*CofOld(1)).gt.0.0000001_dp) then
+        print*, "Error in replicaExchange"
+        print*, "mc%EChi",mc%EChi,"x(1)*CofOld(1)",x(1)*CofOld(1)
+        stop 1
+    endif
+
     mc%EChi    =mc%EChi    +x(1)*(Cof(1)-CofOld(1)) 
     mc%EBind   =mc%EBind   +x(2)*(Cof(2)-CofOld(2))  
     mc%EField  =mc%EField  +x(3)*(Cof(3)-CofOld(3)) 
@@ -549,6 +557,12 @@ Subroutine replicaExchange(mc)
    ! mc%EElas(1)=mc%EElas(1)+x(6)*(Cof(6)-CofOld(6)) 
    ! mc%EElas(2)=mc%EElas(2)+x(7)*(Cof(7)-CofOld(7)) 
    ! mc%EElas(3)=mc%EElas(3)+x(8)*(Cof(8)-CofOld(8)) 
+
+    if (abs(mc%EChi-x(1)*Cof(1)).gt.0.000001_dp) then
+        print*, "Error in replicaExchange"
+        print*, "mc%EChi",mc%EChi,"x(1)*Cof(1)",x(1)*Cof(1)
+        stop 1
+    endif
 
     ! change output file sufix
     write(iostr,"(I4)"), mc%rep
