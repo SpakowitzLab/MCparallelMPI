@@ -30,7 +30,7 @@ my $filein1;            # File with bead coordinates
 my $fileout1;           # Output file for pdb
 
 for (my $filecount=$file0; $filecount<=$filef; $filecount+=1) {
-$filein1 =sprintf("r%dv%d", $savept, $filecount);
+$filein1 =sprintf("../data/r%dv%d", $savept, $filecount);
 $fileout1=sprintf(">snap%03d.pdb",$filecount);
 
 open(COORD1, $filein1) || die('cannot open file:'. $!);
