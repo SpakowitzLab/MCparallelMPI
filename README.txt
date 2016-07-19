@@ -5,7 +5,7 @@
 #-------------------------------------------------------------------------------------
 Authors: 
 Andrew Spakowitz  (wrote initial code for wlc)
-Sifan Mao (Improved MC setup)
+Shifan Mao (Improved MC setup)
 Quinn MacPherson (Improved MC setup and MPI paralleization)  spring 2016
 Contact: qmac@stanford.edu
 
