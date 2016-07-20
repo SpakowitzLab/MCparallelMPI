@@ -45,13 +45,10 @@ Subroutine wlcsim(rand_stat)
   INQUIRE (FILE = 'data/out1', exist = restart)
   if (.NOT.restart) then
 
-    PRINT*, '-----new simulation-----'
 !    Calculate volume of bins
     if (mc%confineType.eq.3) then 
-        print*, "Calculating Bin volumes"
         call MC_caclVolume(mc%confineType,mc%NBINX,mc%DEL, mc%LBox(1), &
                            md%Vol,rand_stat)  ! calculate partial volumes
-        print*, "Done Calculating Bin volumes"
     else
         do I=1,mc%NBIN
              md%Vol(I)=mc%del**3
@@ -59,17 +56,14 @@ Subroutine wlcsim(rand_stat)
     endif
     
 !     Setup the initial condition
-    print*, "setting initial position ..."
     call initcond(md%R,md%U,md%AB,mc%NT,mc%NB,mc%NP,mc%FRMFILE,mc%PARA,mc%LBOX, &
                   mc%setType,rand_stat)
 
 !     Load in AB sequence
     IF (mc%FRMCHEM) THEN
         iostr='input/ab'
-        print *, "loading AB"
         call MCvar_loadAB(mc,md,iostr)
     ELSE
-        print*, "setting initial binding condition..."
         call initchem(md%AB,mc%NT,mc%N,mc%G,mc%NP,mc%FA,mc%LAM,rand_stat)
     ENDIF
 
@@ -80,37 +74,28 @@ Subroutine wlcsim(rand_stat)
         print*, "wlcsim: FRMMETH not fininshed"
         stop 1
     ELSE
-        print*, "setting initial chemical condition..."
         call initchem(md%METH,mc%NT,mc%N,mc%G,mc%NP,mc%F_METH,mc%LAM_METH,rand_stat)        
     ENDIF
 
 !   Load External field
     if (mc%FRMField) then
         iostr='input/h_A'
-        print *, "loading h_A"
         Call MCvar_LoadField(mc,md,iostr)
     else
         Call MCvar_MakeField(mc,md)
     endif
 
 !      Get assignement from other threads
-    if ( mc%PTON) then
-        print*, "calling PT_overrid ..."
-        call PT_override(mc,md)
-    else
-        mc%repSufix=''
-    endif
+    call PT_override(mc,md)
+
     iostr='data/r0'
     I=0;
-    print*, 'calling saveR...'
     call MCvar_saveR(mc,md,iostr,0)
    
     iostr='data/params'
-    print*, "calling saveParameters..."
     call MCvar_saveParameters(mc,iostr)
 
     iostr='data/u0'
-    print*, "calling saveU..."
     call MCvar_saveU(mc,md,iostr)
 
 
@@ -122,14 +107,14 @@ Subroutine wlcsim(rand_stat)
     call MCvar_readBindary(mc,md,iostr)
 
  endif
- call MCvar_printDescription(mc)
+ ! call MCvar_printDescription(mc)  ! output simulation parameters
 
 !  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
 !              Begin simulation
 !
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  print*, 'Beginning simulation'
+  print*, 'Beginning simulation: rep', mc%rep, " id", mc%id
   mc%IND=1
 
   DO WHILE ((mc%IND).LE.mc%INDMAX) 

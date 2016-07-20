@@ -10,14 +10,17 @@
 subroutine interp(confineType,RBIN,LBOX,NBINX,DEL,IX,IY,IZ,WX,WY,WZ)
 use setPrecision
 IMPLICIT NONE
-integer confineType
-
-DOUBLE PRECISION RBIN(3) ! Total number of bins
-DOUBLE PRECISION LBOX(3) ! Side length of box
-INTEGER NBINX(3)      ! number of discritations in each direction
-DOUBLE PRECISION DEL  ! size of discritation
-INTEGER IX(2),IY(2),IZ(2)  ! Output
-DOUBLE PRECISION WX(2),WY(2),WZ(2) ! Output
+integer, intent (in) :: confineType
+DOUBLE PRECISION, intent(inout) :: RBIN(3) ! position or posiion within bin 
+DOUBLE PRECISION, intent(in) :: LBOX(3) ! Side length of box
+INTEGER, intent(in) :: NBINX(3)      ! number of discritations in each direction
+DOUBLE PRECISION, intent(in) :: DEL  ! size of discritation
+INTEGER, intent(out) :: IX(2)  ! Output
+INTEGER, intent(out) :: IY(2) ! Output
+INTEGER, intent(out) :: IZ(2)  ! Output
+DOUBLE PRECISION, intent(out) :: WX(2) ! Output
+DOUBLE PRECISION, intent(out) :: WY(2) ! Output
+DOUBLE PRECISION, intent(out) :: WZ(2) ! Output
 SELECT CASE (confineType)
 CASE (0) ! Box from 0-LBOX, Bins split by boundaries
     ! Periodic BC

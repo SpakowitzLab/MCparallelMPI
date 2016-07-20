@@ -14,16 +14,9 @@ mv code/MCparrll_out .
 mkdir -p data
 mv data/* trash/
 
-sleep 2
 echo "Now run"
 # now run the output
 # --prefix used to avoid changing path
 mpirun --prefix ~/openmpi/ -np 8 MCparrll_out
 
 
-# cd code
-# gfortran -O3 -fbounds-check -o wlcsim SIMcode/* BDcode/* DATAcode/* MCcode/*
-# cd ..
-# mv code/wlcsim .
-# mv data/* trash/.
-# ./wlcsim

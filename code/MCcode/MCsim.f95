@@ -66,7 +66,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 !   initialize densities and energies 
 !
 ! -------------------------------------
-    print*, "initializeing..." ! make sure this doesn't take too much time
     ! --- Binding Energy ---
     md%ABP=0 ! set entire array to zero
     !  Notide that ABP and AB are intensionally swapped below
@@ -190,7 +189,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
              md%PHIB(I)=0.0_dp
         enddo
     endif
-    print*, "done initializing"
     close (3) 
 ! -------------------------------------
 !
@@ -283,13 +281,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               mc%ECon=0.0_dp;
           endif
 
-         ! if (MCTYPE.EQ.10) then
-         !     print*,"mc%DEELAS",mc%DEELAS
-         !     print*,"mc%DEKap",mc%DEKap 
-         !     print*,"mc%DEChi",mc%DEChi
-         !     print*,"mc%ECon",mc%ECon
-         !     call sleep(1)
-         ! endif
 !   Change the position if appropriate
           ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3) & 
                  +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon+mc%DEField
@@ -366,11 +357,10 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
             endif
           endif
 
-
        enddo ! End of movetype loop
 
        !  -----  Parallel tempering ----
-       IF ((mc%PTON).and.((mod(ISTEP,mc%NPT)).eq.0)) THEN
+       IF (mod(ISTEP,mc%NPT).eq.0) THEN
           call replicaExchange(mc)
        ENDIF
       

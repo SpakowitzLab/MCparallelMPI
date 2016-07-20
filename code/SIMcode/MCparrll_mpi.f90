@@ -44,9 +44,7 @@ program main
 !
   if ( id == 0 ) then
     write ( *, '(a)' ) ' '
-    write ( *, '(a)' ) '  MC with tempering using MPI'
-    write ( *, '(a)' ) '  FORTRAN90/MPI version'
-    write ( *, '(a)' ) '  This is a basic parallel tempering MC sim'
+    write ( *, '(a)' ) '  WLC MC sim with tempering using MPI'
     write ( *, '(a)' ) ' '
     write ( *, '(a,i8)' ) '  The number of threads being used is ', p
     write ( *, '(a,i8)' ) '  The number of replicas is ', p-1
@@ -208,7 +206,6 @@ subroutine paraTemp ( p, id)
             cofMtrx(rep,7)=mc%Para(2)
             cofMtrx(rep,8)=mc%Para(3) 
         enddo
-        !call PT_cofValues(cof,nPTReplicas)
 
         N_average=0
 
@@ -245,6 +242,10 @@ subroutine paraTemp ( p, id)
                 endif
             enddo
             
+            source=1 
+            call MPI_Recv (mc%Ind, 1, MPI_INTEGER, source, 0, &
+                           MPI_COMM_WORLD, status, error )
+
             ! do replica exchange
             do rep=1,(nPTReplicas-1)
                 energy=0.0_dp
@@ -254,9 +255,11 @@ subroutine paraTemp ( p, id)
                 enddo
                 call random_number(urand,rand_stat)
                 if (exp(-1.0_dp*energy).gt.urand(1)) then 
-                    temp=nodeNumber(rep)
-                    nodeNumber(rep)=nodeNumber(rep+1)
-                    nodeNumber(rep+1)=temp
+                    if (mc%PTON) then
+                        temp=nodeNumber(rep)
+                        nodeNumber(rep)=nodeNumber(rep+1)
+                        nodeNumber(rep+1)=temp
+                    endif
                     upSuccess(rep)=upSuccess(rep)+1
                     downSuccess(rep+1)=downSuccess(rep+1)+1
                     x=xMtrx(rep,:)
@@ -265,9 +268,6 @@ subroutine paraTemp ( p, id)
                 endif
             enddo
 
-            source=1 
-            call MPI_Recv (mc%Ind, 1, MPI_INTEGER, source, 0, &
-                           MPI_COMM_WORLD, status, error )
             
             ! track/adapt acceptance rates
             N_average=N_average+1
@@ -387,6 +387,13 @@ Subroutine PT_override(mc,md)
 
     call MPI_COMM_SIZE(MPI_COMM_WORLD,nThreads,ierror)
     call MPI_COMM_RANK(MPI_COMM_WORLD,id,ierror)
+    if (nThreads.lt.3) then
+        mc%repSufix="v1"
+        mc%rep=1
+        mc%id=int(id)
+        print*, "No PT_override. Input values used."
+        return
+    endif
     
     !---------------------------------------------
     !
@@ -450,7 +457,7 @@ Subroutine PT_override(mc,md)
     iostrg=trim(iostrg)
     mc%repSufix=iostrg
 
-    ! keep track of which tread you are
+    ! keep track of which thread you are
     mc%id=int(id)
 end Subroutine
 Subroutine replicaExchange(mc)
@@ -469,6 +476,7 @@ Subroutine replicaExchange(mc)
     integer i  ! working intiger
     integer (kind=4) dest ! message destination
     integer (kind=4) source ! message source
+    integer (kind=4) nThreads
     character*16 iostr ! for handling sufix string
     integer status(MPI_STATUS_SIZE)  ! MPI status
     double precision cof(nTerms)
@@ -476,6 +484,9 @@ Subroutine replicaExchange(mc)
     double precision x(nTerms)
     double precision test(5)
     logical isfile
+
+    call MPI_COMM_SIZE(MPI_COMM_WORLD,nThreads,ierror)
+    if (nThreads.lt.3) return
 
     x(1)=mc%x_Chi
     x(2)=mc%x_mu
@@ -573,6 +584,6 @@ Subroutine replicaExchange(mc)
     mc%repSufix=iostr
 
 
-    ! keep track of which tread you are
+    ! keep track of which thread you are
     mc%id=int(id)
 end Subroutine
