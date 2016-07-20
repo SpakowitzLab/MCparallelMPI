@@ -1,5 +1,7 @@
 data/*
 trash/*
+mkfigures/savedata/*
+
 MCparrll_out
 stdout.txt
 
