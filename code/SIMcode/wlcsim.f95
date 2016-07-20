@@ -20,9 +20,6 @@ Subroutine wlcsim(rand_stat)
   use mersenne_twister  ! so that we know the size of rand_stat
 
   IMPLICIT NONE
-  DOUBLE PRECISION, PARAMETER :: PI=3.141592654_dp ! Value of pi
-
-  !Inputs
   type(random_stat), intent(inout) :: rand_stat ! state of random number generator
 
   ! miscellaneous

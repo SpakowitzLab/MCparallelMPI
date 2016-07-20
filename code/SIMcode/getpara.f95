@@ -2,7 +2,6 @@
       
       SUBROUTINE getpara(PARA,EPS,L0,LBOX)
       
-      PARAMETER (PI=3.141593)
 
       DOUBLE PRECISION PARA(10)
       DOUBLE PRECISION DEL
@@ -34,7 +33,8 @@
   
       OPEN (UNIT=5,FILE='input/dssWLCparams',STATUS='OLD')
       DO 10 I=1,679
-         READ(5,*) PVEC(I,1),PVEC(I,2),PVEC(I,3),PVEC(I,4),PVEC(I,5),PVEC(I,6),PVEC(I,7),PVEC(I,8)
+         READ(5,*) PVEC(I,1),PVEC(I,2),PVEC(I,3),PVEC(I,4),PVEC(I,5), &
+                   PVEC(I,6),PVEC(I,7),PVEC(I,8)
  10   CONTINUE 
       CLOSE(5)
       

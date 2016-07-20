@@ -2,12 +2,11 @@
 #sleep 30
 
 echo "Compile"
-
+rm MCparrll_out
 cd code
 # compile with mpi's fortran compiler
-
 mpifort -c DATAcode/* mersenne_twister.f90
-mpifort -c -fbounds-check -Wall -fmax-errors=5 -O5 SIMcode/*  MCcode/* 
+mpifort -c -fbounds-check -Wall -W -fmax-errors=5 -O5 SIMcode/*  MCcode/* 
 mpifort *.o -o MCparrll_out 
 rm *.o
 cd ..

@@ -16,8 +16,6 @@ SUBROUTINE initchem(AB,NT,N,G,NP,FA,LAM,rand_stat)
     use mersenne_twister
     use setPrecision
 
-  DOUBLE PRECISION, PARAMETER :: PI=3.141592653589793_dp ! Value of pi 
-  
   INTEGER, intent(out) :: AB(NT)     ! Chemical identity of beads
   INTEGER, intent(in) :: N           ! Number of monomers per polymer
   INTEGER, intent(in) :: G           ! Number of beads per monomer

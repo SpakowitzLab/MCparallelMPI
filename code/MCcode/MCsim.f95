@@ -16,8 +16,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
     IMPLICIT NONE 
 
-    DOUBLE PRECISION, PARAMETER :: PI=3.141592654 ! Value of pi
-
     INTEGER, intent(in) :: NSTEP             ! Number of MC steps
     INTEGER, intent(in) :: INTON             ! Include polymer interactions
     
