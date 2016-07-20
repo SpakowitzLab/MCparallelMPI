@@ -6,6 +6,7 @@ use simMod
 implicit none
 type(random_stat), intent(inout) :: rand_stat ! state of random number generator
 Type(MCvar) mc 
+TYPE(MCData) md
 double precision r(8)
 double precision rp(8)
 integer term
@@ -19,6 +20,9 @@ double precision chiOld, xchiOld, EchiOld
 
 fileName='input/params'
 call MCvar_setParams(mc,fileName)
+call MCvar_allocate(mc,md)
+call PT_override(mc,md)
+
 do term=1,8
     r(term)=0.0_dp
 enddo
@@ -49,9 +53,13 @@ do ISTEP=1,mc%NSTEP
     endif
     mc%ECHI=mc%CHI*(r(1)**2)
     ! Make Move
-    do term=1,8 
-        call random_number(urnd,rand_stat)
-        rp(term)=r(term)+urnd(1)-0.5_dp
+    do term=1,8
+        if (mod(istep,8)+1.eq.term) then 
+            call random_number(urnd,rand_stat)
+            rp(term)=r(term)+urnd(1)-0.5_dp
+        else
+            rp(term)=r(term)
+        endif
     enddo
 
     ! Calculate change in energy
@@ -63,7 +71,7 @@ do ISTEP=1,mc%NSTEP
     mc%dx_kap=   (rp(5)**2-r(5)**2)
     
     mc%DEBind=mc%mu*(rp(2)**2-r(2)**2) + (rp(2)-r(2))
-   
+    
     mc%dx_chi=mc%dx_chi*mc%CHI_ON
     mc%dx_couple=mc%dx_couple*mc%Couple_ON
     mc%dx_Kap=mc%dx_Kap*mc%KAP_ON
@@ -73,9 +81,9 @@ do ISTEP=1,mc%NSTEP
     mc%DEKap=mc%Kap*        mc%dx_Kap
     mc%DEField=mc%h_A*      mc%dx_Field
 
-    mc%deelas(1)=0.1234*(rp(6)**2-r(6)**2)
-    mc%deelas(2)=0.1345*(rp(7)**2-r(7)**2)
-    mc%deelas(3)=0.1456*(rp(8)**2-r(8)**2)
+    mc%deelas(1)=mc%Para(1)*(rp(6)**2-r(6)**2)
+    mc%deelas(2)=mc%Para(2)*(rp(7)**2-r(7)**2)
+    mc%deelas(3)=mc%Para(3)*(rp(8)**2-r(8)**2)
 
     ! accept or reject
     ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3) &
@@ -108,7 +116,6 @@ do ISTEP=1,mc%NSTEP
     chiOld=mc%Chi
     xchiOld=mc%x_chi
     EchiOld=mc%EChi
-    !  Replica Couple
     IF ((mod(ISTEP,4)).eq.0) THEN
         call replicaExchange(mc)
     ENDIF
@@ -130,11 +137,11 @@ do ISTEP=1,mc%NSTEP
             if (.not.isfile) then
                 OPEN (UNIT = 2, FILE = fullName, STATUS = 'NEW')
                 write(2,*), mc%chi, mc%mu, mc%h_A, mc%HP1_Bind,mc%kap,&
-                            0.1234,0.1345, 0.1456, mc%repSufix
+                            mc%Para(1),mc%Para(2), mc%Para(3), mc%id
                 close(2)
             endif
         endif
-        write(1,*) r,mc%ind, mc%NSTEP*(mc%IND-1)+ISTEP, mc%repSufix
+        write(1,*) r,mc%ind, mc%NSTEP*(mc%IND-1)+ISTEP
         Close(1)
     endif
 
