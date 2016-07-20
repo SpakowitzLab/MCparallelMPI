@@ -45,7 +45,7 @@ def spectrumbar (*args, **kwargs):
     name="spectrumbar"
     radius=0.2
     ends="square"
-    x1=20.5
+    x1=20
     y1=22
     z1=22
     x2=22

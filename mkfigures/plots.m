@@ -3,11 +3,11 @@ clear;close all
 % OPTIONS
 PLOTSIM = 1;    % plot simulation structure factor
 PLOTMF = 1;     % plot mean-field structure factor
-SAVESIM = 0;    % save simulation structure factor to file
+SAVESIM = 1;    % save simulation structure factor to file
 
 % plot parameters
-NREP = [1,30,60];  % number of replicas
-NSNAP = 30:35;  % snapshots to average
+NREP = [1:60];  % number of replicas
+NSNAP = 25:63;  % snapshots to average
 
 % add/define paths
 addpath('misc/');
@@ -17,12 +17,12 @@ savedir = 'savedata/';   % save directory
 
 % simulation parameters
 boxl = 20;   % edge size of simulation
-Ree = 1.5;   % average end-to-end distance of a monomer
-EPS = 0.04;  % inter-bead segment rigidity (in unit of 2lp)
+Ree = 2.0;   % average end-to-end distance of a monomer
+EPS = 0.01;  % inter-bead segment rigidity (in unit of 2lp)
 LAM = 0;     % degree of chemical correlation
 G = 5;       % number of beads per monomer
 FA = 0.16;   % chemical fraction of A species
-lksample = 20;
+lksample = 10;
 
 % load CHI parameters
 CHI = load(strcat(dir,'chi'));  % adjusted CHI values
@@ -39,6 +39,7 @@ if (PLOTSIM)
         col = (REP-1)/(max(NREP)-1)
         savg = [];
         for SNAP=NSNAP
+            fprintf('REP = %d, SNAP = %d\n',REP,SNAP)
             r=dlmread(strcat(dir,sprintf('r%dv%d',SNAP,REP)));
             [k,s]=scalc(r,boxl,lksample);
             savg = [savg,s];
