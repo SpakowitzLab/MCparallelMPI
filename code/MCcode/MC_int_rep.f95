@@ -42,9 +42,13 @@ LOGICAL forward ! move forward
 
 NBINX=mc%NBINX
 
-if (md%RP(I1,1).eq.md%R(I1+1,1)) then
+if ((md%RP(I1,1).eq.md%R(I1+1,1)).and. &
+    (md%RP(I1,2).eq.md%R(I1+1,2)).and. &
+    (md%RP(I1,3).eq.md%R(I1+1,3))) then 
     forward=.TRUE.
-elseif (md%RP(I2,1).eq.md%R(I2-1,1)) then
+elseif ((md%RP(I2,1).eq.md%R(I2-1,1)).and. &
+        (md%RP(I2,2).eq.md%R(I2-1,2)).and. &
+        (md%RP(I2,3).eq.md%R(I2-1,3))) then
     forward=.FALSE.
 else
     print*, "md%RP(I1,1)",md%RP(I1,1),"md%R(I1+1,1)",md%R(I1+1,1)

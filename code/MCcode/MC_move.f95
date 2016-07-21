@@ -1,4 +1,4 @@
-!---------------------------------------------------------------*
+!--------------------------------------------------------------*
 !
 !           Makes Monti Carlo Moves
 !           
@@ -9,7 +9,6 @@ SUBROUTINE MC_move(R,U,RP,UP,NT,NB,NP,IP,IB1,IB2,IT1,IT2,MCTYPE &
                   ,MCAMP,WINDOW,AB,ABP,BPM,rand_stat,winType &
                   ,IT3,IT4)
 
-!use mt19937, only : grnd, sgrnd, rnorm, mt, mti
 use mersenne_twister      
 use setPrecision
 IMPLICIT NONE
@@ -34,7 +33,7 @@ INTEGER, intent(out) :: IT4   ! Test bead position 4 if applicable
 
 INTEGER I,J  ! Test indices
 ! Things for random number generator
-type(random_stat) rand_stat  ! status of random number generator      
+type(random_stat), intent(inout) :: rand_stat  ! status of random number generator      
 real urand(3)  ! random vector
 real urnd(1) ! single random number
 ! Variables for the crank-shaft move

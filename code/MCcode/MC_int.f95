@@ -18,12 +18,11 @@ use simMod
 use setPrecision
 IMPLICIT NONE
 
-!   iputs
 TYPE(MCvar), intent(inout) :: mc   ! <---- Contains output
 TYPE(MCData), intent(inout) :: md
-LOGICAL, intent(in) :: initialize        ! if true calculate absolute energy
-INTEGER, intent(in) :: I1                ! Test bead position 1
-INTEGER, intent(in) :: I2                ! Test bead position 2
+LOGICAL, intent(in) :: initialize   ! if true, calculate absolute energy
+INTEGER, intent(in) :: I1           ! Test bead position 1
+INTEGER, intent(in) :: I2           ! Test bead position 2
 
 !   Internal variables
 INTEGER I                 ! For looping over bins
