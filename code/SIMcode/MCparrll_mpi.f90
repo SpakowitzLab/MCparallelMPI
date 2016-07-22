@@ -146,7 +146,7 @@ subroutine paraTemp ( p, id)
     character*16 fileName ! ouput filename
     double precision energy ! for deciding to accept exchange
     integer term ! for loopin over terms
-    double precision h_path,chi_path ! functions
+    double precision h_path,chi_path,mu_path,kap_path,HP1_Bind_path ! functions
 
     nExchange=0
     nPTReplicas=p-1 
@@ -198,10 +198,10 @@ subroutine paraTemp ( p, id)
 
         do rep=1,nPTReplicas
             cofMtrx(rep,1)=chi_path(s_vals(rep))      
-            cofMtrx(rep,2)=mc%mu     
+            cofMtrx(rep,2)=mu_path(s_vals(rep))      
             cofMtrx(rep,3)=h_path(s_vals(rep))     
-            cofMtrx(rep,4)=mc%HP1_Bind
-            cofMtrx(rep,5)=mc%Kap    
+            cofMtrx(rep,4)=HP1_Bind_path(s_vals(rep))     
+            cofMtrx(rep,5)=kap_path(s_vals(rep))      
             cofMtrx(rep,6)=mc%Para(1)
             cofMtrx(rep,7)=mc%Para(2)
             cofMtrx(rep,8)=mc%Para(3) 
@@ -368,6 +368,30 @@ function h_path(s) result(h)
         h=0.0_dp
     endif
 end function h_path
+function mu_path(s) result(mu)
+    use setPrecision
+    implicit none
+    double precision, intent(in) :: s
+    double precision mu
+    if(.false.) mu=s
+    mu=0.0_dp
+end function mu_path
+function kap_path(s) result(kap)
+    use setPrecision
+    implicit none
+    double precision, intent(in) :: s
+    double precision kap
+    if(.false.) kap=s
+    kap=0.0_dp
+end function kap_path
+function hp1_bind_path(s) result(hp1_bind)
+    use setPrecision
+    implicit none
+    double precision, intent(in) :: s
+    double precision hp1_bind
+    if(.false.) hp1_bind=s
+    hp1_bind=0.0_dp
+end function hp1_bind_path
 Subroutine PT_override(mc,md)
 ! Override initialization with parallel setup parameters
 !  In particualar it changes: mc%AB, mc%rep, mc%mu, mc%repSufix

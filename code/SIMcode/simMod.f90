@@ -183,12 +183,11 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%FRMFILE=.FALSE.
     mc%FRMMETH=.FALSE.
     mc%FRMFIELD=.false.
-    mc%k_field=0.3145_dp
     mc%saveU=.FALSE.
     mc%savePhi=.FALSE.
     mc%FRMCHEM=.FALSE.
 
-    ! chain and box options
+    ! geometry options
     mc%NP  =1
     mc%N   =2000
     mc%G   =1
@@ -204,6 +203,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%F_METH=0.5_dp
     mc%LAM_METH=0.9_dp
     mc%Fpoly=0.025_dp
+    mc%k_field=0.3145_dp
 
     ! energy parameters
     mc%EPS =0.3_dp
@@ -280,7 +280,7 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READI(mc%setType)
            ! setType      |  Discription
            ! _____________|_________________________________
-           !    1         |   staight line in y direction with random starting
+           !    1         |   straight line in y direction with random starting
            !    2         |   rerandomize when reaching boundary, slit in z dir
            !    3         |   rerandomize when reaching boundary, cube boundary
            !    4         |   rerandomize when reaching boundary, shpere
@@ -289,7 +289,7 @@ Subroutine MCvar_setParams(mc,fileName)
            ! confineType  |  Discription
            ! _____________|_________________________________
            !    0         |  No confinement, periodic cube
-           !    1         |  Betwene two plates in Z direction at 0 and LBox
+           !    1         |  Between two plates in Z direction at 0 and LBox
            !    2         |  Cube of size LBox**3,  range: 0-LBox
            !    3         |  Circle of radius LBox, centered at LBox/2
            !    4         |  Periodic, unequal dimensions
@@ -303,6 +303,8 @@ Subroutine MCvar_setParams(mc,fileName)
            !    1         | Solution (For DNA)
        CASE('FRMCHEM')
            Call READO(mc%FRMCHEM) ! Initial chemical sequence from file
+       CASE('FRMFILE')
+           call READO(mc%FRMFILE) ! Read configuration from file
        CASE('FRMMETH')
            Call READO(mc%FRMMETH) ! Read methalation from file
        CASE('PTON')
@@ -403,6 +405,8 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READF(mc%MINWINDOW(7))
        CASE('REDUCE_MOVE')
            Call READI(mc%reduce_move) !  only exicute unlikely movetypes every ____ cycles
+       CASE('MIN_ACCEPT')
+           Call READF(mc%MIN_ACCEPT) ! below which moves are turned off
        CASE('CRANK_SHAFT_TARGET')
            Call READF(mc%winTarget(1)) ! target window size for crank shaft move
        CASE('SLIDE_TARGET')
@@ -433,8 +437,6 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READF(mc%k_field)  ! wave mode for default field
        CASE('REPLICA_BOUNDS')
            Call READO(mc%replicaBounds) ! insure that 0 < s < 1
-       CASE('MIN_ACCEPT')
-           Call READF(mc%MIN_ACCEPT) ! below which moves are turned off
        CASE('INITIAL_MAX_S')
            call READF(mc%INITIAL_MAX_S) ! inital chi of rep with highest chi
        CASE DEFAULT
@@ -901,7 +903,11 @@ Subroutine MCvar_saveR(mc,md,fileName,repeatingBC)
     else
         Do I=1,mc%NP
             Do J=1,mc%NB
-                 WRITE(1,"(3f10.3,I2)") md%R(IB,1),md%R(IB,2),md%R(IB,3),md%AB(IB)
+                if (mc%simtype.eq.0) then
+                    WRITE(1,"(3f10.3,I2)") md%R(IB,1),md%R(IB,2),md%R(IB,3),md%AB(IB)
+                else
+                    WRITE(1,"(3f10.3,I2)") md%R(IB,1),md%R(IB,2),md%R(IB,3),md%AB(IB), md%METH(IB)
+                endif
                 IB=IB+1
             enddo
         enddo
@@ -936,7 +942,7 @@ Subroutine MCvar_saveU(mc,md,fileName)
     IB=1
     Do I=1,mc%NP
         Do J=1,mc%NB
-            WRITE(1,"(3f8.3,2I2)") md%U(IB,1),md%U(IB,2),md%U(IB,3),md%AB(IB),md%METH(IB)
+            WRITE(1,"(3f8.3,2I2)") md%U(IB,1),md%U(IB,2),md%U(IB,3)
             IB=IB+1
         enddo
     enddo
