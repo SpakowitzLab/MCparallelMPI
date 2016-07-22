@@ -1,5 +1,4 @@
 #/bin/bash
-#sleep 30
 
 echo "Compile"
 rm MCparrll_out
