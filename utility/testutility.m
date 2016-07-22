@@ -3,12 +3,10 @@ close all
 % inputs:
 % r101, an example file for bead coordinates
 % pdata, analytical solution for end-to-end distribution
-%   pdata available shifan@tower12:~/testdir/pdata
-% sdata, analytical solution of structure factors
-%   sdata available shifan@tower12:~/testdir/sdata
+%   pdata available tower12:/home/testdata/pdata
 
 %% read data
-r = dlmread('../../data/r15v1');
+r = dlmread('../data/r50v1');
 
 %% TEST OPTIONS
 TEST1 = 1;  % end-to-end distribution
@@ -16,7 +14,7 @@ TEST2 = 1;  % bead-bead distribution
 TEST3 = 1;  % total and partial density
 TEST4 = 1;  % radial distrbution function
 TEST5 = 1;  % structure factor
-TEST6 = 1;  % chemical potential (widom insertion)
+TEST6 = 0;  % chemical potential (widom insertion, work in progress)
 
 %% parameters
 boxl = 20;
@@ -30,7 +28,7 @@ N = 8;
 L0=2*EPS*(-.5+.5*exp(-2*EPS*G)+EPS*G)^(-.5);
 LP=L0/(2*EPS);
 Ree = 2;
-LAM = -0.75;
+LAM = 0;
 FA = 0.5;
 CHI = 0/G;
 KAP = 10;
@@ -64,7 +62,7 @@ if (TEST3)
     % total and partial density
     [PHIA,PHIB] = r_to_phi(r,boxl,DEL,V);
     figure;hist(PHIA+PHIB,50);
-    xlabel('\phi_A+phi_B');ylabel('P(\phi)')
+    xlabel('\phi_A+\phi_B');ylabel('P(\phi_T)')
 end
 
 if (TEST4)
@@ -81,9 +79,9 @@ if (TEST5)
     
     % load analytical theory
     filename = sprintf('sdata/S_EPS%.3fLAM%.2fFA%.2f',EPS,LAM,FA);
-    S = load(filename);
-    KS = S(:,1);
-    SS = 1./(-2*CHI+1./S(:,2));
+    MF = load(filename);
+    KS = MF(2:end,1); %wavevectors
+	SS = 1./(-2*CHI+EPS*MF(2:end,2));
     
     figure;hold
     plot(k*Ree,s,KS,SS);
