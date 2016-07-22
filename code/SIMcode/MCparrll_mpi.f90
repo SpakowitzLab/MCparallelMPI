@@ -273,7 +273,8 @@ subroutine paraTemp ( p, id)
             N_average=N_average+1
             if (N_average.ge.mc%NRepAdapt) then
                 call save_repHistory(upSuccess,downSuccess,nPTReplicas, &
-                                     cofMtrx,xMtrx,nodeNumber,N_average,nExchange,mc%IND,nTerms)
+                                     cofMtrx,xMtrx,nodeNumber,N_average,&
+                                     nExchange,mc%IND,nTerms,s_vals)
 
                 if ((mc%IND.ge.mc%indStartRepAdapt).and. &
                     (mc%IND.lt.mc%indEndRepAdapt)) then ! insert input defined location here
