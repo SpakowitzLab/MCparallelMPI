@@ -80,7 +80,7 @@ if (TEST5)
     [k,s]=scalc(r,boxl,lksample);
     
     % load analytical theory
-    filename = sprintf('sdata/Seps%.3flam%.2f',EPS,LAM);
+    filename = sprintf('sdata/S_EPS%.3fLAM%.2fFA%.2f',EPS,LAM,FA);
     S = load(filename);
     KS = S(:,1);
     SS = 1./(-2*CHI+1./S(:,2));
