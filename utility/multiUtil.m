@@ -1,4 +1,4 @@
-path=sprintf('../data');
+path=sprintf('../MCPoly/MCparallelMPI/data');
 
 %% parameters
 boxl = 20;
@@ -9,34 +9,34 @@ NP = 2000;
 EPS = 0.01;
 G = 5;
 N = 8;
-L0=2*EPS*(-.5+.5*exp(-2*EPS*G)+EPS*G)^(-.5);
+L0=2*EPS*(-.5+.5*exp(-2*EPS*G)+EPS*G)^(-.5)
 LP=L0/(2*EPS);
 Ree = 2;
-LAM = 0;
+LAM = -0.75;
 FA = 0.5;
-CHI = 0/G;
+CHI = 0;
 KAP = 10;
 
 repMIN=1;
 repSkip=5;
 repMAX=47;
 snapMin=26;
-snapSkip=3;
+snapSkip=1;
 snapMax=50;
 
 %% TEST OPTIONS
-TEST1 = 0;  % end-to-end distribution
+TEST1 = 1;  % end-to-end distribution
 TEST2 = 0;  % bead-bead distribution
 TEST3 = 0;  % total and partial density
 TEST4 = 0;  % radial distrbution function
-TEST5 = 1;  % structure factor
+TEST5 = 0;  % structure factor
 TEST6 = 0;  % chemical potential (widom insertion)
 
 %% Main Loop
 %%
 nrep=length(repMIN:repSkip:repMAX);
 v=0;
-legVec={};
+chiVec={};
 for rep=repMIN:repSkip:repMAX
     v=v+1;
     first=1;
@@ -83,8 +83,8 @@ for rep=repMIN:repSkip:repMAX
         navj=navj+1;
     end
     col=(rep-repMIN)/(repMAX-repMIN);
-    out1=dlmread(strcat(path,sprintf('/out1v%d',rep)),'',1,0);
-    legVec{v}=num2str(out1(end,13));
+    out1=dlmread(strcat(path,sprintf('/out1v%d',rep)));
+    chiVec{v}=num2str(out1(end,11));
 %% PLOT
     if (TEST1)
         X=X/navj;
@@ -105,7 +105,7 @@ for rep=repMIN:repSkip:repMAX
         figure(3); hold on
         subplot(ceil(sqrt(nrep)),ceil(sqrt(nrep)),v);
         hist(PHIA+PHIB,50,'color',[col 0 1-col]);
-        xlabel('\phi_A+\phi_B');ylabel('P(\phi_T)')
+        xlabel('\phi_A+\phi_B');ylabel('P(\phi)')
     end
     if(TEST5)
         k=k/navj;
@@ -119,10 +119,9 @@ end
 if (TEST1)
     figure(1);
     hold on;
-    plot(X,P);pplot(N*G,EPS*N*G)
+    pplot(N*G,EPS*N*G)
     xlabel('R/L');ylabel('P(R/L)')
-    legVec{end+1}='theory';
-    legend(legVec)
+    legend(chiVec)
 end
 if (TEST2)
     % bead-bead distribution
@@ -141,15 +140,13 @@ end
 if (TEST5)
     % load analytical theory
     figure(5); hold on
-    filename = sprintf('sdata/S_EPS%.3fLAM%.2fFA%.2f',EPS,LAM,FA);
-    MF = load(filename);
-    KS = MF(2:end,1); %wavevectors
-	SS = 1./(-2*CHI+EPS*MF(2:end,2));
-    
-    plot(KS,SS,'k');
+    filename = sprintf('sdata/Seps%.3flam%.2f',EPS,LAM);
+    S = load(filename);
+    KS = S(:,1);
+    SS = 1./(-2*CHI+1./S(:,2));
+    plot(KS,SS);
     xlabel('q');ylabel('S(q)')
     set(gca,'xscale','log');set(gca,'yscale','log')
-    legVec{end+1}='theory';
-    legend(legVec)
+    legend(chiVec)
 end
 
