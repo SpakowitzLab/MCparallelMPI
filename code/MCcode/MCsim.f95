@@ -30,6 +30,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     INTEGER IB2               ! Test bead position 2
     INTEGER IT2               ! Index of test bead 2
     INTEGER IT3, IT4          ! second polymer for polymer swap
+    logical forward           ! direction of reptation move
 
     INTEGER I,J
     
@@ -167,17 +168,17 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
         ! check for NaN
         do I=1,mc%NBIN
             if (md%Vol(I).eq.0.0) Cycle
-            if (md%PHIA(I) .ne. md%PHIA(I)) then
+            if (isnan(md%PHIA(I))) then
                 write(*,"(A,I5,A)"), "PHIA(",I,")=NaN"
                 write(*,"(A,I5,A,f8.4)"), "Vol(",I,")=",md%Vol(I)
                 stop 1
             endif
-            if (md%PHIB(I) .ne. md%PHIB(I)) then
+            if (isnan(md%PHIB(I))) then
                 write(*,"(A,I5,A)"), "PHIB(",I,")=NaN"
                 write(*,"(A,I5,A,f8.4)"), "Vol(",I,")=",md%Vol(I)
                 stop 1
             endif
-            if (md%Vol(I) .ne. md%Vol(I)) then
+            if (isnan(md%Vol(I))) then
                 write(*,"(A,I5,A)"), "Vol(",I,")=NaN"
                 stop 1
             endif
@@ -212,7 +213,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           call MC_move(md%R,md%U,md%RP,md%UP,mc%NT,mc%NB,mc%NP, &
                        IP,IB1,IB2,IT1,IT2,MCTYPE, & 
                        mc%MCAMP,mc%WINDOW,md%AB,md%ABP,mc%G,&
-                       rand_stat, mc%winType,IT3,IT4)
+                       rand_stat, mc%winType,IT3,IT4,forward)
           
 !   Calculate the change in compression and bending energy
           if ((MCTYPE.NE.5) .and. &
@@ -247,9 +248,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           if (INTON.EQ.1) then
              if (MCTYPE.EQ.9) then
                  !skip if doesn't do anything
-                 if (mc%CHI_ON.eq.0.0_dp) then
-                    CYCLE
-                 endif
+                 if (mc%CHI_ON.eq.0.0_dp) CYCLE
                  call MC_int_swap(mc,md,IT1,IT2,IT3,IT4)
                  if (abs(mc%DEKap).gt.0.0001) then
                      print*, "Error in MCsim.  Kappa energy shouldn't change on move 9"
@@ -257,7 +256,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                      stop 1
                  endif
              elseif (MCTYPE.EQ.10) then
-                 call MC_int_rep(mc,md,IT1,IT2)
+                 call MC_int_rep(mc,md,IT1,IT2,forward)
              else
                  call MC_int(mc,md,IT1,IT2,.false.)
              endif
@@ -312,7 +311,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                      enddo
                  endif
              endif
-             if (mc%ECon.ne.0.0_dp) then
+             if (mc%ECon.gt.0.0_dp) then
                  print*, "MCTYPE", MCType
                  call MCvar_printEnergies(mc) 
                  print*, "error in MCsim, out of bounds "

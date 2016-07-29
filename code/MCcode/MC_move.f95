@@ -7,7 +7,7 @@
 !---------------------------------------------------------------    
 SUBROUTINE MC_move(R,U,RP,UP,NT,NB,NP,IP,IB1,IB2,IT1,IT2,MCTYPE &
                   ,MCAMP,WINDOW,AB,ABP,BPM,rand_stat,winType &
-                  ,IT3,IT4)
+                  ,IT3,IT4,forward)
 
 use mersenne_twister      
 use setPrecision
@@ -76,6 +76,7 @@ double precision twistDir(3) ! unit vector perp to upara and uperp
 double precision dtemp  ! temparary storage of double
 double precision vperp(3) ! unit vector allignled with rperpOld
 double precision vperpdotU ! small round error correction
+logical, intent(out) :: forward
 
 !     Perform crank-shaft move (MCTYPE 1)
     
@@ -556,6 +557,7 @@ elseif(MCTYPE.EQ.10) then
     ! move forward or backward
     call random_number(urnd,rand_stat)
     if (urnd(1).lt.0.5_dp) then
+        forward=.true.
         dR(1)=R(IT1+1,1)-R(IT1,1)
         dR(2)=R(IT1+1,2)-R(IT1,2)
         dR(3)=R(IT1+1,3)-R(IT1,3)
@@ -631,6 +633,7 @@ elseif(MCTYPE.EQ.10) then
         !call test_equiv_forward(U,R,UP,RP,NT,IT1,IT2,RparaMag,RperpMag)
 
     else
+        forward=.false.
         dR(1)=R(IT2,1)-R(IT2-1,1)
         dR(2)=R(IT2,2)-R(IT2-1,2)
         dR(3)=R(IT2,3)-R(IT2-1,3)

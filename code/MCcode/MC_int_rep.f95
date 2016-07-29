@@ -11,7 +11,7 @@
 !
 !     Edited by Quinn in 2016
       
-SUBROUTINE MC_int_rep(mc,md,I1,I2)
+SUBROUTINE MC_int_rep(mc,md,I1,I2,forward)
 use simMod
 use setPrecision
 IMPLICIT NONE
@@ -38,24 +38,9 @@ LOGICAL isA   ! The bead is of type A
 ! Copy so I don't have to type mc% everywhere
 INTEGER NBINX(3)
 DOUBLE PRECISION temp    !for speeding up code
-LOGICAL forward ! move forward
+LOGICAL, intent(in) :: forward ! move forward
 
 NBINX=mc%NBINX
-
-if ((md%RP(I1,1).eq.md%R(I1+1,1)).and. &
-    (md%RP(I1,2).eq.md%R(I1+1,2)).and. &
-    (md%RP(I1,3).eq.md%R(I1+1,3))) then 
-    forward=.TRUE.
-elseif ((md%RP(I2,1).eq.md%R(I2-1,1)).and. &
-        (md%RP(I2,2).eq.md%R(I2-1,2)).and. &
-        (md%RP(I2,3).eq.md%R(I2-1,3))) then
-    forward=.FALSE.
-else
-    print*, "md%RP(I1,1)",md%RP(I1,1),"md%R(I1+1,1)",md%R(I1+1,1)
-    print*, "md%RP(I2,1)",md%RP(I2,1),"md%R(I2-1,1)",md%R(I2-1,1)
-    print*, "Error in MC_int_rep: neither foward nor back"
-    stop 1
-endif
 
 mc%NPHI=0
 ! -------------------------------------------------------------
