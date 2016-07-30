@@ -62,20 +62,11 @@ INTEGER, intent(out) :: ABP(NT)          ! Underlying (methalation) state
 Double precision d1,d2  !for testing
 
 ! variables for reptation move
-!double precision dR(3) ! old displacement vector
-double precision RperpOld(3)  ! portion of R in perpendicular direction old
-double precision perpNew(3)  ! unit vector in new perp direction
-double precision dRdotU
-double precision RparaMag
-double precision RperpMag
-double precision upara  ! parallel component of other u 
-double precision uperp  ! perpendicular component of other u
-double precision utwist ! the rest of u
-double precision Uvec(3) 
-double precision twistDir(3) ! unit vector perp to upara and uperp
-double precision dtemp  ! temparary storage of double
-double precision vperp(3) ! unit vector allignled with rperpOld
-double precision vperpdotU ! small round error correction
+double precision Uvec(3) ! parallel component of triad
+double precision pDir(3) ! perp component of triad
+double precision tDir(3) ! twist component of triad
+double precision r_relative(3) ! r in new coordinate system
+double precision u_relative(3) ! u in new coordinate system
 logical, intent(out) :: forward
 
 !     Perform crank-shaft move (MCTYPE 1)
@@ -560,66 +551,46 @@ elseif(MCTYPE.EQ.10) then
         forward=.true.
         dR(1)=R(IT1+1,1)-R(IT1,1)
         dR(2)=R(IT1+1,2)-R(IT1,2)
-        dR(3)=R(IT1+1,3)-R(IT1,3)
-        RparaMag=(dR(1)*u(IT1,1) + dR(2)*u(IT1,2) + dR(3)*u(IT1,3))
-        dRdotU=dR(1)*U(IT1,1)+dR(2)*U(IT1,2)+dR(3)*U(IT1,3)
-        RperpOld(1)=dR(1)-dRdotU*U(IT1,1) 
-        RperpOld(2)=dR(2)-dRdotU*U(IT1,2) 
-        RperpOld(3)=dR(3)-dRdotU*U(IT1,3) 
-        RperpMag=sqrt(RperpOld(1)**2+RperpOld(2)**2+RperpOld(3)**2)
-        upara=u(IT1,1)*u(IT1+1,1)+&
-              u(IT1,2)*u(IT1+1,2)+&
-              u(IT1,3)*u(IT1+1,3)
-        ! Need to handle rownding error correctly
-        ! generate a vector, vperp, that is perp to u
-        if((RperpMag/RparaMag).lt.0.000000001_dp) then
-            uperp=0.0_dp
-        else
-            vperp(1)=RperpOld(1)/RperpMag
-            vperp(2)=RperpOld(2)/RperpMag
-            vperp(3)=RperpOld(3)/RperpMag
-            vperpdotU=vperp(1)*U(IT1,1)+vperp(2)*U(IT1,2)+vperp(3)*U(IT1,3)
-            vperp(1)=vperp(1)-U(IT1,1)*vperpdotU
-            vperp(2)=vperp(2)-U(IT1,2)*vperpdotU
-            vperp(3)=vperp(3)-U(IT1,3)*vperpdotU
-            mag=sqrt(vperp(1)**2+vperp(2)**2+vperp(3)**2)
-            vperp(1)=vperp(1)/mag
-            vperp(2)=vperp(2)/mag
-            vperp(3)=vperp(3)/mag
-            uperp=(vperp(1)*u(IT1+1,1)+&
-                   vperp(2)*u(IT1+1,2)+&
-                   vperp(3)*u(IT1+1,3))
+        dR(3)=R(IT1+1,3)-R(IT1,3)   
 
-        endif
-        dtemp=1.0_dp-upara**2-uperp**2
-        if (dtemp.lt.0.0_dp) then
-            if (dtemp.gt.-0.0000001_dp) then
-                utwist=0.0_dp
-            else
-                print*, "Error in MC_move. Imag Num. Forward"
-                stop 1
-            endif
-        else
-            utwist=sqrt(dtemp)
-        endif
-        
-        !use Uvec for final bead orientation
-        Uvec(1)=U(IT2,1)
-        Uvec(2)=U(IT2,2)
-        Uvec(3)=U(IT2,3)
-        call random_perp(Uvec,perpNew,twistDir,rand_stat)
-        ! perpNew is a unit vector
-        UP(IT2,1)=U(IT2,1)*upara+perpNew(1)*uperp+twistDir(1)*utwist
-        UP(IT2,2)=U(IT2,2)*upara+perpNew(2)*uperp+twistDir(2)*utwist
-        UP(IT2,3)=U(IT2,3)*upara+perpNew(3)*uperp+twistDir(3)*utwist
+        Uvec(1)=U(IT1,1); Uvec(2)=U(IT1,2); Uvec(3)=U(IT1,3)
+        ! chose coordinate system
+        call random_perp(Uvec,pDir,tDir,rand_stat)
+        ! find next r and u in new coordinate system
+        u_relative(1)=Uvec(1)*u(IT1+1,1)+&
+                      Uvec(2)*u(IT1+1,2)+&
+                      Uvec(3)*u(IT1+1,3)
+        u_relative(2)=pDir(1)*u(IT1+1,1)+&
+                      pDir(2)*u(IT1+1,2)+&
+                      pDir(3)*u(IT1+1,3)
+        u_relative(3)=tDir(1)*u(IT1+1,1)+&
+                      tDir(2)*u(IT1+1,2)+&
+                      tDir(3)*u(IT1+1,3)
+        r_relative(1)=Uvec(1)*dR(1)+&
+                      Uvec(2)*dR(2)+&
+                      Uvec(3)*dR(3)
+        r_relative(2)=pDir(1)*dR(1)+&
+                      pDir(2)*dR(2)+&
+                      pDir(3)*dR(3)
+        r_relative(3)=tDir(1)*dR(1)+&
+                      tDir(2)*dR(2)+&
+                      tDir(3)*dR(3)
+
+
+        ! orient coordinate system with end of chain
+        Uvec(1)=U(IT2,1); Uvec(2)=U(IT2,2); Uvec(3)=U(IT2,3)
+        call random_perp(Uvec,pDir,tDir,rand_stat)
+        ! update UP and RP
+        UP(IT2,1)=Uvec(1)*u_relative(1)+pDir(1)*u_relative(2)+tDir(1)*u_relative(3)
+        UP(IT2,2)=Uvec(2)*u_relative(1)+pDir(2)*u_relative(2)+tDir(2)*u_relative(3)
+        UP(IT2,3)=Uvec(3)*u_relative(1)+pDir(3)*u_relative(2)+tDir(3)*u_relative(3)
         mag=sqrt(UP(IT2,1)**2+UP(IT2,2)**2+UP(IT2,3)**2)
         UP(IT2,1)=UP(IT2,1)/mag
         UP(IT2,2)=UP(IT2,2)/mag
         UP(IT2,3)=UP(IT2,3)/mag
-        
-        RP(IT2,1)=R(IT2,1)+U(IT2,1)*RparaMag+perpNew(1)*RperpMag
-        RP(IT2,2)=R(IT2,2)+U(IT2,2)*RparaMag+perpNew(2)*RperpMag
-        RP(IT2,3)=R(IT2,3)+U(IT2,3)*RparaMag+perpNew(3)*RperpMag
+        RP(IT2,1)=R(IT2,1)+Uvec(1)*r_relative(1)+pDir(1)*r_relative(2)+tDir(1)*r_relative(3)
+        RP(IT2,2)=R(IT2,2)+Uvec(2)*r_relative(1)+pDir(2)*r_relative(2)+tDir(2)*r_relative(3)
+        RP(IT2,3)=R(IT2,3)+Uvec(3)*r_relative(1)+pDir(3)*r_relative(2)+tDir(3)*r_relative(3)
         
         DO I=IT1,IT2-1
            RP(I,1)=R(I+1,1)
@@ -630,73 +601,55 @@ elseif(MCTYPE.EQ.10) then
            UP(I,3)=U(I+1,3)
         enddo
 
-        !call test_equiv_forward(U,R,UP,RP,NT,IT1,IT2,RparaMag,RperpMag)
+       ! RperpMag=sqrt(r_relative(2)**2+r_relative(3)**2)
+       ! RparaMag=r_relative(1)
+       ! call test_equiv_forward(U,R,UP,RP,NT,IT1,IT2,RparaMag,RperpMag)
 
     else
         forward=.false.
         dR(1)=R(IT2,1)-R(IT2-1,1)
         dR(2)=R(IT2,2)-R(IT2-1,2)
         dR(3)=R(IT2,3)-R(IT2-1,3)
-        RparaMag=(dR(1)*u(IT2,1) + dR(2)*u(IT2,2) + dR(3)*u(IT2,3))
-        dRdotU=dR(1)*U(IT2,1)+dR(2)*U(IT2,2)+dR(3)*U(IT2,3)
-        RperpOld(1)=dR(1)-dRdotU*U(IT2,1) 
-        RperpOld(2)=dR(2)-dRdotU*U(IT2,2) 
-        RperpOld(3)=dR(3)-dRdotU*U(IT2,3) 
-        RperpMag=sqrt(RperpOld(1)**2+RperpOld(2)**2+RperpOld(3)**2)
-        upara=u(IT2,1)*u(IT2-1,1)+&
-              u(IT2,2)*u(IT2-1,2)+&
-              u(IT2,3)*u(IT2-1,3)
-        ! Need to handle rownding error correctly
-        ! generate a vector, vperp, that is perp to u
-        if((RperpMag/RparaMag).lt.0.000000001_dp) then
-            uperp=0.0_dp
-        else
-            vperp(1)=RperpOld(1)/RperpMag
-            vperp(2)=RperpOld(2)/RperpMag
-            vperp(3)=RperpOld(3)/RperpMag
-            vperpdotU=vperp(1)*U(IT2,1)+vperp(2)*U(IT2,2)+vperp(3)*U(IT2,3)
-            vperp(1)=vperp(1)-U(IT2,1)*vperpdotU
-            vperp(2)=vperp(2)-U(IT2,2)*vperpdotU
-            vperp(3)=vperp(3)-U(IT2,3)*vperpdotU
-            mag=sqrt(vperp(1)**2+vperp(2)**2+vperp(3)**2)
-            vperp(1)=vperp(1)/mag
-            vperp(2)=vperp(2)/mag
-            vperp(3)=vperp(3)/mag
-            uperp=(vperp(1)*u(IT2-1,1)+&
-                   vperp(2)*u(IT2-1,2)+&
-                   vperp(3)*u(IT2-1,3))
 
-        endif
-        dtemp=1.0_dp-upara**2-uperp**2
-        if (dtemp.lt.0.0_dp) then
-            if (dtemp.gt.-0.0000001_dp) then
-                utwist=0.0_dp
-            else
-                print*, "Error in MC_move. Imag Num. Backward"
-                stop 1
-            endif
-        else
-            utwist=sqrt(dtemp)
-        endif
-        
-        !use Uvec for final bead orientation
-        Uvec(1)=U(IT1,1)
-        Uvec(2)=U(IT1,2)
-        Uvec(3)=U(IT1,3)
 
-        call random_perp(Uvec,perpNew,twistDir,rand_stat)
-        ! perpNew is a unit vector
-        UP(IT1,1)=U(IT1,1)*upara+perpNew(1)*uperp+twistDir(1)*utwist
-        UP(IT1,2)=U(IT1,2)*upara+perpNew(2)*uperp+twistDir(2)*utwist
-        UP(IT1,3)=U(IT1,3)*upara+perpNew(3)*uperp+twistDir(3)*utwist
+        Uvec(1)=U(IT2,1); Uvec(2)=U(IT2,2); Uvec(3)=U(IT2,3)
+        ! chose coordinate system
+        call random_perp(Uvec,pDir,tDir,rand_stat)
+        ! find next r and u in new coordinate system
+        u_relative(1)=Uvec(1)*u(IT2-1,1)+&
+                      Uvec(2)*u(IT2-1,2)+&
+                      Uvec(3)*u(IT2-1,3)
+        u_relative(2)=pDir(1)*u(IT2-1,1)+&
+                      pDir(2)*u(IT2-1,2)+&
+                      pDir(3)*u(IT2-1,3)
+        u_relative(3)=tDir(1)*u(IT2-1,1)+&
+                      tDir(2)*u(IT2-1,2)+&
+                      tDir(3)*u(IT2-1,3)
+        r_relative(1)=Uvec(1)*dR(1)+&
+                      Uvec(2)*dR(2)+&
+                      Uvec(3)*dR(3)
+        r_relative(2)=pDir(1)*dR(1)+&
+                      pDir(2)*dR(2)+&
+                      pDir(3)*dR(3)
+        r_relative(3)=tDir(1)*dR(1)+&
+                      tDir(2)*dR(2)+&
+                      tDir(3)*dR(3)
+
+        ! orient coordinate system with end of chain
+        Uvec(1)=U(IT1,1); Uvec(2)=U(IT1,2); Uvec(3)=U(IT1,3)
+        call random_perp(Uvec,pDir,tDir,rand_stat)
+        ! update UP and RP
+        UP(IT1,1)=Uvec(1)*u_relative(1)+pDir(1)*u_relative(2)+tDir(1)*u_relative(3)
+        UP(IT1,2)=Uvec(2)*u_relative(1)+pDir(2)*u_relative(2)+tDir(2)*u_relative(3)
+        UP(IT1,3)=Uvec(3)*u_relative(1)+pDir(3)*u_relative(2)+tDir(3)*u_relative(3)
         mag=sqrt(UP(IT1,1)**2+UP(IT1,2)**2+UP(IT1,3)**2)
         UP(IT1,1)=UP(IT1,1)/mag
         UP(IT1,2)=UP(IT1,2)/mag
         UP(IT1,3)=UP(IT1,3)/mag
+        RP(IT1,1)=R(IT1,1)-Uvec(1)*r_relative(1)-pDir(1)*r_relative(2)-tDir(1)*r_relative(3)
+        RP(IT1,2)=R(IT1,2)-Uvec(2)*r_relative(1)-pDir(2)*r_relative(2)-tDir(2)*r_relative(3)
+        RP(IT1,3)=R(IT1,3)-Uvec(3)*r_relative(1)-pDir(3)*r_relative(2)-tDir(3)*r_relative(3)
 
-        RP(IT1,1)=R(IT1,1)-U(IT1,1)*RparaMag-perpNew(1)*RperpMag
-        RP(IT1,2)=R(IT1,2)-U(IT1,2)*RparaMag-perpNew(2)*RperpMag
-        RP(IT1,3)=R(IT1,3)-U(IT1,3)*RparaMag-perpNew(3)*RperpMag
         DO I=IT1+1,IT2
            RP(I,1)=R(I-1,1)
            RP(I,2)=R(I-1,2)
@@ -706,68 +659,6 @@ elseif(MCTYPE.EQ.10) then
            UP(I,3)=U(I-1,3)
         enddo
     endif
-    ! Testing
-   ! if (abs(mag-1.0_dp).gt.0.000001_dp) then
-   !     print*, "Error in MC_move. Bad U."
-   !     stop 1
-   ! endif
-   ! if (ISNAN(UP(IT1,1))) then
-   !     print*, "Error in MC_move, NAN encountered. UP(IT1,1)"
-   !     print*, "upara",upara," uperp",uperp," utwist",utwist
-   !     stop 1
-   ! endif
-   ! if (ISNAN(RP(IT1,1))) then
-   !     print*, "Error in MC_move, NAN encountered. 1"
-   !     print*, "dR", dR
-   !     if (urnd(1).lt.0.5_dp) then
-   !         print*, "U(IT1)", U(IT1,1),U(IT1,2),U(IT1,3)
-   !         print*, "|U(IT1)|", abs(U(IT1,1)**2+U(IT1,2)**2+U(IT1,3)**2)
-   !     else
-   !         print*, "U(IT2)", U(IT2,1),U(IT2,2),U(IT2,3)
-   !         print*, "|U(IT2)|", abs(U(IT2,1)**2+U(IT2,2)**2+U(IT2,3)**2)
-   !     endif
-   !     print*, "RparaMag",RparaMag,"RperpMag",RperpMag
-   !     stop 1
-   ! endif
-   ! if (ISNAN(RP(IT2,1))) then
-   !     print*, "Error in MC_move, NAN encountered. 2"
-   !     stop 1
-   ! endif
-   ! if (ISNAN(R(IT1,1))) then
-   !     print*, "Error in MC_move, NAN encountered. 3"
-   !     stop 1
-   ! endif
-   ! if (ISNAN(R(IT2,1))) then
-   !     print*, "Error in MC_move, NAN encountered. 4"
-   !     stop 1
-   ! endif
-   ! if (abs(Uvec(1)**2+Uvec(2)**2+Uvec(3)**2-1.0_dp).gt.0.00001_dp) then
-   !    print*, "Error in MC_move: Uvec not a unit vector"
-   !    print*, Uvec(1)**2+Uvec(2)**2+Uvec(3)**2
-   !    stop 1
-   ! endif 
-   ! if (abs(dR(1)**2+dR(2)**2+dR(3)**2 &
-   !         -RparaMag**2-RperpMag**2).gt.0.0001_dp) then
-   !     print*, "dR", dR
-   !     print*, "RparaMag", RparaMag," RperpMag",RperpMag
-   !     print*, dR(1)**2+dR(2)**2+dR(3)**2, " .ne. ",RparaMag**2+RperpMag**2
-   !     print*, "urnd", urnd(1)
-   !     print*, "RperpOld",RperpOld
-   !     if (urnd(1).lt.0.5_dp) then
-   !         print*, "U(IT1)", U(IT1,1),U(IT1,2),U(IT1,3)
-   !         print*, "|U(IT1)|", abs(U(IT1,1)**2+U(IT1,2)**2+U(IT1,3)**2)
-   !     else
-   !         print*, "U(IT2)", U(IT2,1),U(IT2,2),U(IT2,3)
-   !         print*, "|U(IT2)|", abs(U(IT2,1)**2+U(IT2,2)**2+U(IT2,3)**2)
-   !     endif
-   !     print*, "Error in MC_move, triangle mismatch"
-   !     stop 1
-   ! endif
-   ! if (abs(upara**2+uperp**2 +utwist**2 - 1.0_dp).gt.0.00001_dp) then
-   !     print*, "Error in MC_move, u vector incorrect"
-   !     stop 1
-   ! endif
-    ! END Testing
     DO J=IT1,IT2
         ABP(J)=1-AB(J)
     ENDDO
@@ -851,12 +742,20 @@ GINew(3)=UP(IT2,3)-UP(IT2-1,3)-Eta*dRperpNew(3)
 if (abs(GIOld(1)**2+GIOld(2)**2+GIOld(3)**2&
       -(GINew(1)**2+GINew(2)**2+GINew(3)**2)).gt.0.000001_dp) then
   print*, "Difference detected in test_equiv, 3"
+  print*, "GIOld(1)**2+GIOld(2)**2+GIOld(3)**2", &
+           GIOld(1)**2+GIOld(2)**2+GIOld(3)**2
+  print*, "GINew(1)**2+GINew(2)**2+GINew(3)**2", &
+          GINew(1)**2+GINew(2)**2+GINew(3)**2
+  print*, "RparaMag",RparaMag,"RperpMag",RperpMag
   stop 1
 endif
 
 return
 end subroutine
 subroutine random_perp(u,p,t,rand_stat)
+! The subroutine generates the second two vectors in a unit triad
+! The output vectors, p and t, are perpendicular to eachother and u
+! The triad is randomly left or right handed
 use mersenne_twister      
 use setPrecision
 IMPLICIT NONE
@@ -865,9 +764,9 @@ type(random_stat) rand_stat  ! status of random number generator
 real urnd(1) ! single random number
 
 double precision v(2) ! random 2-vec
-double precision u(3) ! input
-double precision p(3) ! output: random perpendicular to u
-double precision t(3) ! orthogonal to p and u
+double precision, intent(in) :: u(3) ! input
+double precision, intent(out) :: p(3) ! output: random perpendicular to u
+double precision, intent(out) :: t(3) ! orthogonal to p and u
 double precision f
 
 if (abs(u(1)**2+u(2)**2+u(3)**2-1.0_dp) .gt. 0.0000001_dp) then

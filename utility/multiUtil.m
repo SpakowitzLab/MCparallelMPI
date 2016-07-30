@@ -6,10 +6,10 @@ DEL = 1;
 V = 0.1;
 lksample = 20;
 NP = 2000;
-EPS = 0.01;
+EPS = 1.01;
 G = 5;
 N = 8;
-L0=2*EPS*(-.5+.5*exp(-2*EPS*G)+EPS*G)^(-.5)
+L0=40667; %2*EPS*(-.5+.5*exp(-2*EPS*G)+EPS*G)^(-.5)
 LP=L0/(2*EPS);
 Ree = 2;
 LAM = -0.75;
@@ -19,10 +19,10 @@ KAP = 10;
 
 repMIN=1;
 repSkip=5;
-repMAX=47;
-snapMin=26;
+repMAX=7;
+snapMin=1;
 snapSkip=1;
-snapMax=50;
+snapMax=1;
 
 %% TEST OPTIONS
 TEST1 = 1;  % end-to-end distribution
