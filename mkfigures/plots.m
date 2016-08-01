@@ -30,7 +30,7 @@ CHI = CHI(end,2:end);
 
 %% (Structure factors)
 if (PLOTSIM || PLOTMF)
-    figure;hold;cnt=1;
+  figure;hold;set(gca,'fontsize',20);cnt=1;
 end
 
 if (PLOTSIM)
@@ -45,7 +45,7 @@ if (PLOTSIM)
             savg = [savg,s];
         end
         K = k*Ree; S = mean(savg,2);
-        plot(K,S,'color',[col 0 1-col]);
+        plot(K,S,'o-','linewidth',1.5,'color',[col 0 1-col]);
 
         % save to file
         if (SAVESIM)

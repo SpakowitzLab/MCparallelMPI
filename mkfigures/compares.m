@@ -26,13 +26,17 @@ figure;hold;set(gca,'fontsize',20)
 if (PLOTSIM)
     cnt = 1;
     for REP = NREP
+      if length(NREP) == 1
+        col = 1;
+      else
         col = (cnt-1)/(length(NREP)-1);
-        SAVEFILENAME = sprintf('SSIM_CHIG%.3fLAM%.2fEPS%.2fFA%.2f',CHI(REP)*G,LAM,EPS,FA);
-        ssim = load(strcat(savedir,SAVEFILENAME));
-        PLOTRANGE = unique(round(logspace(0,log10(length(ssim)),50)));
+      end
+      SAVEFILENAME = sprintf('SSIM_CHIG%.3fLAM%.2fEPS%.2fFA%.2f',CHI(REP)*G,LAM,EPS,FA);
+      ssim = load(strcat(savedir,SAVEFILENAME));
+      PLOTRANGE = unique(round(logspace(0,log10(length(ssim)),50)));
         
-        plot(ssim(PLOTRANGE,1),ssim(PLOTRANGE,2)*SCALE,'o-','linewidth',1.5,'color',[col 0 1-col])
-        cnt=cnt+1;
+      plot(ssim(PLOTRANGE,1),ssim(PLOTRANGE,2)*SCALE,'o-','linewidth',1.5,'color',[col 0 1-col])
+      cnt=cnt+1;
     end
 end
 
@@ -44,9 +48,13 @@ if (PLOTEXP)
 
     cnt = 1;
     for ii = NEXP
-        col = (cnt-1)/(length(NEXP)-1);
-        plot(sexp_full(:,1)*rm,sexp_full(:,ii+1),'linewidth',3,'color',[col 0 1-col])
-        cnt=cnt+1;
+      if length(NREP) == 1
+        col = 1;
+      else
+        col = (cnt-1)/(length(NREP)-1);
+      end
+      plot(sexp_full(:,1)*rm,sexp_full(:,ii+1),'linewidth',3,'color',[col 0 1-col])
+      cnt=cnt+1;
     end
 end
 
