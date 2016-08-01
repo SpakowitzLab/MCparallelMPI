@@ -30,16 +30,16 @@ CHI = CHI(end,2:end);
 
 %% (Structure factors)
 if (PLOTSIM || PLOTMF)
-  figure;hold;set(gca,'fontsize',20);
+  figure;hold;set(gca,'fontsize',20);cnt=1;
 end
 
 if (PLOTSIM)
     % plot simulation results
     for REP=NREP
-      if max(NREP) == 1
+      if length(NREP) == 1
         col = 1;
       else
-        col = (REP-1)/(max(NREP)-1);
+        col = (cnt-1)/(length(NREP)-1);
       end
       savg = [];
       for SNAP=NSNAP
@@ -62,6 +62,7 @@ if (PLOTSIM)
         
       % find peak location
       %[pks,locs] = findpeaks(S);
+      cnt = cnt+1;
     end
 end
 
