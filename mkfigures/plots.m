@@ -36,29 +36,33 @@ end
 if (PLOTSIM)
     % plot simulation results
     for REP=NREP
-        col = (REP-1)/(max(NREP)-1)
-        savg = [];
-        for SNAP=NSNAP
-            fprintf('REP = %d, SNAP = %d\n',REP,SNAP)
-            r=dlmread(strcat(dir,sprintf('r%dv%d',SNAP,REP)));
-            [k,s]=scalc(r,boxl,lksample);
-            savg = [savg,s];
-        end
-        K = k*Ree; S = mean(savg,2);
-        plot(K,S,'o-','linewidth',1.5,'color',[col 0 1-col]);
+      if length(NREP) == 1
+        col = 1;
+      else
+        col = (cnt-1)/(length(NREP)-1);
+      end
+      savg = [];
+      for SNAP=NSNAP
+          fprintf('REP = %d, SNAP = %d\n',REP,SNAP)
+          r=dlmread(strcat(dir,sprintf('r%dv%d',SNAP,REP)));
+          [k,s]=scalc(r,boxl,lksample);
+          savg = [savg,s];
+      end
+      K = k*Ree; S = mean(savg,2);
+      plot(K,S,'o-','linewidth',1.5,'color',[col 0 1-col]);
 
-        % save to file
-        if (SAVESIM)
-            SAVEFILENAME = sprintf('SSIM_CHIG%.3fLAM%.2fEPS%.2fFA%.2f',CHI(REP)*G,LAM,EPS,FA);
-            dlmwrite(strcat(savedir,SAVEFILENAME),[K,S]);
-        end
+      % save to file
+      if (SAVESIM)
+          SAVEFILENAME = sprintf('SSIM_CHIG%.3fLAM%.2fEPS%.2fFA%.2f',CHI(REP)*G,LAM,EPS,FA);
+          dlmwrite(strcat(savedir,SAVEFILENAME),[K,S]);
+      end
         
-        % fit to Lorentzian
-        %[KS,SINV,D2S,ERR]=calcserr(K,S,G);
+      % fit to Lorentzian
+      %[KS,SINV,D2S,ERR]=calcserr(K,S,G);
         
-        % find peak location
-        %[pks,locs] = findpeaks(S);
-        cnt = cnt+1;
+      % find peak location
+      %[pks,locs] = findpeaks(S);
+      cnt = cnt+1;
     end
 end
 
