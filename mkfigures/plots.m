@@ -6,22 +6,23 @@ PLOTMF = 1;     % plot mean-field structure factor
 SAVESIM = 1;    % save simulation structure factor to file
 
 % plot parameters
-NREP = [1:60];  % number of replicas
-NSNAP = 25:63;  % snapshots to average
+NREP = [1:55];  % number of replicas
+NSNAP = 40:50;  % snapshots to average
 
 % add/define paths
 addpath('misc/');
 addpath('../utility/');
-dir = '../data/';       % data directory
+%dir = '../data/';       % data directory
+dir = '../../../quinn/MCPoly/MCparallelMPI/data/';
 savedir = 'savedata/';   % save directory
 
 % simulation parameters
 boxl = 20;   % edge size of simulation
 Ree = 2.0;   % average end-to-end distance of a monomer
 EPS = 0.01;  % inter-bead segment rigidity (in unit of 2lp)
-LAM = 0;     % degree of chemical correlation
+LAM = -1;     % degree of chemical correlation
 G = 5;       % number of beads per monomer
-FA = 0.16;   % chemical fraction of A species
+FA = 0.5;   % chemical fraction of A species
 lksample = 10;
 
 % load CHI parameters

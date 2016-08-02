@@ -1,9 +1,11 @@
-clear;close all
+clear;
+%close all
 addpath('misc/');
 addpath('../utility/');
 
 % parse replicas
-dir = '../data/';  % data directory
+%dir = '../data/';  % data directory
+%dir = '../../../quinn/MCPoly/MCparallelMPI/lamNeg1_r7_27_16/';
 %cof = load(strcat(dir,'cofData'));
 chi = load(strcat(dir,'chi'));
 node = load(strcat(dir,'nodeNumber'));
