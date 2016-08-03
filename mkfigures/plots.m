@@ -10,11 +10,10 @@ NREP = [1:55];  % number of replicas
 NSNAP = 40:50;  % snapshots to average
 
 % add/define paths
+loaddir = '../data/';       % data directory
+savedir = 'savedata/';   % save directory
 addpath('misc/');
 addpath('../utility/');
-%dir = '../data/';       % data directory
-dir = '../../../quinn/MCPoly/MCparallelMPI/data/';
-savedir = 'savedata/';   % save directory
 
 % simulation parameters
 boxl = 20;   % edge size of simulation
@@ -26,7 +25,7 @@ FA = 0.5;   % chemical fraction of A species
 lksample = 10;
 
 % load CHI parameters
-CHI = load(strcat(dir,'chi'));  % adjusted CHI values
+CHI = load(strcat(loaddir,'chi'));  % adjusted CHI values
 CHI = CHI(end,2:end);
 
 %% (Structure factors)
@@ -45,7 +44,7 @@ if (PLOTSIM)
       savg = [];
       for SNAP=NSNAP
           fprintf('REP = %d, SNAP = %d\n',REP,SNAP)
-          r=dlmread(strcat(dir,sprintf('r%dv%d',SNAP,REP)));
+          r=dlmread(strcat(loaddir,sprintf('r%dv%d',SNAP,REP)));
           [k,s]=scalc(r,boxl,lksample);
           savg = [savg,s];
       end

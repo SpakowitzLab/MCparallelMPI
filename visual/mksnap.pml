@@ -1,8 +1,8 @@
 delete *
 reset
 
-load snap001.pdb,snap 
-#movie.load snap*.pdb, snap
+movie.load snap*.pdb, snap
+#load snap001.pdb,snap 
 
 set connect_mode,1
 rotate y,+70,state=0,camera=0
@@ -34,6 +34,6 @@ bg_color white
 reset 
 zoom center,15.5
 
-png snap060.png, dpi = 1000, width=1200, height=1200, ray=1
+mpng snap
+#png snap060.png, dpi = 1000, width=1200, height=1200, ray=1
 #set ray_trace_frames = 1
-#mpng snap

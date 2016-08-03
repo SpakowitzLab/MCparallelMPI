@@ -19,8 +19,7 @@ SCALE = 1/46;     % scaling of simulation structure factor
 DISCR = 0;        % if only plot s(k) at selective k values
 
 % add/define paths
-loaddir = '../data/';       % data directory
-loaddir = '../../../quinn/MCPoly/MCparallelMPI/lamNeg1_r7_27_16/';
+loaddir = '../data/';    % data directory
 savedir = 'savedata/';   % save directory
 
 %% Figure 1: structure factors
@@ -43,9 +42,9 @@ if (PLOTSIM)
 
       if (DISCR)
         PLOTRANGE = unique(round(logspace(0,log10(length(ssim)),50)));
-        plot(ssim(PLOTRANGE,1),ssim(PLOTRANGE,2),'-','linewidth',1.5,'color',[col 0 1-col])
+        plot(ssim(PLOTRANGE,1),ssim(PLOTRANGE,2),'.-','MarkerSize',15,'linewidth',1.5,'color',[col 0 1-col])
       else
-        plot(ssim(:,1),ssim(:,2),'-','linewidth',1.5,'color',[col 0 1-col])
+        plot(ssim(:,1),ssim(:,2),'.-','MarkerSize',15,'linewidth',1.5,'color',[col 0 1-col])
       end
       leg{REP} = strcat('\chiG = ', sprintf('%.2f', CHI(REP)*G));
     end
@@ -95,6 +94,7 @@ legend(leg{NREP1});
 axis([0.5,15,1e-2,5e3])
 xlabel('R_Mq');ylabel('S(q)');box on
 set(gca,'xscale','log');set(gca,'yscale','log')
+saveas(gcf,'sk','epsc')
 
 %% Figure 2 (Inverse Peak Intensities)
 if (PLOTQS)
@@ -127,3 +127,4 @@ if (PLOTQS)
   end
   xlabel('\chiG');ylabel('R_Mq^*');box on
 end
+saveas(gcf,'sinv','epsc')
