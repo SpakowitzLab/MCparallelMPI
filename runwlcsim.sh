@@ -11,9 +11,9 @@ rm *.o
 cd ..
 mv code/MCparrll_out .
 mkdir -p data
-touch data/error
 mv data/* trash/
 
+touch data/error
 echo "Now run"
 # now run the output
 # --prefix used to avoid changing path
