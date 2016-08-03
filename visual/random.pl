@@ -2,8 +2,8 @@
 use POSIX qw(ceil floor);
 
 my $savept =35;  # save point
-my $file0 =1;    # replica index 1
-my $filef =1;   # replica index final
+my $repno0 =1;    # replica index 1
+my $repnof =1;   # replica index final
 
 my $ratviz=0.5; # Ratio of visualization
 my $cut = 0;    # Whether show cross-section
@@ -29,7 +29,7 @@ my $gamma=2*$pi*$nbpbead/$nbpturn; # Twist angle per bead
 my $filein1;            # File with bead coordinates
 my $fileout1;           # Output file for pdb
 
-for (my $filecount=$file0; $filecount<=$filef; $filecount+=1) {
+for (my $filecount=$repno0; $filecount<=$repnof; $filecount+=1) {
 $filein1 =sprintf("../data/r%dv%d", $savept, $filecount);
 $fileout1=sprintf(">snap%03d.pdb",$filecount);
 
