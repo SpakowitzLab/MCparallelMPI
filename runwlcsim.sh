@@ -11,6 +11,7 @@ rm *.o
 cd ..
 mv code/MCparrll_out .
 mkdir -p data
+mkdir -p data/error
 mv data/* trash/
 
 echo "Now run"
