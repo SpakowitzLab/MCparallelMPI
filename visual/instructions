@@ -1,0 +1,6 @@
+# first make pdb files by running
+./random
+
+# next generate images by running
+(in Mac) open -a MacPyMol mksnap.pml
+(in Linux) pymol mksnap.pml
