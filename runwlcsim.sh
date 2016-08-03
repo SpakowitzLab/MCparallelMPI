@@ -12,10 +12,9 @@ cd ..
 mv code/MCparrll_out .
 mkdir -p data
 mv data/* trash/
+touch data/error
 
 echo "Now run"
 # now run the output
 # --prefix used to avoid changing path
 mpirun -np 8 MCparrll_out
-
-

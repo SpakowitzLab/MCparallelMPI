@@ -167,7 +167,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
         ! check for NaN
         do I=1,mc%NBIN
-            if (md%Vol(I).eq.0.0) Cycle
+            if (abs(md%Vol(I)).lt.0.00001) Cycle
             if (isnan(md%PHIA(I))) then
                 write(*,"(A,I5,A)"), "PHIA(",I,")=NaN"
                 write(*,"(A,I5,A,f8.4)"), "Vol(",I,")=",md%Vol(I)
@@ -248,7 +248,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           if (INTON.EQ.1) then
              if (MCTYPE.EQ.9) then
                  !skip if doesn't do anything
-                 if (mc%CHI_ON.eq.0.0_dp) CYCLE
+                 if (abs(mc%CHI_ON).lt.0.00001) CYCLE
                  call MC_int_swap(mc,md,IT1,IT2,IT3,IT4)
                  if (abs(mc%DEKap).gt.0.0001) then
                      print*, "Error in MCsim.  Kappa energy shouldn't change on move 9"
