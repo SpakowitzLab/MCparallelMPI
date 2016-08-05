@@ -24,44 +24,121 @@ Subroutine strength_schedule(mc,inton)
 !        PTON=.True.
         mc%CHI_ON=1.0_dp
     endif
-!    maximum=-28.0_dp    
-!    if(ind.lt.101) then
-!        Couple_ON=0.0_dp
-!    elseif(ind.lt.111) then
-!        Couple_ON=0.1_dp
-!    elseif(ind.lt.121) then
-!        Couple_ON=0.2_dp
-!    elseif(ind.lt.131) then
-!        Couple_ON=0.3_dp
-!    elseif(ind.lt.141) then
-!        Couple_ON=0.4_dp
-!    elseif(ind.lt.151) then
-!        Couple_ON=0.5_dp
-!    elseif(ind.lt.161) then
-!        Couple_ON=0.6_dp
-!    elseif(ind.lt.171) then
-!        Couple_ON=0.7_dp
-!    elseif(ind.lt.181) then
-!        Couple_ON=0.8_dp
-!    elseif(ind.lt.191) then
-!        Couple_ON=0.9_dp
-!    elseif(ind.lt.201) then
-!        Couple_ON=1.0_dp
-!    elseif(ind.lt.211) then
-!        Couple_ON=1.1_dp
-!    elseif(ind.lt.221) then
-!        Couple_ON=1.2_dp
-!    elseif(ind.lt.231) then
-!        Couple_ON=1.1_dp
-!    elseif(ind.lt.241) then
-!        Couple_ON=1.0_dp
-!    elseif(ind.lt.251) then
-!        Couple_ON=0.9_dp
-!    elseif(ind.lt.261) then
-!        Couple_ON=0.8_dp
-!    elseif(ind.lt.271) then
-!        Couple_ON=0.7_dp
-!    endif
+
+
+! -----------------------------------------------
+!
+!      Shut off moves for testing purposes
+!
+! -----------------------------------------------
+
+    if (.true.) then
+        return
+    endif
+
+    if (mc%ind.lt.30)
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 1;
+        mc%moveon(10) = 1;
+    elseif (mc%ind.lt.40)
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 0;
+        mc%moveon(10) = 0;
+    elseif (mc%ind.lt.50)
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 1;
+        mc%moveon(10) = 0;
+    elseif (mc%ind.lt.60)
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 0;
+        mc%moveon(10) = 1;
+    elseif (mc%ind.lt.70)
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 0;
+        mc%moveon(9) = 1;
+        mc%moveon(10) = 1;
+    elseif (mc%ind.lt.80)
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 0;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 1;
+        mc%moveon(10) = 1;
+    elseif (mc%ind.lt.90)
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 0;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 1;
+        mc%moveon(10) = 1;
+    elseif (mc%ind.lt.100)
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 0;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 1;
+        mc%moveon(10) = 1;
+    elseif (mc%ind.lt.110)
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 0;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 1;
+        mc%moveon(10) = 1;
+    elseif (mc%ind.lt.120)
+        mc%moveon(1) = 0;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 1;
+        mc%moveon(10) = 1;
+    else
+        mc%moveon(1) = 1;
+        mc%moveon(2) = 1;
+        mc%moveon(3) = 1;
+        mc%moveon(4) = 1;
+        mc%moveon(5) = 1;
+        mc%moveon(6) = 1;
+        mc%moveon(9) = 1;
+        mc%moveon(10) = 1;
+    endif 
+
+
+
     return
 end subroutine
 !---------------------------------------------------------------*
