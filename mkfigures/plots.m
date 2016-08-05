@@ -6,13 +6,13 @@ PLOTMF = 1;     % plot mean-field structure factor
 SAVESIM = 1;    % save simulation structure factor to file
 
 % plot parameters
-NREP = [1:79];  % number of replicas
+NREP = [1:9:79];  % number of replicas
 NSNAP = 26:50;  % snapshots to average
 lksample = 10;
 
 % simulation parameters
 EPS = 0.01;  % inter-bead segment rigidity (in unit of 2lp)
-LAM = 0;     % degree of chemical correlation
+LAM = 0.0;     % degree of chemical correlation
 
 % simulation constants
 boxl = 20;   % edge size of simulation
@@ -23,7 +23,8 @@ FA = 0.5;   % chemical fraction of A species
 % add/define paths
 %loaddir = '../data/';    % data directory
 [pathstr,name,ext] = fileparts(pwd);
-loaddir = strcat('../../../sim',pathstr(end-37:end),'/data/');
+title = 'randcopoly';ind = findstr(pathstr, title);
+loaddir = strcat('../../../sim-',pathstr(ind:end),'/data/');
 savedir = 'savedata/';   % save directory
 addpath('misc/');
 addpath('../utility/');

@@ -7,14 +7,14 @@ PLOTEXP = 0;      % plot experiment structure factors
 PLOTQS = 1;      % plot inverse peak intensities and peak locations
 
 % plot parameters
-NREP1 = [1:79];  % simulation plot range for structure factors
-NREP2 = [1:79];  % simulation plot range for peaks in structure factors
-ZEROPK = 1;     % if use zero q as peak location in plot 2
+NREP1 = [1:9:79];  % simulation plot range for structure factors
+NREP2 = [1:9:79];  % simulation plot range for peaks in structure factors
+ZEROPK = 0;     % if use zero q as peak location in plot 2
 NEXP = 3:2:9;   % experiment plot range
 
 % simulation parameters
 EPS = 0.01;  % inter-bead segment rigidity (in unit of 2lp)
-LAM = 0;     % degree of chemical correlation
+LAM = 0.;     % degree of chemical correlation
 
 % simulation constants
 G = 5;       % number of beads per monomer
@@ -27,9 +27,9 @@ DISCR = 0;        % if only plot s(k) at selective k values
 % add/define paths
 %loaddir = '../data/';    % data directory
 [pathstr,name,ext] = fileparts(pwd);
-loaddir = strcat('../../../sim',pathstr(end-37:end),'/data/');
+title = 'randcopoly';ind = findstr(pathstr, title);
+loaddir = strcat('../../../sim-',pathstr(ind:end),'/data/');
 savedir = 'savedata/';   % save directory
-
 %% Figure 1: structure factors
 CHI = load(strcat(loaddir,'chi'));  % adjusted CHI values
 CHI = CHI(end,2:end);

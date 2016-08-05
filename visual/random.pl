@@ -1,9 +1,18 @@
 #!/usr/bin/perl -w
 use POSIX qw(ceil floor);
+use Cwd;
 
-my $savept =35;  # save point
+my $savept =50;  # save point
 my $repno0 =1;    # replica index 1
-my $repnof =1;   # replica index final
+my $repnof =79;   # replica index final
+
+# define derectory
+# my $loaddir = "../data/"
+my $dir = getcwd;
+my $title = "randcopoly";
+my $ind = index($dir, $title);
+my $folder = substr $dir, $ind, -6;
+my $loaddir = "../../../sim-".$folder."data/";
 
 my $ratviz=0.5; # Ratio of visualization
 my $cut = 0;    # Whether show cross-section
@@ -29,8 +38,9 @@ my $gamma=2*$pi*$nbpbead/$nbpturn; # Twist angle per bead
 my $filein1;            # File with bead coordinates
 my $fileout1;           # Output file for pdb
 
+print "\n Start loading data from: ".$loaddir."...\n ";
 for (my $filecount=$repno0; $filecount<=$repnof; $filecount+=1) {
-$filein1 =sprintf("../data/r%dv%d", $savept, $filecount);
+$filein1 =sprintf($loaddir."r%dv%d", $savept, $filecount);
 $fileout1=sprintf(">snap%03d.pdb",$filecount);
 
 open(COORD1, $filein1) || die('cannot open file:'. $!);
