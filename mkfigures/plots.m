@@ -6,23 +6,27 @@ PLOTMF = 1;     % plot mean-field structure factor
 SAVESIM = 1;    % save simulation structure factor to file
 
 % plot parameters
-NREP = [1:55];  % number of replicas
-NSNAP = 40:50;  % snapshots to average
+NREP = [1:79];  % number of replicas
+NSNAP = 26:50;  % snapshots to average
+lksample = 10;
+
+% simulation parameters
+EPS = 0.01;  % inter-bead segment rigidity (in unit of 2lp)
+LAM = 0;     % degree of chemical correlation
+
+% simulation constants
+boxl = 20;   % edge size of simulation
+Ree = 2.0;   % average end-to-end distance of a monomer
+G = 5;       % number of beads per monomer
+FA = 0.5;   % chemical fraction of A species
 
 % add/define paths
-loaddir = '../data/';       % data directory
+%loaddir = '../data/';    % data directory
+[pathstr,name,ext] = fileparts(pwd);
+loaddir = strcat('../../../sim',pathstr(end-37:end),'/data/');
 savedir = 'savedata/';   % save directory
 addpath('misc/');
 addpath('../utility/');
-
-% simulation parameters
-boxl = 20;   % edge size of simulation
-Ree = 2.0;   % average end-to-end distance of a monomer
-EPS = 0.01;  % inter-bead segment rigidity (in unit of 2lp)
-LAM = -1;     % degree of chemical correlation
-G = 5;       % number of beads per monomer
-FA = 0.5;   % chemical fraction of A species
-lksample = 10;
 
 % load CHI parameters
 CHI = load(strcat(loaddir,'chi'));  % adjusted CHI values
