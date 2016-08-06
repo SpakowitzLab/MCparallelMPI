@@ -2,8 +2,6 @@ function [REP,CHI,NTIME,NREP] = replica(chi,nodes)
 
 % load data
 [NTIME,NREP] = size(chi);
-NTIME = 290;
-
 NREP = NREP-1;
 TIME = 1:NTIME;
 
