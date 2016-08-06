@@ -29,7 +29,9 @@ DISCR = 0;        % if only plot s(k) at selective k values
 [pathstr,name,ext] = fileparts(pwd);
 title = 'randcopoly';ind = findstr(pathstr, title);
 loaddir = strcat('../../../sim-',pathstr(ind:end),'/data/');
-savedir = 'savedata/';   % save directory
+savedir = 'savedata/';   % save data directory
+figdir = 'figures/';     % save figure directory
+
 %% Figure 1: structure factors
 CHI = load(strcat(loaddir,'chi'));  % adjusted CHI values
 CHI = CHI(end,2:end);
@@ -102,7 +104,7 @@ legend(leg{NREP1});
 axis([0.5,15,1e-2,5e3])
 xlabel('R_Mq');ylabel('S(q)');box on
 set(gca,'xscale','log');set(gca,'yscale','log')
-saveas(gcf,'sk','epsc')
+saveas(gcf,strcat(figdir,'sk'),'epsc')
 
 %% Figure 2 (Inverse Peak Intensities)
 if (PLOTQS)
@@ -146,4 +148,4 @@ if (PLOTQS)
   end
   xlabel('\chiG');ylabel('R_Mq^*');box on
 end
-saveas(gcf,'sinv','epsc')
+saveas(gcf,strcat(figdir,'sinv'),'epsc')
