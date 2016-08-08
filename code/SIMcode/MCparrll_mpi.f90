@@ -197,11 +197,31 @@ subroutine paraTemp ( p, id)
         enddo
 
         do rep=1,nPTReplicas
-            cofMtrx(rep,1)=chi_path(s_vals(rep))      
-            cofMtrx(rep,2)=mu_path(s_vals(rep))      
-            cofMtrx(rep,3)=h_path(s_vals(rep))     
-            cofMtrx(rep,4)=HP1_Bind_path(s_vals(rep))     
-            cofMtrx(rep,5)=kap_path(s_vals(rep))      
+            if (mc%PT_chi) then
+                cofMtrx(rep,1)=chi_path(s_vals(rep))      
+            else
+                cofMtrx(rep,1)=mc%chi
+            endif
+            if (mc%PT_mu) then
+                cofMtrx(rep,2)=mu_path(s_vals(rep))      
+            else
+                cofMtrx(rep,2)=mc%mu
+            endif
+            if (mc%PT_h) then
+                cofMtrx(rep,3)=h_path(s_vals(rep))
+            else
+                cofMtrx(rep,3)=mc%h_A
+            endif
+            if (mc%PT_couple) then
+                cofMtrx(rep,4)=HP1_Bind_path(s_vals(rep))
+            else
+                cofMtrx(rep,4)=mc%HP1_Bind
+            endif
+            if (mc%PT_Kap) then
+                cofMtrx(rep,5)=kap_path(s_vals(rep))
+            else
+                cofMtrx(rep,5)=mc%KAP
+            endif
             cofMtrx(rep,6)=mc%Para(1)
             cofMtrx(rep,7)=mc%Para(2)
             cofMtrx(rep,8)=mc%Para(3) 
@@ -374,24 +394,21 @@ function mu_path(s) result(mu)
     implicit none
     double precision, intent(in) :: s
     double precision mu
-    if(.false.) mu=s
-    mu=0.0_dp
+    mu=s
 end function mu_path
 function kap_path(s) result(kap)
     use setPrecision
     implicit none
     double precision, intent(in) :: s
     double precision kap
-    if(.false.) kap=s
-    kap=0.0_dp
+    kap=s*10.0_dp
 end function kap_path
 function hp1_bind_path(s) result(hp1_bind)
     use setPrecision
     implicit none
     double precision, intent(in) :: s
     double precision hp1_bind
-    if(.false.) hp1_bind=s
-    hp1_bind=0.0_dp
+    hp1_bind=s
 end function hp1_bind_path
 Subroutine PT_override(mc,md)
 ! Override initialization with parallel setup parameters

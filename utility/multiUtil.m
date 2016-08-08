@@ -83,7 +83,7 @@ for rep=repMIN:repSkip:repMAX
         navj=navj+1;
     end
     col=(rep-repMIN)/(repMAX-repMIN);
-    out1=dlmread(strcat(path,sprintf('/out1v%d',rep)));
+    out1=dlmread(strcat(path,sprintf('/out1v%d',rep)),'',1,0);
     chiVec{v}=num2str(out1(end,11));
 %% PLOT
     if (TEST1)
@@ -140,11 +140,11 @@ end
 if (TEST5)
     % load analytical theory
     figure(5); hold on
-    filename = sprintf('sdata/Seps%.3flam%.2f',EPS,LAM);
-    S = load(filename);
-    KS = S(:,1);
-    SS = 1./(-2*CHI+1./S(:,2));
-    plot(KS,SS);
+%    filename = sprintf('sdata/Seps%.3flam%.2f',EPS,LAM);
+%    S = load(filename);
+%    KS = S(:,1);
+%    SS = 1./(-2*CHI+1./S(:,2));
+%    plot(KS,SS);
     xlabel('q');ylabel('S(q)')
     set(gca,'xscale','log');set(gca,'yscale','log')
     legend(chiVec)

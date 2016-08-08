@@ -75,8 +75,6 @@ Module simMod
     DOUBLE PRECISION x_Field, dx_Field
     DOUBLE PRECISION x_Mu,    dx_Mu
 
-
-
 !   Move Variables 
     DOUBLE PRECISION DEELAS(3)   ! Change in bending energy
 !    DOUBLE PRECISION DEINT    ! Change in self energy
@@ -125,7 +123,12 @@ Module simMod
     integer (kind = 4) error  ! MPI error
     double precision M ! M=\sum_i \sigma_i   like ising magnitization
     logical PTON
-    ! see Timing variables for NPT
+    ! see Timing variables for NPT\
+    logical PT_chi
+    logical PT_h
+    logical PT_kap
+    logical PT_mu
+    logical PT_couple
 
 !   Replica Dynamic Cof choice 
     integer NRepAdapt ! number of exchange attemts between adapt
@@ -209,11 +212,11 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%EPS =0.3_dp
     mc%CHI =0.0_dp
     mc%h_A =0.0_dp
-    mc%KAP =100.0_dp
+    mc%KAP =10.0_dp
     mc%EU  =-1.52_dp
     mc%EM  =0.01_dp
     mc%mu  =0.0_dp
-    mc%HP1_Bind=-28.0_dp
+    mc%HP1_Bind=0.0_dp !-28.0_dp
 
     ! options
     mc%moveTypes=10
@@ -249,6 +252,11 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%indEndRepAdapt=20
     mc%repAnnealSpeed=0.01
     mc%replicaBounds=.TRUE.
+    mc%PT_chi =.False. 
+    mc%PT_h =.False. 
+    mc%PT_kap =.False. 
+    mc%PT_mu =.False.  
+    mc%PT_couple =.False. 
 
     call MCvar_defaultAmp(mc) 
 
@@ -438,7 +446,17 @@ Subroutine MCvar_setParams(mc,fileName)
        CASE('REPLICA_BOUNDS')
            Call READO(mc%replicaBounds) ! insure that 0 < s < 1
        CASE('INITIAL_MAX_S')
-           call READF(mc%INITIAL_MAX_S) ! inital chi of rep with highest chi
+           call READF(mc%INITIAL_MAX_S) ! inital s of rep with highest s
+       CASE('PT_CHI')
+           call READO(mc%PT_chi) ! parallel temper chi
+       CASE('PT_H')
+           call READO(mc%PT_h) ! parallel temper h
+       CASE('PT_KAP')
+           call READO(mc%PT_kap) ! parallel temper kap
+       CASE('PT_MU')
+           call READO(mc%PT_mu) ! parallel temper mu 
+       CASE('PT_COUPLE')
+           call READO(mc%PT_couple) ! parallel temper HP1_bind
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)

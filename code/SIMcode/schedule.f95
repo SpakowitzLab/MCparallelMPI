@@ -36,7 +36,7 @@ Subroutine strength_schedule(mc,inton)
         return
     endif
 
-    if (mc%ind.lt.30)
+    if (mc%ind.lt.30) then
         mc%moveon(1) = 1;
         mc%moveon(2) = 1;
         mc%moveon(3) = 1;
@@ -45,7 +45,7 @@ Subroutine strength_schedule(mc,inton)
         mc%moveon(6) = 1;
         mc%moveon(9) = 1;
         mc%moveon(10) = 1;
-    elseif (mc%ind.lt.40)
+    elseif (mc%ind.lt.40) then
         mc%moveon(1) = 1;
         mc%moveon(2) = 1;
         mc%moveon(3) = 1;
@@ -54,7 +54,7 @@ Subroutine strength_schedule(mc,inton)
         mc%moveon(6) = 1;
         mc%moveon(9) = 0;
         mc%moveon(10) = 0;
-    elseif (mc%ind.lt.50)
+    elseif (mc%ind.lt.50) then
         mc%moveon(1) = 1;
         mc%moveon(2) = 1;
         mc%moveon(3) = 1;
@@ -63,7 +63,7 @@ Subroutine strength_schedule(mc,inton)
         mc%moveon(6) = 1;
         mc%moveon(9) = 1;
         mc%moveon(10) = 0;
-    elseif (mc%ind.lt.60)
+    elseif (mc%ind.lt.60) then
         mc%moveon(1) = 1;
         mc%moveon(2) = 1;
         mc%moveon(3) = 1;
@@ -72,7 +72,7 @@ Subroutine strength_schedule(mc,inton)
         mc%moveon(6) = 1;
         mc%moveon(9) = 0;
         mc%moveon(10) = 1;
-    elseif (mc%ind.lt.70)
+    elseif (mc%ind.lt.70) then
         mc%moveon(1) = 1;
         mc%moveon(2) = 1;
         mc%moveon(3) = 1;
@@ -81,7 +81,7 @@ Subroutine strength_schedule(mc,inton)
         mc%moveon(6) = 0;
         mc%moveon(9) = 1;
         mc%moveon(10) = 1;
-    elseif (mc%ind.lt.80)
+    elseif (mc%ind.lt.80) then
         mc%moveon(1) = 1;
         mc%moveon(2) = 1;
         mc%moveon(3) = 1;
@@ -90,7 +90,7 @@ Subroutine strength_schedule(mc,inton)
         mc%moveon(6) = 1;
         mc%moveon(9) = 1;
         mc%moveon(10) = 1;
-    elseif (mc%ind.lt.90)
+    elseif (mc%ind.lt.90) then
         mc%moveon(1) = 1;
         mc%moveon(2) = 1;
         mc%moveon(3) = 1;
@@ -99,7 +99,7 @@ Subroutine strength_schedule(mc,inton)
         mc%moveon(6) = 1;
         mc%moveon(9) = 1;
         mc%moveon(10) = 1;
-    elseif (mc%ind.lt.100)
+    elseif (mc%ind.lt.100) then
         mc%moveon(1) = 1;
         mc%moveon(2) = 1;
         mc%moveon(3) = 0;
@@ -108,7 +108,7 @@ Subroutine strength_schedule(mc,inton)
         mc%moveon(6) = 1;
         mc%moveon(9) = 1;
         mc%moveon(10) = 1;
-    elseif (mc%ind.lt.110)
+    elseif (mc%ind.lt.110) then
         mc%moveon(1) = 1;
         mc%moveon(2) = 0;
         mc%moveon(3) = 1;
@@ -117,7 +117,7 @@ Subroutine strength_schedule(mc,inton)
         mc%moveon(6) = 1;
         mc%moveon(9) = 1;
         mc%moveon(10) = 1;
-    elseif (mc%ind.lt.120)
+    elseif (mc%ind.lt.120) then 
         mc%moveon(1) = 0;
         mc%moveon(2) = 1;
         mc%moveon(3) = 1;
