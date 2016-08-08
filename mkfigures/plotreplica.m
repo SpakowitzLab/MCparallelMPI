@@ -1,25 +1,30 @@
-clear;
-%close all
-addpath('misc/');
-addpath('../utility/');
+clear;close all
 
-% parse replicas
-%dir = '../data/';  % data directory
-%dir = '../../../quinn/MCPoly/MCparallelMPI/lamNeg1_r7_27_16/';
-%cof = load(strcat(dir,'cofData'));
-chi = load(strcat(dir,'chi'));
-node = load(strcat(dir,'nodeNumber'));
-[REPS,CHI,NTIME,NREP] = replica(chi,node);
+% plot options
+NINTERV = 100;
+NSTART = 1000;
 
 % simulation parameters
 G = 5;
 
+% parse replicas
+%loaddir = '../data/';  % data directory
+[pathstr,name,ext] = fileparts(pwd);
+title = 'randcopoly';ind = findstr(pathstr, title);
+loaddir = strcat('../../../sim-',pathstr(ind:end),'/data/');
+addpath('misc/');
+addpath('../utility/');
+
+chi = load(strcat(loaddir,'chi'));
+node = load(strcat(loaddir,'nodeNumber'));
+[REPS,CHI,NTIME,NREP] = replica(chi,node);
+
 figure;hold
 for ii = 1:NREP
- plot(1:10:NTIME,CHI(1:10:NTIME,ii)*G,'linewidth',1.5)
+ plot(1:NINTERV:NTIME,CHI(1:NINTERV:NTIME,ii)*G,'linewidth',1.5)
 end
 
 figure;hold
-for ii = 250:1:290
-    plot(CHI(250,:)*G,CHI(ii,:)*G,'rx')
+for ii = NSTART:1:NTIME
+    plot(CHI(NSTART,:)*G,CHI(ii,:)*G,'r.')
 end

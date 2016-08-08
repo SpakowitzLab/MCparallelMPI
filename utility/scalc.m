@@ -81,7 +81,7 @@ for n1=0:Nsample
         k2=(2*pi/L)*n2;
         k3=(2*pi/L)*n3;
         km=sqrt(k1*k1+k2*k2+k3*k3);
-        kb(ii,:)=[k1,k2,k3,km];
+        kb(jj,:)=[k1,k2,k3,km];
     end
   end
 end
