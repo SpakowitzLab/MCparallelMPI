@@ -51,7 +51,3 @@ ylabel('\chi at later times')
 % plot(h_A,FieldEnergy./h_A,'o')
 % xlabel('h')
 % ylabel('x feild')
-
-
-
-

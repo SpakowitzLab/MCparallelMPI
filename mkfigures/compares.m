@@ -7,20 +7,30 @@ PLOTEXP = 0;      % plot experiment structure factors
 PLOTQS = 1;      % plot inverse peak intensities and peak locations
 
 % plot parameters
-NREP1 = [1:6:55];  % simulation plot range for structure factors
-NREP2 = [1:55];    % simulation plot range for peaks in structure factors
+NREP1 = [1:9:79];  % simulation plot range for structure factors
+NREP2 = [1:9:79];  % simulation plot range for peaks in structure factors
+ZEROPK = 0;     % if use zero q as peak location in plot 2
 NEXP = 3:2:9;   % experiment plot range
 
-% load Simulation CHI parameters
-G = 5;LAM = -1.0;EPS = 0.01;FA=0.50;
+% simulation parameters
+EPS = 0.01;  % inter-bead segment rigidity (in unit of 2lp)
+LAM = 0.;     % degree of chemical correlation
+
+% simulation constants
+G = 5;       % number of beads per monomer
+FA = 0.5;   % chemical fraction of A species
 
 % plot options
 SCALE = 1/46;     % scaling of simulation structure factor
 DISCR = 0;        % if only plot s(k) at selective k values
 
 % add/define paths
-loaddir = '../data/';    % data directory
-savedir = 'savedata/';   % save directory
+%loaddir = '../data/';    % data directory
+[pathstr,name,ext] = fileparts(pwd);
+title = 'randcopoly';ind = findstr(pathstr, title);
+loaddir = strcat('../../../sim-',pathstr(ind:end),'/data/');
+savedir = 'savedata/';   % save data directory
+figdir = 'figures/';     % save figure directory
 
 %% Figure 1: structure factors
 CHI = load(strcat(loaddir,'chi'));  % adjusted CHI values
@@ -94,7 +104,7 @@ legend(leg{NREP1});
 axis([0.5,15,1e-2,5e3])
 xlabel('R_Mq');ylabel('S(q)');box on
 set(gca,'xscale','log');set(gca,'yscale','log')
-saveas(gcf,'sk','epsc')
+saveas(gcf,strcat(figdir,'sk'),'epsc')
 
 %% Figure 2 (Inverse Peak Intensities)
 if (PLOTQS)
@@ -107,11 +117,23 @@ if (PLOTQS)
   KS = MF(1,2);     % critical wavemode
   plot(CHI*G,2*(CHIS/G-CHI),'k-.','linewidth',2)
 
+  % find peak location
+  QS = zeros(max(NREP2),1);
+  for REP = NREP2
+    SAVEFILENAME = sprintf('SSIM_CHIG%.3fLAM%.2fEPS%.2fFA%.2f',CHI(REP)*G,LAM,EPS,FA);
+    if (ZEROPK)
+      QS(REP) = 1;
+    else
+      ssim = load(strcat(savedir,SAVEFILENAME));
+      QS(REP) = find(ssim(:,2) == max(ssim(:,2)));
+    end
+  end
+
   for REP = NREP2
     col = (REP-1)/(max(NREP2)-1);
     SAVEFILENAME = sprintf('SSIM_CHIG%.3fLAM%.2fEPS%.2fFA%.2f',CHI(REP)*G,LAM,EPS,FA);
     ssim = load(strcat(savedir,SAVEFILENAME));
-    plot(CHI(REP)*G,1/max(ssim(:,2)),'o','linewidth',1.5,'color',[col 0 1-col])
+    plot(CHI(REP)*G,1/ssim(QS(REP),2),'o','linewidth',1.5,'color',[col 0 1-col])
   end
   xlabel('\chiG');ylabel('1/S(q^*)')
   ylim([0,2*CHIS/G]);box on
@@ -122,9 +144,8 @@ if (PLOTQS)
     col = (REP-1)/(max(NREP2)-1);
     SAVEFILENAME = sprintf('SSIM_CHIG%.3fLAM%.2fEPS%.2fFA%.2f',CHI(REP)*G,LAM,EPS,FA);
     ssim = load(strcat(savedir,SAVEFILENAME));
-    QS = find(ssim(:,2) == max(ssim(:,2)));
-    plot(CHI(REP)*G,ssim(QS,1),'o','linewidth',1.5,'color',[col 0 1-col])
+    plot(CHI(REP)*G,ssim(QS(REP),1),'o','linewidth',1.5,'color',[col 0 1-col])
   end
   xlabel('\chiG');ylabel('R_Mq^*');box on
 end
-saveas(gcf,'sinv','epsc')
+saveas(gcf,strcat(figdir,'sinv'),'epsc')

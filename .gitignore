@@ -9,3 +9,5 @@ mkfigures/savedata/*
 mkfigures/*.eps
 utility/r101
 utility/pdata
+visual/*.pdb
+visual/*.png
