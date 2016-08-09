@@ -14,10 +14,10 @@ Subroutine MCvar_adapt(mc,MCTYPE)
     INTEGER, intent(in) :: MCTYPE   ! Type of move
 
     ! Correct for turned down poor moves
-    if ((mc%PHit(MCTYPE).lt.mc%MIN_ACCEPT)) then
+    if ((mc%PHit(MCTYPE).lt.mc%MIN_ACCEPT).and. &
+        ((MCTYPE.eq.5).or.(MCTYPE.eq.6))) then
         mc%SUCCESS(MCTYPE)=mc%SUCCESS(MCTYPE)*mc%reduce_move
     endif
-    
 
 !   Change the position if appropriate
     mc%PHIT(MCTYPE)=real(mc%SUCCESS(MCTYPE))/real(mc%NADAPT(MCTYPE))
