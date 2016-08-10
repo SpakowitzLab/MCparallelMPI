@@ -70,6 +70,16 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     endif
     write(1,*), IND, cofMtrx(:,3)
     Close(1)
+    ! save kap
+    fullName=  'data/kap'
+    inquire(file = fullName, exist=isfile)
+    if (isfile) then
+        OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
+    else 
+        OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
+    endif
+    write(1,*), IND, cofMtrx(:,5)
+    Close(1)
     ! save mu
     fullName=  'data/mu'
     inquire(file = fullName, exist=isfile)
@@ -78,6 +88,16 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
     endif
-    write(1,*), IND, cofMtrx(:,3)
+    write(1,*), IND, cofMtrx(:,2)
+    Close(1)
+    ! save s
+    fullName=  'data/s'
+    inquire(file = fullName, exist=isfile)
+    if (isfile) then
+        OPEN (UNIT = 1, FILE = fullName, STATUS ='OLD', POSITION="append")
+    else 
+        OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
+    endif
+    write(1,*), IND, s
     Close(1)
 end subroutine

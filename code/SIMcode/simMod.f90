@@ -206,7 +206,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%F_METH=0.5_dp
     mc%LAM_METH=0.9_dp
     mc%Fpoly=0.025_dp
-    mc%k_field=0.3145_dp
+    mc%k_field=1.5708_dp !0.3145_dp
 
     ! energy parameters
     mc%EPS =0.3_dp
