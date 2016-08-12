@@ -303,8 +303,21 @@ subroutine paraTemp ( p, id)
                                    mc%lowerCofRail,mc%upperCofRail,&
                                    mc%RepAnnealSpeed,mc%replicaBounds)
                     do rep=1,nPTReplicas
-                        cofMtrx(rep,1)=chi_path(s_vals(rep))      
-                        cofMtrx(rep,3)=h_path(s_vals(rep))     
+                        if (mc%PT_chi) then
+                            cofMtrx(rep,1)=chi_path(s_vals(rep))      
+                        endif
+                        if (mc%PT_mu) then
+                            cofMtrx(rep,2)=mu_path(s_vals(rep))      
+                        endif
+                        if (mc%PT_h) then
+                            cofMtrx(rep,3)=h_path(s_vals(rep))
+                        endif
+                        if (mc%PT_couple) then
+                            cofMtrx(rep,4)=HP1_Bind_path(s_vals(rep))
+                        endif
+                        if (mc%PT_Kap) then
+                            cofMtrx(rep,5)=kap_path(s_vals(rep))
+                        endif
                     enddo
                 endif
                 N_average=0
