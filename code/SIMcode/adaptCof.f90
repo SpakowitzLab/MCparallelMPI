@@ -25,7 +25,15 @@ double precision successRate
 
 allocate( newCof(1:nPTReplicas) )
 
-newCof(1)=Cof(1)
+if(.false.) then
+    if ((downSuccess(2).lt.0.99_dp).and.(newCof(1).lt.1.0_dp)) then
+        newCof(1)=Cof(1)+repAnnealSpeed
+    else
+        newCof(1)=Cof(1)
+    endif
+else
+    newCof(1)=Cof(1)
+endif
 do rep=2,nPTReplicas
     successRate=dble(downSuccess(rep))/dble(N_average) 
     if (Cof(rep).lt.Cof(rep-1)) then
