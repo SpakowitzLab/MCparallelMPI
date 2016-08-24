@@ -764,6 +764,7 @@ Subroutine MCvar_defaultAmp(mc)
         mc%NADAPT(MCTYPE)=1000 ! adapt after at most 1000 steps
         mc%PDESIRE(MCTYPE)=0.5_dp ! Target
         mc%SUCCESS(MCTYPE)=0
+        mc%PHIT(MCTYPE)=0.0_dp
     ENDDO
 end subroutine
 Subroutine MCvar_recenter(mc,md)
