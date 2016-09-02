@@ -465,6 +465,21 @@ Subroutine MCvar_setParams(mc,fileName)
     ENDDO
     close(PF)
 
+    if ((mc%NBINX(1)-mc%NBINX(2).ne.0).or. &
+        (mc%NBINX(1)-mc%NBINX(3).ne.0)) then
+        if (mc%simType.eq.1) then
+            print*, "Solution not tested with non-cube box, more coding needed"
+            stop 1
+        endif
+        if (mc%confineType.ne.4) then
+            print*, "Unequal boundaries require confineType=4"
+            stop 1
+        endif    
+        if (mc%setType.eq.4) then
+            print*, "You shouldn't put a shpere in and unequal box!"
+            stop 1
+        endif    
+    endif
     ! --------------------
     !
     ! Derived Variables, Reconcile inputs
@@ -578,21 +593,7 @@ Subroutine MCvar_setParams(mc,fileName)
         print*, "error in MCsim. Can't have kap without int on"
         stop 1
     endif
-    if ((mc%NBINX(1)-mc%NBINX(2).ne.0).or. &
-        (mc%NBINX(1)-mc%NBINX(3).ne.0)) then
-        if (mc%simType.eq.1) then
-            print*, "Solution not tested with non-cube box, more coding needed"
-            stop 1
-        endif
-        if (mc%confineType.ne.4) then
-            print*, "Unequal boundaries require confineType=4"
-            stop 1
-        endif    
-        if (mc%setType.eq.4) then
-            print*, "You shouldn't put a shpere in and unequal box!"
-            stop 1
-        endif    
-    endif
+    
 end Subroutine
 Subroutine MCvar_printDescription(mc)
     IMPLICIT NONE

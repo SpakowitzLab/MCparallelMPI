@@ -41,7 +41,8 @@ INTEGER NBINX(3)
 double precision temp
 NBINX=mc%NBINX
 
-if ((mc%simType.ne.0).or.(mc%confineType.ne.0)) then
+if ((mc%simType.ne.0).or.&
+    ((mc%confineType.ne.0).and.(mc%confineType.ne.4))) then
     print*, "change back to not using temp"
     stop 1
 endif
