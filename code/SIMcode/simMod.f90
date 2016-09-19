@@ -115,6 +115,7 @@ Module simMod
     double precision KAP_ON   
     double precision CHI_ON
     double precision Couple_ON
+    logical restart
 
 !   Parallel Tempering variables
     Character*16 repSufix    ! prefix for writing files
@@ -189,6 +190,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%saveU=.FALSE.
     mc%savePhi=.FALSE.
     mc%FRMCHEM=.FALSE.
+    mc%restart=.FALSE.
 
     ! geometry options
     mc%NP  =1
@@ -257,6 +259,8 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%PT_kap =.False. 
     mc%PT_mu =.False.  
     mc%PT_couple =.False. 
+
+
 
     call MCvar_defaultAmp(mc) 
 
@@ -457,6 +461,8 @@ Subroutine MCvar_setParams(mc,fileName)
            call READO(mc%PT_mu) ! parallel temper mu 
        CASE('PT_COUPLE')
            call READO(mc%PT_couple) ! parallel temper HP1_bind
+       CASE('RESTART')
+           call READO(mc%restart) ! Restart from parallel tempering
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)

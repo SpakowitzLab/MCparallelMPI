@@ -238,6 +238,7 @@ subroutine paraTemp ( p, id)
         !    Begin Main loop
         !
         !------------------------------------------------------
+        mc%IND=0
         keepGoing=.True.
         do while(keepGoing)
             ! give workers thier jobs
@@ -245,9 +246,16 @@ subroutine paraTemp ( p, id)
                 dest=nodeNumber(rep)
                 call MPI_Send (rep,1, MPI_INTEGER, dest,   0, &
                                 MPI_COMM_WORLD,error )
-                cof=cofMtrx(rep,:)
-                call MPI_Send (cof,nTerms, MPI_DOUBLE_PRECISION, dest,   0, &
-                                MPI_COMM_WORLD,error )
+                if (mc%restart.and.mc%IND.eq.0) then
+                    source=dest
+                    call MPI_Recv (cof, nTerms, MPI_DOUBLE_PRECISION, source, 0, &
+                                   MPI_COMM_WORLD, status, error ) 
+                    cofMtrx(rep,:)=cof
+                else
+                    cof=cofMtrx(rep,:)
+                    call MPI_Send (cof,nTerms, MPI_DOUBLE_PRECISION, dest,   0, &
+                                    MPI_COMM_WORLD,error )
+                endif
             enddo
             ! get results from workers
             

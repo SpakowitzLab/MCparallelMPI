@@ -1,8 +1,10 @@
 # -----------------------------------------------
-#  Keys for a simple melt calculation 
+#  Keys for a simple melt calculation
 #
 # -----------------------------------------------
 # Simulation basics
+#
+RESTART T
 SETTYPE 1
 CONFINETYPE 0
 SIMTYPE 0
@@ -10,12 +12,13 @@ STRENGTH_SCHEDULE T
 FRMCHEM F
 FRMMETH F
 PTON T
+PT_CHI T
 
 # Chain parameters
 G 5
 N 8
 FA 0.5
-LAM -0.75
+LAM -1.0
 EPS 0.01
 L0 0.406666
 V 0.1
@@ -33,7 +36,7 @@ H_A 0.0
 NSTEP 4000
 NPT 100
 NNOINT 10
-INDMAX 100
+INDMAX 1000
 N_KAP_ON 10
 N_CHI_ON 15
 
@@ -48,7 +51,6 @@ UPPER_COF_RAIL 0.5
 REP_ANNEAL_SPEED 0.01
 REPLICA_BOUNDS F
 INITIAL_MAX_S 0.1
-PT_CHI T
 
 # Monte-Carlo settings
 CRANK_SHAFT_ON 1
@@ -67,3 +69,6 @@ MIN_SLIDE_WIN 6
 MIN_PIVOT_WIN 6
 MIN_ACCEPT 0.1
 REDUCE_MOVE 6
+SAVE_U T
+SAVE_PHI F
+

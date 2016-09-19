@@ -93,8 +93,6 @@ else ! Calculate change in energy
         enddo
     endif
 endif
-
-
 mc%dx_chi=mc%dx_chi*mc%CHI_ON
 mc%dx_couple=mc%dx_couple*mc%Couple_ON
 mc%dx_Kap=mc%dx_Kap*mc%KAP_ON

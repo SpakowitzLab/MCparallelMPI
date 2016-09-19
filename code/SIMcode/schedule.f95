@@ -4,7 +4,7 @@ Subroutine strength_schedule(mc,inton)
     use simMod
     implicit none
     TYPE(MCvar), intent(inout) :: mc
-    integer, intent(inout) :: inton
+    integer, intent(out) :: inton
 
     if (mc%IND.LE.mc%NNOINT) then
         INTON=0
