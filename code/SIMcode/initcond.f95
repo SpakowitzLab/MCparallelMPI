@@ -50,6 +50,7 @@ INTEGER ii !for testing
 !      Random number generator initiation
 type(random_stat) rand_stat
 real urand(3)
+DOUBLE PRECISION mag  ! magnitude of U for reload
 
 !     Setup the choice parameters
 
@@ -63,7 +64,12 @@ if(FRMFILE)then
    OPEN (UNIT = 5, FILE = 'input/u0', STATUS = 'OLD')
    Do I=1,NT
       READ(5,*) U(I,1),U(I,2),U(I,3)
+       mag=sqrt(U(I,1)**2+U(I,2)**2+U(I,3)**2)
+       U(I,1)=U(I,1)/mag
+       U(I,2)=U(I,2)/mag
+       U(I,3)=U(I,3)/mag
    enddo 
+
    CLOSE(5)
    return
 endif
