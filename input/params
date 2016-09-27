@@ -19,8 +19,8 @@ G 5
 N 8
 FA 0.5
 LAM -1.0
-EPS 0.01
-L0 0.406666
+EPS 1
+L0 0.9428
 V 0.1
 
 # Simulation parameters
