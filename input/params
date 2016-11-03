@@ -4,7 +4,7 @@
 # -----------------------------------------------
 # Simulation basics
 #
-RESTART T
+RESTART F
 SETTYPE 1
 CONFINETYPE 0
 SIMTYPE 0

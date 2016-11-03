@@ -28,7 +28,7 @@ snapMax=1;
 TEST1 = 1;  % end-to-end distribution
 TEST2 = 0;  % bead-bead distribution
 TEST3 = 0;  % total and partial density
-TEST4 = 0;  % radial distrbution function
+TEST4 = 1;  % radial distrbution function
 TEST5 = 0;  % structure factor
 TEST6 = 0;  % chemical potential (widom insertion)
 
