@@ -648,11 +648,11 @@ Subroutine MCvar_allocate(mc,md)
     NT=mc%NT
     NBIN=mc%NBIN
     
-    if ((NT.GT.200000).OR.(NT.lt.1)) then
+    if ((NT.GT.1000000).OR.(NT.lt.1)) then
         print*, "Tried to allocate ", NT," beads in MCvar_allocate"
         stop 1
     endif 
-    if ((NBIN.GT.20000).or.(NBIN.lt.1)) then
+    if ((NBIN.GT.1000000).or.(NBIN.lt.1)) then
         print*, "Tried to allocate ",NBIN," bins in MCvar_allocate"
         stop 1
     endif
