@@ -26,7 +26,7 @@ V 0.1
 # Simulation parameters
 FPOLY 1.0
 LBOX 20
-DEL 0.5000
+DEL 1.000
 CHI 1.0
 KAP 10
 H_A 0.0
