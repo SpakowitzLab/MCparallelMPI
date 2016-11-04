@@ -1,5 +1,5 @@
-GFORTRAN module version '6' created from mersenne_twister.f90 on Sat Sep 17 18:20:47 2016
-MD5:4b01509e5d65203a0008a54d1fd248db -- If you edit this, you'll get what you deserve.
+GFORTRAN module version '6' created from mersenne_twister.f90 on Thu Nov  3 23:53:02 2016
+MD5:b02b324c756ec3293cbe245865de63a1 -- If you edit this, you'll get what you deserve.
 
 (() () () () () () () () () () () () () () () () () () () () () () () ()
 () () ())
@@ -117,19 +117,19 @@ DUMMY) (DERIVED 27 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
 CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '1') ()) 0 () () () 0 0)
 47 'inseed' '' 'inseed' 45 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN 0
 0 DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
-49 'harvest' '' 'harvest' 48 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
-0 0 DIMENSION DUMMY) (REAL 4 0 0 REAL ()) 0 0 () (1 0 ASSUMED_SHAPE (
-CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '1') ()) 0 () () () 0 0)
 18 'iharvest' '' 'iharvest' 16 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0 RESULT) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () ()
 () 0 0)
+49 'harvest' '' 'harvest' 48 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
+0 0 DIMENSION DUMMY) (REAL 4 0 0 REAL ()) 0 0 () (1 0 ASSUMED_SHAPE (
+CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '1') ()) 0 () () () 0 0)
+17 'imax' '' 'imax' 16 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN 0 0
+DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
 51 'harvest' '' 'harvest' 50 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN UNKNOWN
 0 0 DIMENSION DUMMY) (REAL 4 0 0 REAL ()) 0 0 () (1 0 ASSUMED_SHAPE (
 CONSTANT (INTEGER 4 0 0 INTEGER ()) 0 '1') ()) 0 () () () 0 0)
 52 'stat' '' 'stat' 50 ((VARIABLE INOUT UNKNOWN-PROC UNKNOWN UNKNOWN 0 0
 DUMMY) (DERIVED 27 0 0 DERIVED ()) 0 0 () () 0 () () () 0 0)
-17 'imax' '' 'imax' 16 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN 0 0
-DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
 54 'imax' '' 'imax' 53 ((VARIABLE IN UNKNOWN-PROC UNKNOWN UNKNOWN 0 0
 DUMMY) (INTEGER 4 0 0 INTEGER ()) 0 0 () () 0 () () () 0 0)
 55 'iharvest' '' 'iharvest' 53 ((VARIABLE OUT UNKNOWN-PROC UNKNOWN

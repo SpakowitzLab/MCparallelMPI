@@ -67,19 +67,19 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 !   initialize densities and energies 
 !
 ! -------------------------------------
-    ! --- Binding Energy ---
-    md%ABP=0 ! set entire array to zero
-    !  Notide that ABP and AB are intensionally swapped below
-    IT1=1; IT2=mc%NT
-    call MC_bind(mc%NT,mc%G,IT1,IT2,md%ABP,md%AB,md%METH, &
-                 mc%EU,mc%EM,mc%DEBind,mc%mu,mc%dx_mu)
-
     inquire(file = "data/error", exist=isfile)
     if (isfile) then
         OPEN (UNIT = 3, FILE = "data/error", STATUS ='OLD', POSITION="append")
     else 
         OPEN (UNIT = 3, FILE = "data/error", STATUS = 'new')
     endif
+
+    ! --- Binding Energy and Mu energy ---
+    md%ABP=0 ! set entire array to zero
+    !  Notide that ABP and AB are intensionally swapped below
+    IT1=1; IT2=mc%NT
+    call MC_bind(mc%NT,mc%G,IT1,IT2,md%ABP,md%AB,md%METH, &
+                 mc%EU,mc%EM,mc%DEBind,mc%DEmu,mc%mu,mc%dx_mu)
 
     if(abs(mc%EBind-mc%DEBind).gt.0.00001) then
         print*, "Warning. Integrated binding enrgy:", &
@@ -90,7 +90,21 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                 mc%DEBind
     endif
     mc%EBind=mc%DEBind
+
+    if(abs(mc%EMu-mc%DEMu).gt.0.00001) then
+        print*, "Warning. Integrated mu enrgy:", &
+                mc%EMu," while absolute mu energy:", &
+                mc%DEMu
+        write(3,*), "Warning. Integrated mu enrgy:", &
+                mc%EMu," while absolute mu energy:", &
+                mc%DEMu
+    endif
+    mc%EMu=mc%DEMU
     mc%x_mu=mc%dx_mu
+    if (abs(mc%x_mu*mc%mu-mc%EMu).gt.0.000001_dp) then
+        print*, "Bad initiaize on mu"
+        stop 1
+    endif
 
 
     ! --- Elastic Energy ---
@@ -119,6 +133,9 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
         enddo
         call MC_int(mc,md,IT1,IT2,.True.)
         do I=1,mc%NBIN
+            if (md%Vol(I).lt.0.0001) then
+                cycle
+            endif
             phiTot=phiTot+(md%PHIA(I)+md%PHIB(I))*md%Vol(I)
         enddo
         ! test to see if sum of changes are same as calculating from scratch
@@ -238,9 +255,11 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           if (MCTYPE.EQ.7) then
               !print*, 'MCsim says EM:',EM,'EU',EU
               call MC_bind(mc%NT,mc%G,IT1,IT2,md%AB,md%ABP,md%METH,mc%EU,mc%EM, &
-                           mc%DEBind,mc%mu,mc%dx_mu)
+                           mc%DEBind,mc%DEmu,mc%mu,mc%dx_mu)
           else
               mc%DEBind=0.0
+              mc%DEMu=0.0
+              mc%dx_mu=0.0
           endif
          
 !   Calculate the change in the self-interaction energy (actually all
@@ -282,7 +301,8 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
 !   Change the position if appropriate
           ENERGY=mc%DEELAS(1)+mc%DEELAS(2)+mc%DEELAS(3) & 
-                 +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon+mc%DEField
+                 +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%DEMu &
+                 +mc%ECon+mc%DEField
           PROB=exp(-ENERGY)
           call random_number(urnd,rand_stat)
           TEST=urnd(1)
@@ -291,6 +311,9 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                  DO I=IT1,IT2
                       md%AB(I)=md%ABP(I)
                  ENDDO
+                 mc%EBind=mc%EBind+mc%DEBind
+                 mc%EMu=mc%EMu+mc%DEMu
+                 mc%x_mu=mc%x_mu+mc%dx_mu
              else
                  DO I=IT1,IT2
                      md%R(I,1)=md%RP(I,1)
@@ -310,25 +333,26 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                          md%U(I,3)=md%UP(I,3)
                      enddo
                  endif
+                 if (mc%ECon.gt.0.0_dp) then
+                     print*, "MCTYPE", MCType
+                     call MCvar_printEnergies(mc) 
+                     print*, "error in MCsim, out of bounds "
+                     stop 1
+                 endif
+                 mc%EELAS(1)=mc%EELAS(1)+mc%DEELAS(1)
+                 mc%EELAS(2)=mc%EELAS(2)+mc%DEELAS(2)
+                 mc%EELAS(3)=mc%EELAS(3)+mc%DEELAS(3)
              endif
-             if (mc%ECon.gt.0.0_dp) then
-                 print*, "MCTYPE", MCType
-                 call MCvar_printEnergies(mc) 
-                 print*, "error in MCsim, out of bounds "
-                 stop 1
-             endif
-             mc%EBind=mc%EBind+mc%DEBind
-             mc%x_mu=mc%x_mu+mc%dx_mu
-             mc%EELAS(1)=mc%EELAS(1)+mc%DEELAS(1)
-             mc%EELAS(2)=mc%EELAS(2)+mc%DEELAS(2)
-             mc%EELAS(3)=mc%EELAS(3)+mc%DEELAS(3)
              if (INTON.EQ.1) then
                 DO I=1,mc%NPHI
                    J=md%INDPHI(I)
                    md%PHIA(J)=md%PHIA(J)+md%DPHIA(I)
                    md%PHIB(J)=md%PHIB(J)+md%DPHIB(I)  
                    if ((md%PHIA(J).lt.-0.000001_dp) .or. (md%PHIB(J).lt.-0.00001_dp)) then
-                       print*, "Error in MCsim. Negitive phi"
+                       print*, "Error in MCsim. Negitive phi", md%PHIA(J), md%PHIB(J)
+                       print*, "DphiA", md%DPHIA(I), "DPHIB", md%DPHIB(I)
+                       print*, "Vol(I)", md%Vol(I)
+                       print*, "MCType", MCTYPE
                        stop 1
                    endif
                 enddo

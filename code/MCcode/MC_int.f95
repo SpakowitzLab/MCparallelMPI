@@ -41,9 +41,8 @@ INTEGER NBINX(3)
 double precision temp
 NBINX=mc%NBINX
 
-if ((mc%simType.ne.0).or.&
-    ((mc%confineType.ne.0).and.(mc%confineType.ne.4))) then
-    print*, "change back to not using temp"
+if (mc%simType.eq.0) then
+    print*, "change back to using temp"
     stop 1
 endif
 
@@ -76,13 +75,15 @@ do IB=I1,I2
        RBIN(1)=md%R(IB,1)
        RBIN(2)=md%R(IB,2)
        RBIN(3)=md%R(IB,3)
+       isA=md%AB(IB).eq.1
    else     
        RBIN(1)=md%RP(IB,1)
        RBIN(2)=md%RP(IB,2)
        RBIN(3)=md%RP(IB,3)
+       isA=md%ABP(IB).eq.1
    endif
-   isA=md%AB(IB).eq.1
-   temp=rrdr*mc%V*mc%DEL**3
+   !temp=rrdr*mc%V*mc%DEL**3
+
    ! --------------------------------------------------
    !
    !  Interpolate beads into bins
@@ -98,6 +99,7 @@ do IB=I1,I2
    !   Add or Subtract volume fraction with weighting from each bin
    !   I know that it looks bad to have this section of code twice but it
    !   makes it faster.
+   
    if (isA) then
        do ISX=1,2
           if ((IX(ISX).le.0).OR.(IX(ISX).ge.(NBINX(1)+1))) CYCLE
@@ -117,13 +119,13 @@ do IB=I1,I2
                        if (I.eq.0) then
                           mc%NPHI=mc%NPHI+1
                           md%INDPHI(mc%NPHI)=INDBIN
-                          !md%DPHIA(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          md%DPHIA(mc%NPHI)=temp*WTOT
+                          md%DPHIA(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          !md%DPHIA(mc%NPHI)=temp*WTOT
                           md%DPHIB(mc%NPHI)=0.0_dp
                           exit
                        elseif (INDBIN.EQ.md%INDPHI(I)) then
-                          !md%DPHIA(I)=md%DPHIA(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          md%DPHIA(I)=md%DPHIA(I)+temp*WTOT
+                          md%DPHIA(I)=md%DPHIA(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          !md%DPHIA(I)=md%DPHIA(I)+temp*WTOT
                           exit
                        else
                           I=I-1
@@ -153,12 +155,12 @@ do IB=I1,I2
                           mc%NPHI=mc%NPHI+1
                           md%INDPHI(mc%NPHI)=INDBIN
                           md%DPHIA(mc%NPHI)=0.0_dp
-                          !md%DPHIB(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          md%DPHIB(mc%NPHI)=temp*WTOT
+                          md%DPHIB(mc%NPHI)=rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          !md%DPHIB(mc%NPHI)=temp*WTOT
                           exit
                        elseif (INDBIN.EQ.md%INDPHI(I)) then
-                          !md%DPHIB(I)=md%DPHIB(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
-                          md%DPHIB(I)=md%DPHIB(I)+temp*WTOT
+                          md%DPHIB(I)=md%DPHIB(I)+rrdr*WTOT*mc%V/md%Vol(INDBIN)
+                          !md%DPHIB(I)=md%DPHIB(I)+temp*WTOT
                           exit
                        else
                           I=I-1

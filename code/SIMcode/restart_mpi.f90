@@ -56,7 +56,7 @@ Subroutine pt_restart(mc,md)
         READ(1,*,IOSTAT=ios), temp(1), temp(2), temp(3), temp(4), temp(5), &
                               temp(6), temp(7), temp(8), temp(9), temp(10), &
                               temp(11), temp(12), temp(13), temp(14), &
-                              temp(15), temp(16)
+                              temp(15), temp(16), temp(17)
         if (ios.eq.0) then
             mc%ind=nint(temp(1))
             mc%EElas(1)=temp(3)
@@ -73,6 +73,7 @@ Subroutine pt_restart(mc,md)
             mc%mu=temp(14)
             mc%Kap=temp(15)
             mc%h_A=temp(16)
+            mc%Emu=temp(17)
         else
             Exit
         endif
@@ -94,7 +95,7 @@ Subroutine pt_restart(mc,md)
         mc%x_Field=mc%EField/mc%h_A
     endif
     if (mc%Mu.ne.0.0) then
-        mc%x_Mu=mc%EBind/mc%Mu
+        mc%x_Mu=mc%EMu/mc%Mu
     endif
 
     ! Read back in addaptation stuff, May make slight difference

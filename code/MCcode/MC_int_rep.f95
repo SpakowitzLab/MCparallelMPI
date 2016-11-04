@@ -40,6 +40,11 @@ INTEGER NBINX(3)
 DOUBLE PRECISION temp    !for speeding up code
 LOGICAL, intent(in) :: forward ! move forward
 
+if ((mc%setType.ne.1)) then
+    print*, "Temp may not work here"
+    stop 1
+endif
+
 NBINX=mc%NBINX
 
 mc%NPHI=0

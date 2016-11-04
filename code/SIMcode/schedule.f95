@@ -20,9 +20,11 @@ Subroutine strength_schedule(mc,inton)
     if(mc%ind.lt.mc%N_CHI_ON) then
 !        PTON=.False.
         mc%CHI_ON=0.0_dp
+        mc%Couple_ON=0.0_dp
     else
 !        PTON=.True.
         mc%CHI_ON=1.0_dp
+        mc%Couple_ON=1.0_dp
     endif
 
 

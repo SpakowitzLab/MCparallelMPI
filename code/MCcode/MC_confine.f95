@@ -65,6 +65,7 @@ elseif(confineType.EQ.3) then
         if(((RP(I,1)-LBox(1)/2)**2 + (RP(I,2)-LBox(1)/2_dp)**2 + &
            (RP(I,3)-LBox(1)/2)**2).GT.dble(LBox(1)*LBox(1)*0.25_dp)) then
             ECon=9990000.0
+            return
         endif
     Enddo    
 elseif(confineType.EQ.4) then

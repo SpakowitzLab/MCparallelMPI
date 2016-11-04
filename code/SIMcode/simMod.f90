@@ -66,6 +66,7 @@ Module simMod
     DOUBLE PRECISION EKAP     ! KAP energy
     DOUBLE PRECISION ECouple  ! Coupling 
     DOUBLE PRECISION EBind    ! binding energy
+    DOUBLE PRECISION EMu      ! chemical potential energy
     DOUBLE PRECISION EField   ! Field energy
 
 !   Congigate Energy variables (needed to avoid NaN when cof-> 0 in rep exchange)
@@ -82,6 +83,7 @@ Module simMod
     DOUBLE PRECISION DEChi    ! chi interaction energy
     DOUBLE PRECISION DEKap    ! compression energy
     DOUBLE PRECISION DEBind   ! Change in binding energy
+    DOUBLE PRECISION DEMu     ! Change in chemical potential energy
     Double Precision DEField  ! Change in field energy
     DOUBLE PRECISION ECon     ! Confinement Energy
     INTEGER NPHI  ! NUMBER o phi values that change
@@ -236,7 +238,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%UseSchedule=.False.
     mc%KAP_ON=1.0_dp
     mc%CHI_ON=1.0_dp
-    mc%Couple_ON=1.0_dp
+    mc%Couple_ON=0.0_dp
     mc%N_KAP_ON=1
     mc%N_CHI_ON=1
     mc%recenter_on=.TRUE.
@@ -379,7 +381,7 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READF(mc%EM) ! Energy of binding for methalated
        CASE('MU')
            Call READF(mc%MU) ! chemical potential of HP1
-       CASE('HP1_BIND')
+       CASE('HP1_COUPLE')
            Call READF(mc%HP1_BIND) ! Energy of binding of HP1 to eachother
        CASE('F_METH')
            Call READF(mc%F_METH) ! Fraction methalated
@@ -471,21 +473,6 @@ Subroutine MCvar_setParams(mc,fileName)
     ENDDO
     close(PF)
 
-    if ((mc%NBINX(1)-mc%NBINX(2).ne.0).or. &
-        (mc%NBINX(1)-mc%NBINX(3).ne.0)) then
-        if (mc%simType.eq.1) then
-            print*, "Solution not tested with non-cube box, more coding needed"
-            stop 1
-        endif
-        if (mc%confineType.ne.4) then
-            print*, "Unequal boundaries require confineType=4"
-            stop 1
-        endif    
-        if (mc%setType.eq.4) then
-            print*, "You shouldn't put a shpere in and unequal box!"
-            stop 1
-        endif    
-    endif
     ! --------------------
     !
     ! Derived Variables, Reconcile inputs
@@ -561,6 +548,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%EElas(3)=0.0_dp
     mc%ECouple=0.0_dp
     mc%EBind=0.0_dp
+    mc%EMu=0.0_dp
     mc%EKap=0.0_dp
     mc%ECHI=0.0_dp
     mc%EField=0.0_dp
@@ -575,6 +563,23 @@ Subroutine MCvar_setParams(mc,fileName)
     !  Idiot checks
     !
     !-----------------------------
+    call MCvar_printDescription(mc)
+    if ((mc%NBINX(1)-mc%NBINX(2).ne.0).or. &
+        (mc%NBINX(1)-mc%NBINX(3).ne.0)) then
+        if (mc%simType.eq.1) then
+            print*, "Solution not tested with non-cube box, more coding needed"
+            print*, mc%NBINX(1), mc%NBINX(2), mc%NBINX(3)
+            stop 1
+        endif
+        if (mc%confineType.ne.4) then
+            print*, "Unequal boundaries require confineType=4"
+            stop 1
+        endif    
+        if (mc%setType.eq.4) then
+            print*, "You shouldn't put a shpere in and unequal box!"
+            stop 1
+        endif    
+    endif
     if (mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3).ne.mc%NBIN) then
         print*, "error in MCsim. Wrong number of bins"
         stop 1
@@ -648,11 +653,11 @@ Subroutine MCvar_allocate(mc,md)
     NT=mc%NT
     NBIN=mc%NBIN
     
-    if ((NT.GT.200000).OR.(NT.lt.1)) then
+    if ((NT.GT.1000000).OR.(NT.lt.1)) then
         print*, "Tried to allocate ", NT," beads in MCvar_allocate"
         stop 1
     endif 
-    if ((NBIN.GT.20000).or.(NBIN.lt.1)) then
+    if ((NBIN.GT.1000000).or.(NBIN.lt.1)) then
         print*, "Tried to allocate ",NBIN," bins in MCvar_allocate"
         stop 1
     endif
@@ -808,6 +813,7 @@ Subroutine MCvar_printEnergies(mc)
     print*, "EField", mc%EField
     print*, "EKAP", mc%EKAP
     print*, "EBind", mc%EBind
+    print*, "EMu", mc%EMu
 end subroutine
 Subroutine MCvar_printPhi(mc,md)
 ! Prints densities for trouble shooting
@@ -932,7 +938,7 @@ Subroutine MCvar_saveR(mc,md,fileName,repeatingBC)
                 if (mc%simtype.eq.0) then
                     WRITE(1,"(3f10.3,I2)") md%R(IB,1),md%R(IB,2),md%R(IB,3),md%AB(IB)
                 else
-                    WRITE(1,"(3f10.3,I2)") md%R(IB,1),md%R(IB,2),md%R(IB,3),md%AB(IB), md%METH(IB)
+                    WRITE(1,"(3f10.3,I2,I3)") md%R(IB,1),md%R(IB,2),md%R(IB,3),md%AB(IB), md%METH(IB)
                 endif
                 IB=IB+1
             enddo
@@ -1018,13 +1024,13 @@ Subroutine MCvar_appendEnergyData(mc,fileName)
         WRITE(1,*), "IND | id |",&
                     " EBend  | EParll | EShear | ECoupl | E Kap  | E Chi  |",&
                     " EField | EBind  |   M    | Couple |  Chi   |  mu    |",&
-                    "  Kap   | Field  |"
+                    "  Kap   | Field  | E mu   "
     endif
-    WRITE(1,"(2I5, 9f9.1,5f9.4)") mc%IND, mc%id, &
+    WRITE(1,"(2I5, 9f9.1,5f9.4,f9.2)") mc%IND, mc%id, &
            mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
            mc%EKap, mc%ECHI, mc%EField, mc%EBind, mc%M, &
            mc%HP1_Bind*mc%Couple_on, mc%CHI*mc%CHI_ON, mc%mu, mc%KAP*mc%KAP_ON,&
-           mc%h_A
+           mc%h_A,mc%EMU
     Close(1)
 end subroutine
 Subroutine MCvar_appendAdaptData(mc,fileName)

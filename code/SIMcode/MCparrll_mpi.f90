@@ -415,7 +415,7 @@ function mu_path(s) result(mu)
     implicit none
     double precision, intent(in) :: s
     double precision mu
-    mu=s
+    mu=s-2.0
 end function mu_path
 function kap_path(s) result(kap)
     use setPrecision
@@ -550,6 +550,10 @@ Subroutine replicaExchange(mc)
 
     call MPI_COMM_SIZE(MPI_COMM_WORLD,nThreads,ierror)
     if (nThreads.lt.3) return
+    if (abs(mc%x_mu*mc%mu-mc%EMu).gt.0.000001_dp) then
+        print*, "Problem comming in"
+        stop 1
+    endif
 
     x(1)=mc%x_Chi
     x(2)=mc%x_mu
@@ -624,13 +628,22 @@ Subroutine replicaExchange(mc)
     endif
 
     mc%EChi    =mc%EChi    +x(1)*(Cof(1)-CofOld(1)) 
-    mc%EBind   =mc%EBind   +x(2)*(Cof(2)-CofOld(2))  
+    mc%EMu     =mc%EMu     +x(2)*(Cof(2)-CofOld(2))  
     mc%EField  =mc%EField  +x(3)*(Cof(3)-CofOld(3)) 
     mc%ECouple =mc%ECouple +x(4)*(Cof(4)-CofOld(4)) 
     mc%EKap    =mc%EKap    +x(5)*(Cof(5)-CofOld(5)) 
    ! mc%EElas(1)=mc%EElas(1)+x(6)*(Cof(6)-CofOld(6)) 
    ! mc%EElas(2)=mc%EElas(2)+x(7)*(Cof(7)-CofOld(7)) 
    ! mc%EElas(3)=mc%EElas(3)+x(8)*(Cof(8)-CofOld(8)) 
+
+    if (abs(mc%x_mu*mc%mu-mc%EMu).gt.0.000001_dp) then
+        print*, "mc%x_mu*mc%mu",mc%x_mu*mc%mu," mc%EMu",mc%EMu
+        print*, "mc%mu",mc%mu," Cof(2)",Cof(2)," CofOld(2)", CofOld(2)
+        print*, "x(2)",x(2)," mc%x_mu",mc%x_mu
+        print*, "mc%Emu",mc%Emu
+        print*, "Problem in mu coupling"
+        stop 1
+    endif
 
     if (abs(mc%EChi-x(1)*Cof(1)).gt.0.000001_dp) then
         print*, "Error in replicaExchange"
