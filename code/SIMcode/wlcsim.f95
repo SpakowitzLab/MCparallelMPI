@@ -61,6 +61,8 @@ Subroutine wlcsim(rand_stat)
   endif
 
   if (mc%restart) then
+      print*, "Restart not working for extra Polymer"
+      stop
       call pt_restart(mc,md)
       !PRINT*, '-----load simulation-----'
       !iostr='BinaryFileName'
@@ -71,15 +73,29 @@ Subroutine wlcsim(rand_stat)
       
     !   Setup the initial condition
       call initcond(md%R,md%U,md%AB,mc%NT,mc%NB,mc%NP,mc%FRMFILE,mc%PARA,mc%LBOX, &
-                    mc%setType,rand_stat)
-    
+                    mc%setType,rand_stat,mc%nBeadsP2)
+      call initcond(md%R_P2,md%U_P2,md%AB_P2,mc%nBeadsP2,mc%nBeadsP2,1,mc%FRMFILE,mc%paraP2,mc%LBOX, &
+                    mc%setType,rand_stat,0)
+      do I=1,mc%nBeadsP2
+          if (abs(md%U_P2(I,1)**2+md%U_P2(I,2)**2+md%U_P2(I,3)**2-1.0_dp) .gt. 0.0000001_dp) then
+              print*, md%UP_P2(I,:)
+              print*, "Found a non-unit vector, after initcond"
+              stop 1
+          endif
+      enddo
+
     !   Load in AB sequence
       IF (mc%FRMCHEM) THEN
           iostr='input/ab'
           call MCvar_loadAB(mc,md,iostr)
       ELSE
-          call initchem(md%AB,mc%NT,mc%N,mc%G,mc%NP,mc%FA,mc%LAM,rand_stat)
+          call initchem(md%AB,mc%NT,mc%N,mc%G,mc%NP,mc%FA,mc%LAM,rand_stat,mc%nBeadsP2)
       ENDIF
+      do I=1,mc%nBeadsP2
+          md%AB_P2(I)=floor(mod( (real(I)-0.5)/real(mc%nBlockP2),2.0)) ;
+          md%AB(I+mc%NT)=md%AB_P2(I);
+          md%ABP(I+mc%NT)=md%AB_P2(I);
+      enddo
     
       
     !   Load methalation sequence
@@ -88,7 +104,7 @@ Subroutine wlcsim(rand_stat)
           print*, "wlcsim: FRMMETH not fininshed"
           stop 1
       ELSE
-          call initchem(md%METH,mc%NT,mc%N,mc%G,mc%NP,mc%F_METH,mc%LAM_METH,rand_stat)        
+          call initchem(md%METH,mc%NT,mc%N,mc%G,mc%NP,mc%F_METH,mc%LAM_METH,rand_stat,mc%nBeadsP2)        
       ENDIF
     
     ! Load External field

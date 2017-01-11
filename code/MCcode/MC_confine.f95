@@ -14,16 +14,17 @@
 !    3         |  Circle of radius LBox, centered at LBox/2
 !    4         |  Periodic, non-equal lengths
 
-SUBROUTINE MC_confine(confineType, LBox, RP, NT, IT1, IT2, ECon)
+SUBROUTINE MC_confine(confineType, LBox, RP, NT, IT1, IT2, ECon,nBeadsP2)
 use setPrecision
 
 
 IMPLICIT NONE
 
+INTEGER, intent(in) :: nBeadsP2
 INTEGER confineType  ! Specifier for type of confinement
 DOUBLE PRECISION LBox(3) ! Side length of box
 INTEGER NT     ! Total number of beads in simulation
-DOUBLE PRECISION RP(NT,3)  ! Bead positions
+DOUBLE PRECISION RP(NT+nBeadsP2,3)  ! Bead positions
 INTEGER IT1    ! Start test bead
 INTEGER IT2    ! Final test bead
 INTEGER I      ! Index of bead being compared

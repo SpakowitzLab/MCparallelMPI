@@ -8,13 +8,14 @@
 !     Andrew Spakowitz
 !     Written 9-1-04
       
-      SUBROUTINE energy_elas(EELAS,R,U,NT,NB,NP,PARA)
+      SUBROUTINE energy_elas(EELAS,R,U,NT,NB,NP,PARA,nBeadsP2)
       use setPrecision
       IMPLICIT NONE 
+      INTEGER, intent(in) :: nBeadsP2
       INTEGER, intent(in) :: NB           ! Number of beads in a polymer
       INTEGER, intent(in) :: NT           ! Number of beads total
       INTEGER, intent(in) :: NP           ! Number of polymers
-      DOUBLE PRECISION, intent(in) :: R(NT,3)  ! Bead positions
+      DOUBLE PRECISION, intent(in) :: R(NT+nBeadsP2,3)  ! Bead positions
       DOUBLE PRECISION, intent(in) :: U(NT,3)  ! Tangent vectors
       DOUBLE PRECISION, intent(out):: EELAS(3) ! Elastic force
       INTEGER I,J,IB            ! Index holders

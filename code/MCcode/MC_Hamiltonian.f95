@@ -35,8 +35,11 @@ if (initialize) then  ! calculate absolute energy
             VV=md%Vol(I)
             if (VV.le.0.1_dp) CYCLE
             mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIA(I)*md%PHIB(I))
-            mc%Dx_Kap=mc%dx_Kap+(VV/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2)
             mc%Dx_Field=mc%dx_Field-md%PHIH(I)*md%PHIA(I)
+
+            if ((md%PHIA(I)+md%PHIB(I)-1.0_dp)>0.0_dp) then
+                mc%Dx_Kap=mc%dx_Kap+(VV/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2)
+            endif
         enddo        
     elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
         do I=1,mc%NBIN
@@ -64,12 +67,21 @@ else ! Calculate change in energy
             phi_B=md%PHIB(J)+md%DPHIB(I)
             phi_h=md%PHIH(J)
             mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*phi_B
-            mc%Dx_Kap=mc%Dx_Kap+(VV/mc%V)*((phi_A+phi_B-1.0_dp)**2)
             mc%Dx_Field=mc%Dx_Field-phi_h*phi_A
+            
+            if ((phi_A+phi_B-1.0_dp)>0.0_dp) then
+                mc%Dx_Kap=mc%Dx_Kap+(VV/mc%V)*((phi_A+phi_B-1.0_dp)**2)
+            endif
+            
             ! minus old
             mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(J)*md%PHIB(J))
-            mc%Dx_Kap=mc%Dx_Kap-(VV/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
             mc%Dx_Field=mc%Dx_Field+phi_h*md%PHIA(J)
+
+            if ((md%PHIA(J)+md%PHIB(J)-1.0_dp)>0.0_dp) then
+                mc%Dx_Kap=mc%Dx_Kap-(VV/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
+            endif
+
+
         enddo
     elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
         do I=1,mc%NPHI

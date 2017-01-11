@@ -7,16 +7,17 @@
 !---------------------------------------------------------------    
 SUBROUTINE MC_move(R,U,RP,UP,NT,NB,NP,IP,IB1,IB2,IT1,IT2,MCTYPE &
                   ,MCAMP,WINDOW,AB,ABP,BPM,rand_stat,winType &
-                  ,IT3,IT4,forward)
+                  ,IT3,IT4,forward,nBeadsP2)
 
 use mersenne_twister      
 use setPrecision
 IMPLICIT NONE
 DOUBLE PRECISION, PARAMETER :: PI=3.141592653589793_dp ! Value of pi 
 
-DOUBLE PRECISION, intent(in) :: R(NT,3)  ! Bead positions
+INTEGER, intent(in) :: nBeadsP2
+DOUBLE PRECISION, intent(in) :: R(NT+nBeadsP2,3)  ! Bead positions
 DOUBLE PRECISION, intent(in) :: U(NT,3)  ! Tangent vectors
-DOUBLE PRECISION, intent(out) :: RP(NT,3)  ! Bead positions
+DOUBLE PRECISION, intent(out) :: RP(NT+nBeadsP2,3)  ! Bead positions
 DOUBLE PRECISION, intent(out) :: UP(NT,3)  ! Tangent vectors
 INTEGER, intent(in) :: NB     ! Number of beads on a polymer
 INTEGER, intent(in) :: NP     ! Number of polymers
@@ -57,8 +58,8 @@ DOUBLE PRECISION DR(3)    ! Displacement for slide move
 INTEGER TEMP
 
 ! Variables for change of binding state move
-INTEGER, intent(in) :: AB(NT)            ! Chemical (binding) state
-INTEGER, intent(out) :: ABP(NT)          ! Underlying (methalation) state
+INTEGER, intent(in) :: AB(NT+nBeadsP2)            ! Chemical (binding) state
+INTEGER, intent(out) :: ABP(NT+nBeadsP2)          ! Underlying (methalation) state
 Double precision d1,d2  !for testing
 
 ! variables for reptation move
@@ -545,6 +546,7 @@ elseif(MCTYPE.EQ.10) then
     IP=ceiling(urnd(1)*NP)
     IT1=NB*(IP-1)+1
     IT2=NB*(IP-1)+NB
+    IB1=1; IB2=NB;
     ! move forward or backward
     call random_number(urnd,rand_stat)
     if (urnd(1).lt.0.5_dp) then

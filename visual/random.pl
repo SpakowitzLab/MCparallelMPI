@@ -2,7 +2,7 @@
 use POSIX qw(ceil floor);
 use Cwd;
 
-my $savept =50;  # save point
+my $savept =20;  # save point
 my $repno0 =1;    # replica index 1
 my $repnof =79;   # replica index final
 
@@ -12,7 +12,8 @@ my $dir = getcwd;
 my $title = "randcopoly";
 my $ind = index($dir, $title);
 my $folder = substr $dir, $ind, -6;
-my $loaddir = "../../../sim-".$folder."data/";
+#my $loaddir = "../../../sim-".$folder."data/";
+my $loaddir = "../data/";
 
 my $ratviz=0.5; # Ratio of visualization
 my $cut = 0;    # Whether show cross-section
@@ -23,7 +24,7 @@ my $zlbox=20; # Box edge length
 my $xshift=0;  # shift of x periodicity
 my $yshift=0;  # shift of x periodicity
 my $zshift=0;  # shift of x periodicity
-my $nbead=40*2000;
+my $nbead=40*1000;
 
 my $radius=1;           # Radius of chain
 my $ratio=1;            # Resize ratio

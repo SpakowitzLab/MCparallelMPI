@@ -43,8 +43,13 @@ Module simMod
     DOUBLE PRECISION PARA(10) ! Parameters for sswlc
         ! EB, EPAR, EPERP, GAM, ETA, ...
 
-
-!   Monte Carlo Variables (for adaptation)
+    INTEGER nBeadsP2
+    INTEGER nBlockP2
+    Double Precision l0P2
+    Double Precision epsP2
+    Double Precision paraP2(10)
+           
+    !   Monte Carlo Variables (for adaptation)
     INTEGER moveTypes
     DOUBLE PRECISION MCAMP(NmoveTypes) ! Amplitude of random change
     DOUBLE PRECISION MinAMP(NmoveTypes) ! minium amplitude
@@ -62,6 +67,7 @@ Module simMod
 !   Energys
     !DOUBLE PRECISION Eint     ! running Eint
     DOUBLE PRECISION EELAS(3) ! Elastic force
+    DOUBLE PRECISION EELAS_P2(3) ! Elastic force
     DOUBLE PRECISION ECHI     ! CHI energy
     DOUBLE PRECISION EKAP     ! KAP energy
     DOUBLE PRECISION ECouple  ! Coupling 
@@ -77,6 +83,7 @@ Module simMod
 
 !   Move Variables 
     DOUBLE PRECISION DEELAS(3)   ! Change in bending energy
+    DOUBLE PRECISION DEELAS_P2(3)   ! Change in bending energy
 !    DOUBLE PRECISION DEINT    ! Change in self energy
     DOUBLE PRECISION DECouple ! Coupling energy
     DOUBLE PRECISION DEChi    ! chi interaction energy
@@ -161,6 +168,13 @@ Module simMod
     REAl(dp), Allocatable, Dimension(:):: DPHIA    ! Change in phi A
     REAl(dp), Allocatable, Dimension(:):: DPHIB    ! Change in phi A
     INTEGER, Allocatable, Dimension(:) :: INDPHI   ! Indices of the phi
+
+    Real(dp), ALLOCATABLE, DIMENSION(:,:):: R_P2
+    Real(dp), ALLOCATABLE, DIMENSION(:,:):: U_P2
+    Real(dp), ALLOCATABLE, DIMENSION(:,:):: RP_P2
+    Real(dp), ALLOCATABLE, DIMENSION(:,:):: UP_P2
+    INTEGER, ALLOCATABLE, DIMENSION(:):: AB_P2
+
   end TYPE
 contains
 Subroutine MCvar_setParams(mc,fileName)
@@ -207,7 +221,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%LAM =0.0_dp
     mc%F_METH=0.5_dp
     mc%LAM_METH=0.9_dp
-    mc%Fpoly=0.025_dp
+    mc%Fpoly=1.0_dp
     mc%k_field=1.5708_dp !0.3145_dp
 
     ! energy parameters
@@ -261,6 +275,8 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%PT_couple =.False. 
 
 
+    ! extra Polymer
+    mc%nBeadsP2 = 0
 
     call MCvar_defaultAmp(mc) 
 
@@ -463,6 +479,14 @@ Subroutine MCvar_setParams(mc,fileName)
            call READO(mc%PT_couple) ! parallel temper HP1_bind
        CASE('RESTART')
            call READO(mc%restart) ! Restart from parallel tempering
+       CASE('N_BEADS_P2')
+           call READI(mc%nBeadsP2)
+       CASE('L0_P2')
+           call READF(mc%l0P2)
+       CASE('EPS_P2')
+           call READF(mc%epsP2)
+       CASE('N_BLOCK_P2')
+           call READI(mc%nBlockP2)
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
@@ -512,8 +536,8 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%LBOX(3) = mc%NBINX(3)*mc%DEL! used to be: DEL=LBOX/NBINX
     elseif (mc%simType.eq.0) then
         if (mc%confineType.eq.0) then
-            mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
-            mc%LBOX=(mc%V*mc%N*mc%G*mc%NP)**(1.0_dp/3.0_dp)
+            mc%NP=nint(mc%Fpoly*mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+            mc%LBOX=(mc%V*mc%N*mc%G*mc%NP/mc%Fpoly)**(1.0_dp/3.0_dp)
             mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
             mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
             mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
@@ -550,6 +574,7 @@ Subroutine MCvar_setParams(mc,fileName)
        print*, "Error in simMod: symType",mc%simType," not found"
     endif 
     call getpara(mc%PARA,mc%EPS,mc%L0,NAN_dp)
+    call getpara(mc%paraP2,mc%epsP2,mc%l0P2,NAN_dp)
    
     ! -----------------------
     !
@@ -570,6 +595,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%x_Kap=0.0_dp
     mc%x_Chi=0.0_dp
 
+    call MCvar_printDescription(mc)
     !-----------------------------
     !
     !  Idiot checks
@@ -611,6 +637,7 @@ Subroutine MCvar_printDescription(mc)
     print*, " Number of monomers in a polymer, N=", mc%N
     print*, " Number of polymers, NP=",mc%NP
     print*, " Number of beads in a monomer, G=", mc%G
+    print*, " Fraction polymer, Fpoly", mc%Fpoly
     print*, " fraction Methalated", mc%F_METH
     print*, " LAM_METH", mc%LAM_METH
     print*, "Length and volume Variables:"
@@ -656,12 +683,18 @@ Subroutine MCvar_allocate(mc,md)
         print*, "Tried to allocate ",NBIN," bins in MCvar_allocate"
         stop 1
     endif
-    ALLOCATE(md%R(NT,3))
+    ALLOCATE(md%R_P2(mc%nBeadsP2,3))
+    ALLOCATE(md%U_P2(mc%nBeadsP2,3))
+    ALLOCATE(md%RP_P2(mc%nBeadsP2,3))
+    ALLOCATE(md%UP_P2(mc%nBeadsP2,3))
+    ALLOCATE(md%AB_P2(mc%nBeadsP2))
+
+    ALLOCATE(md%R(NT+mc%nBeadsP2,3))
     ALLOCATE(md%U(NT,3))
-    Allocate(md%RP(NT,3))
+    Allocate(md%RP(NT+mc%nBeadsP2,3))
     Allocate(md%UP(NT,3))
-    ALLOCATE(md%AB(NT))   !Chemical identity aka binding state
-    ALLOCATE(md%ABP(NT))   !Chemical identity aka binding state
+    ALLOCATE(md%AB(NT+mc%nBeadsP2))   !Chemical identity aka binding state
+    ALLOCATE(md%ABP(NT+mc%nBeadsP2))   !Chemical identity aka binding state
     ALLOCATE(md%METH(NT)) !Underlying methalation profile 
     ALLOCATE(md%PHIA(NBIN))
     ALLOCATE(md%PHIB(NBIN))
@@ -804,6 +837,9 @@ Subroutine MCvar_printEnergies(mc)
     print*, "Bending energy", mc%EELAS(1)
     print*, "Par compression energy", mc%EELAS(2)
     print*, "Shear energy", mc%EELAS(3)
+    print*, "Bending energy P2", mc%EELAS_P2(1)
+    print*, "Par compression energy P2", mc%EELAS_P2(2)
+    print*, "Shear energy P2", mc%EELAS_P2(3)
     print*, "ECHI", mc%ECHI
     print*, "EField", mc%EField
     print*, "EKAP", mc%EKAP
@@ -939,6 +975,38 @@ Subroutine MCvar_saveR(mc,md,fileName,repeatingBC)
         enddo
     endif
     Close(1)
+
+    fullName=  trim(fileName) // trim(mc%repSufix) 
+    fullName= trim(fullName) // "P2"
+    OPEN (UNIT = 1, FILE = fullName, STATUS = 'NEW')
+    IB=1
+    if (repeatingBC.eq.1) then 
+        Do I=1,1
+            Do J=1,mc%nBeadsP2
+                    WRITE(1,"(3f10.3,I2)") , &
+                          md%R_P2(IB,1)-0.*nint(md%R_P2(IB,1)/mc%LBOX(1)-0.5_dp)*mc%LBOX(1), &
+                          md%R_P2(IB,2)-0.*nint(md%R_P2(IB,2)/mc%LBOX(2)-0.5_dp)*mc%LBOX(2), &
+                          md%R_P2(IB,3)-0.*nint(md%R_P2(IB,3)/mc%LBOX(3)-0.5_dp)*mc%LBOX(3), & 
+                          md%AB_P2(IB)
+                IB=IB+1
+            enddo
+        enddo
+        print*, "Error in MCvar_saveR"
+        print*, "Are you sure you want reapeating BC"
+        stop 1
+    else
+        Do I=1,1
+            Do J=1,mc%nBeadsP2
+                if (mc%simtype.eq.0) then
+                    WRITE(1,"(3f10.3,I2)") md%R_P2(IB,1),md%R_P2(IB,2),md%R_P2(IB,3),md%AB_P2(IB)
+                else
+                    WRITE(1,"(3f10.3,I2)") md%R_P2(IB,1),md%R_P2(IB,2),md%R_P2(IB,3),md%AB_P2(IB), md%METH(IB)
+                endif
+                IB=IB+1
+            enddo
+        enddo
+    endif
+    Close(1)
 end subroutine
 Subroutine MCVar_savePHI(mc,md,fileName)
 ! Saves PHIA and PHIB to file for analysis
@@ -1018,13 +1086,15 @@ Subroutine MCvar_appendEnergyData(mc,fileName)
         WRITE(1,*), "IND | id |",&
                     " EBend  | EParll | EShear | ECoupl | E Kap  | E Chi  |",&
                     " EField | EBind  |   M    | Couple |  Chi   |  mu    |",&
-                    "  Kap   | Field  |"
+                    "  Kap   | Field  | EBend2 | EParl2 | ESher2 |"
     endif
-    WRITE(1,"(2I5, 9f9.1,5f9.4)") mc%IND, mc%id, &
+    WRITE(1,"(2I5, 9f9.1,5f9.4,3f9.1)") mc%IND, mc%id, &
            mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
            mc%EKap, mc%ECHI, mc%EField, mc%EBind, mc%M, &
            mc%HP1_Bind*mc%Couple_on, mc%CHI*mc%CHI_ON, mc%mu, mc%KAP*mc%KAP_ON,&
-           mc%h_A
+           mc%h_A,&
+           mc%EELAS_P2(1), mc%EELAS_P2(2), mc%EELAS_P2(3)
+
     Close(1)
 end subroutine
 Subroutine MCvar_appendAdaptData(mc,fileName)

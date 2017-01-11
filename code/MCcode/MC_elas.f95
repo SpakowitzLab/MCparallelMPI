@@ -4,13 +4,14 @@
      
 SUBROUTINE MC_eelas(DEELAS,R,U,RP,UP,&
                     NT,NB,IB1,IB2,&
-                    IT1,IT2,EB,EPAR,EPERP,GAM,ETA)
+                    IT1,IT2,EB,EPAR,EPERP,GAM,ETA,nBeadsP2)
 
 use setPrecision
 IMPLICIT NONE
-DOUBLE PRECISION, intent(in) :: R(NT,3)  ! Bead positions
+INTEGER, intent(in) :: nBeadsP2
+DOUBLE PRECISION, intent(in) :: R(NT+nBeadsP2,3)  ! Bead positions
 DOUBLE PRECISION, intent(in) :: U(NT,3)  ! Tangent vectors
-DOUBLE PRECISION, intent(in) :: RP(NT,3)  ! Bead positions
+DOUBLE PRECISION, intent(in) :: RP(NT+nBeadsP2,3)  ! Bead positions
 DOUBLE PRECISION, intent(in) :: UP(NT,3)  ! Tangent vectors
 INTEGER, intent(in) :: NB                ! Number of beads in a polymer
 INTEGER, intent(in) :: NT                ! Total number of beads
@@ -43,7 +44,7 @@ DEELAS(3)=0.0_dp
 !     Calculate the change in the energy
 
 if (IB1.NE.1) then
-   
+  
    DR(1)=R(IT1,1)-R(IT1-1,1)
    DR(2)=R(IT1,2)-R(IT1-1,2)
    DR(3)=R(IT1,3)-R(IT1-1,3)

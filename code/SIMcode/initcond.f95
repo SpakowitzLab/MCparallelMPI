@@ -10,7 +10,7 @@
 !     Updated by Quinn in 2016
 !
 SUBROUTINE initcond(R,U,AB,NT,N,NP,FRMFILE,PARA,LBOX, &
-                    setType,rand_stat)
+                    setType,rand_stat,nBeadsP2)
 
 !use mt19937, only : grnd, init_genrand, rnorm, mt, mti
 use mersenne_twister
@@ -21,10 +21,13 @@ IMPLICIT NONE
 DOUBLE PRECISION PI
 PARAMETER (PI=3.141593_dp)
 
-DOUBLE PRECISION R(NT,3)  ! Bead positions
-DOUBLE PRECISION U(NT,3)  ! Tangent vectors
-INTEGER AB(NT)            ! Chemical identity of beads
-INTEGER N,NP,NT           ! Number of beads
+INTEGER, intent(in) :: nBeadsP2
+DOUBLE PRECISION, intent(out) :: R(NT+nBeadsP2,3)  ! Bead positions
+DOUBLE PRECISION, intent(out) :: U(NT,3)  ! Tangent vectors
+INTEGER AB(NT+nBeadsP2)            ! Chemical identity of beads
+INTEGER, intent(in) :: N           ! Number of beads
+INTEGER, intent(in) :: NP           ! Number of beads
+INTEGER, intent(in) :: NT           ! Number of beads
 DOUBLE PRECISION GAM      ! Equil bead separation
 DOUBLE PRECISION LBOX(3)  ! Box edge length
 INTEGER I,J,IB            ! Index Holders
@@ -53,7 +56,6 @@ real urand(3)
 DOUBLE PRECISION mag  ! magnitude of U for reload
 
 !     Setup the choice parameters
-
 if(FRMFILE)then
    OPEN (UNIT = 5, FILE = 'input/r0', STATUS = 'OLD')
    Do I=1,NT

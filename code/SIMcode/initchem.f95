@@ -10,13 +10,14 @@
 !     Quinn updated on 5/22/16 to use thread save randum number generator
 !
       
-SUBROUTINE initchem(AB,NT,N,G,NP,FA,LAM,rand_stat)
+SUBROUTINE initchem(AB,NT,N,G,NP,FA,LAM,rand_stat,nBeadsP2)
 
 !  use mt19937, only : grnd, init_genrand, rnorm, mt, mti
     use mersenne_twister
     use setPrecision
 
-  INTEGER, intent(out) :: AB(NT)     ! Chemical identity of beads
+  INTEGER, intent(in) :: nBeadsP2
+  INTEGER, intent(out) :: AB(NT+nBeadsP2)     ! Chemical identity of beads
   INTEGER, intent(in) :: N           ! Number of monomers per polymer
   INTEGER, intent(in) :: G           ! Number of beads per monomer
   INTEGER, intent(in) :: NP          ! Number of polymer chains

@@ -470,7 +470,7 @@ Subroutine PT_override(mc,md)
                 call MPI_Send (md%METH,mc%NT, MPI_INTEGER, dest,   0, &
                                MPI_COMM_WORLD,error )
             elseif(mc%simType.eq.0) then
-                call MPI_Send (md%AB,mc%NT, MPI_INTEGER, dest,   0, &
+                call MPI_Send (md%AB,mc%NT+mc%nBeadsP2, MPI_INTEGER, dest,   0, &
                                MPI_COMM_WORLD,error )
             else
                 print*, "Error in PT_override. simType doesn't exist."
@@ -483,7 +483,7 @@ Subroutine PT_override(mc,md)
             call MPI_Recv (md%METH, mc%NT, MPI_INTEGER, source, 0, &
                            MPI_COMM_WORLD, status, error )
         elseif(mc%simType.eq.0) then
-            call MPI_Recv (md%AB, mc%NT, MPI_INTEGER, source, 0, &
+            call MPI_Recv (md%AB, mc%NT+mc%nBeadsP2, MPI_INTEGER, source, 0, &
                            MPI_COMM_WORLD, status, error )
         else
             print*, "Error in PT_override. simType doesn't exist."

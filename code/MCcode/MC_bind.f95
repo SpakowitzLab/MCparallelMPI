@@ -8,15 +8,16 @@
 !  sign convention: EM and EU are more positive for favorable binding
 !  Typical Values: EU=-1.52 and EM=0.01  
 
-SUBROUTINE MC_bind(NT,BPM,IT1,IT2,AB,ABP,METH,EU,EM,DEBind,mu,dx_mu)
+SUBROUTINE MC_bind(NT,BPM,IT1,IT2,AB,ABP,METH,EU,EM,DEBind,mu,dx_mu,nBeadsP2)
 use setPrecision
 IMPLICIT NONE
+INTEGER, intent(in) :: nBeadsP2
 INTEGER, intent(in) :: NT     ! Total number of beads in simulation
 INTEGER, intent(in) :: BPM    ! Number of beads per monomer
 INTEGER, intent(in) :: IT1    ! Start test bead
 INTEGER, intent(in) :: IT2    ! Final test bead
-INTEGER, intent(in) :: AB(NT)   ! Chemical identity (a.k.a. binding state)
-INTEGER, intent(in) :: ABP(NT)  ! Test Chemical identity
+INTEGER, intent(in) :: AB(NT+nBeadsP2)   ! Chemical identity (a.k.a. binding state)
+INTEGER, intent(in) :: ABP(NT+nBeadsP2)  ! Test Chemical identity
 INTEGER, intent(in) :: METH(NT) ! Methalation state (unerlyin chamical type)
 DOUBLE PRECISION, intent(in) :: EU        ! Binding energy of Unemethalted state
 DOUBLE PRECISION, intent(in) :: EM        ! Binding energy of methalated state
