@@ -43,12 +43,28 @@ Module simMod
     DOUBLE PRECISION PARA(10) ! Parameters for sswlc
         ! EB, EPAR, EPERP, GAM, ETA, ...
 
+    ! parameters and variables of external object
     INTEGER nBeadsP2
     INTEGER nBlockP2
     Double Precision l0P2
     Double Precision epsP2
     Double Precision paraP2(10)
-           
+
+    ! parameters and variables for umbrella sampling
+    logical umbrellaOn      ! Should we umbrella sample?
+    integer nUmbrellaBins   ! number of bins for Umbrella sampling
+    double precision rxnQ   ! current reaction coordiante
+    double precision rxnQp  ! proposed reaction coordinate
+    double precision minQ   ! lower limit on reaction coordinate
+    double precision maxQ   ! upper limit on reaction coordiante
+    double precision EUmbrella   ! umbrella energy
+    double precision DEUmbrella  ! change in umbrella energy
+    integer nStepsUmbrella  ! number of steps before umbrella update
+    integer IndUmbrella  ! steps since last umbrella sample
+    integer umbBin
+    integer umbBin_p
+    integer nOutside
+
     !   Monte Carlo Variables (for adaptation)
     INTEGER moveTypes
     DOUBLE PRECISION MCAMP(NmoveTypes) ! Amplitude of random change
@@ -175,6 +191,9 @@ Module simMod
     Real(dp), ALLOCATABLE, DIMENSION(:,:):: UP_P2
     INTEGER, ALLOCATABLE, DIMENSION(:):: AB_P2
 
+    INTEGER, ALLOCATABLE, DIMENSION(:):: umbrellaCounts
+    Real(dp), ALLOCATABLE, DIMENSION(:):: umbrellaV
+
   end TYPE
 contains
 Subroutine MCvar_setParams(mc,fileName)
@@ -274,6 +293,15 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%PT_mu =.False.  
     mc%PT_couple =.False. 
 
+    ! extra Polymer
+    mc%nBeadsP2 = 40
+    mc%l0P2 = 0.5
+    mc%epsP2 = 1.0
+    mc%nBlockP2 = 40
+    mc%umbrellaOn = .FALSE.
+    mc%nUmbrellaBins = 25
+    mc%minQ = 0
+    mc%maxQ = 1
 
     ! extra Polymer
     mc%nBeadsP2 = 0
@@ -487,6 +515,16 @@ Subroutine MCvar_setParams(mc,fileName)
            call READF(mc%epsP2)
        CASE('N_BLOCK_P2')
            call READI(mc%nBlockP2)
+       CASE('UMBRELLA_ON')
+           call READO(mc%umbrellaOn)
+       CASE('N_UMBRELLA_BINS')
+           call READI(mc%nUmbrellaBins)
+       CASE('MIN_Q')
+           call READF(mc%minQ)
+       CASE('MAX_Q')
+           call READF(mc%maxQ)
+       CASE('N_UMBRELLA_STEPS')
+           call READI(mc%nStepsUmbrella)  ! number of steps before umbrella update
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
@@ -594,8 +632,15 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%x_couple=0.0_dp
     mc%x_Kap=0.0_dp
     mc%x_Chi=0.0_dp
+    mc%EUmbrella=0.0_dp
+    mc%DEUmbrella=0.0_dp
+    mc%IndUmbrella=0
+    mc%nOutside=0
+    mc%umbBin=0
+    mc%umbBin_p=0
 
-    call MCvar_printDescription(mc)
+    !call MCvar_printDescription(mc)
+
     !-----------------------------
     !
     !  Idiot checks
@@ -704,6 +749,10 @@ Subroutine MCvar_allocate(mc,md)
     Allocate(md%INDPHI(NBIN))
     Allocate(md%PhiH(NBIN))
 
+    Allocate (md%umbrellaCounts(mc%nUmbrellaBins))
+    Allocate (md%umbrellaV(mc%nUmbrellaBins))
+    md%umbrellaCounts=0
+    md%umbrellaV=0.0
 end subroutine
 Subroutine MCvar_defaultAmp(mc)
     IMPLICIT NONE
@@ -844,6 +893,7 @@ Subroutine MCvar_printEnergies(mc)
     print*, "EField", mc%EField
     print*, "EKAP", mc%EKAP
     print*, "EBind", mc%EBind
+    print*, "Umbrella Energy", mc%EUmbrella
 end subroutine
 Subroutine MCvar_printPhi(mc,md)
 ! Prints densities for trouble shooting
@@ -853,7 +903,7 @@ Subroutine MCvar_printPhi(mc,md)
     Integer I
     DOUBLE PRECISION EKap, ECouple, EChi,VV, PHIPOly
     print*,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    print*, " PHIA  | PHIB  | PPoly |  Vol  | EKap  | EChi  |ECouple|" 
+    print*, " PHIA  | PHIB  | PPoly |  Vol  | EKap  | EChi  |ECouple|EUmbrel|" 
     Do I=1,mc%NBIN
         VV=md%Vol(I)
         if (VV.le.0.1_dp) CYCLE
@@ -868,7 +918,7 @@ Subroutine MCvar_printPhi(mc,md)
         endif
         write(*,"(4f8.4,3f8.1)"), md%PHIA(I), md%PHIB(I), & 
                             md%PHIA(I)+md%PHIB(I),md%Vol(I),&
-                            EKap,EChi,ECouple
+                            EKap,EChi,ECouple,mc%EUmbrella
     enddo
     print*,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 end subroutine
@@ -1086,14 +1136,16 @@ Subroutine MCvar_appendEnergyData(mc,fileName)
         WRITE(1,*), "IND | id |",&
                     " EBend  | EParll | EShear | ECoupl | E Kap  | E Chi  |",&
                     " EField | EBind  |   M    | Couple |  Chi   |  mu    |",&
-                    "  Kap   | Field  | EBend2 | EParl2 | ESher2 |"
+                    "  Kap   | Field  | EBend2 | EParl2 | ESher2 | E Umbr |",&
+                    "  rxnQ  | um Bin |"
     endif
-    WRITE(1,"(2I5, 9f9.1,5f9.4,3f9.1)") mc%IND, mc%id, &
+    WRITE(1,"(2I5, 9f9.1,5f9.4,3f9.1,2f9.3,1I9)") mc%IND, mc%id, &
            mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
            mc%EKap, mc%ECHI, mc%EField, mc%EBind, mc%M, &
            mc%HP1_Bind*mc%Couple_on, mc%CHI*mc%CHI_ON, mc%mu, mc%KAP*mc%KAP_ON,&
            mc%h_A,&
-           mc%EELAS_P2(1), mc%EELAS_P2(2), mc%EELAS_P2(3)
+           mc%EELAS_P2(1), mc%EELAS_P2(2), mc%EELAS_P2(3),&
+           mc%EUmbrella,mc%rxnQ,mc%umbBin
 
     Close(1)
 end subroutine

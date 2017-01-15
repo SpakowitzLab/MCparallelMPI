@@ -17,4 +17,4 @@ touch data/error
 echo "Now run"
 # now run the output
 # --prefix used to avoid changing path
-mpirun -np 30 MCparrll_out
+mpirun -np 4 MCparrll_out

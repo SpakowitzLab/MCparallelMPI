@@ -56,6 +56,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     Type(MCData), intent(inout) :: md     ! system allocated data
 
 
+
     EB=   mc%PARA(1)
     EPAR= mc%PARA(2)
     EPERP=mc%PARA(3)
@@ -131,6 +132,18 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                 (mc%DEElas_P2(1)+mc%DEElas_P2(2)+mc%DEElas_P2(3))
     endif
     mc%EElas_P2=mc%DEElas_P2 ! copy array
+
+    ! --- Umbrella Energy ---
+    call calcRxnQ(mc,md,mc%rxnQp,-1,-1) ! caclualte only 
+    call calcUmbrellaE(mc,md,mc%rxnQp,mc%DEUmbrella,mc%umbBin)
+
+    if(abs(mc%EUmbrella-mc%DEUmbrella).gt. 0.0001_dp) then
+        print*, "Warning. Intigraged Umbrella Energy,", &
+            mc%EUmbrella, " While abosolute energy is", &
+            mc%DEUmbrella
+    endif
+    mc%EUmbrella=mc%DEUmbrella
+    
 
     ! --- Interaction Energy ---
     if (INTON.EQ.1) then
@@ -215,6 +228,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
         enddo
     endif
     close (3) 
+
 ! -------------------------------------
 !
 !   Begin Monte Carlo simulation
@@ -228,13 +242,13 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
        !
        !-------------------------------
        DO MCTYPE=1,mc%moveTypes
-
           if (MCTYPE.GE.7 .and. MCTYPE.LE.9) cycle
-
-          if ((mod(ISTEP,20).ne.0).and. &
+          if (mod(ISTEP,3).gt.0) CYCLE ! save time
+          if ((mod(ISTEP,80).ne.0).and. & 
               ((MCTYPE.eq.5).or.(MCTYPE.eq.6))) then
-              CYCLE
+              CYCLE ! save time
           endif
+
           call MC_move(md%R_P2,md%U_P2,md%RP_P2,md%UP_P2,mc%nBeadsP2,mc%nBeadsP2,1, &
                        IP,IB1,IB2,IT1,IT2,MCTYPE, & 
                        mc%MCAMP,mc%WINDOW,md%AB,md%ABP,mc%G,&
@@ -296,9 +310,27 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           else
               mc%ECon=0.0_dp;
           endif
+
+!   Calculate change in Umbrella energy
+          if (INTON.eq.1 .and. mc%umbrellaOn) then
+              call calcRxnQ(mc,md,mc%rxnQp,IT1,IT2) ! calcualte proposed rxnQ
+              call calcUmbrellaE(mc,md,mc%rxnQp,mc%DEUmbrella,mc%umbBin_p) !calculage  proposed energy
+              mc%DEUmbrella=mc%DEUmbrella-mc%EUmbrella ! change in energy
+              ! now update umbrell sampling ...
+              mc%IndUmbrella=mc%IndUmbrella+1 
+              if(mod(mc%IndUmbrella,mc%nStepsUmbrella).eq.0) then
+                  call updateUmbrella(mc,md)
+              endif
+              if ((mod(ISTEP,25000).eq.0).and.(MCTYPE.eq.1)) then
+                  call saveQ(mc)
+              endif
+          else
+              mc%DEUmbrella=0
+          endif 
 !   Change the position if appropriate
           ENERGY=mc%DEELAS_P2(1)+mc%DEELAS_P2(2)+mc%DEELAS_P2(3) & 
-                 +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon+mc%DEField
+                 +mc%DEKap+mc%DECouple+mc%DEChi+mc%DEBind+mc%ECon+mc%DEField+ &
+                 mc%DEUmbrella
           PROB=exp(-ENERGY)
           call random_number(urnd,rand_stat)
           TEST=urnd(1)
@@ -331,6 +363,10 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                  print*, "MCTYPE", MCType
                  stop 1
              endif
+             mc%EUmbrella=mc%EUmbrella+mc%DEUmbrella
+             mc%umbBin=mc%umbBin_p
+             mc%rxnQ=mc%rxnQp
+
              mc%EBind=mc%EBind+mc%DEBind
              mc%x_mu=mc%x_mu+mc%dx_mu
              mc%EELAS_P2(1)=mc%EELAS_P2(1)+mc%DEELAS_P2(1)
@@ -357,6 +393,23 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
              endif
              !mc%SUCCESS(MCTYPE)=mc%SUCCESS(MCTYPE)+1
+          endif
+          ! Keep track of how many times eacy bin is visited
+          if (mc%umbrellaOn.and.INTON.eq.1 .and.mc%umbBin.ne.-1) then
+             ! if (umbrellaBin.lt.1 .or. umbrellaBin.gt.40) then
+             !     print*, "MCTYPE", MCTYPE, "TEST",TEST,"PROB",PROB
+             !     print*, "umbrellaBin",umbrellaBin
+             !     print*, "umbrellaBin_p",umbrellaBin_p
+             !     print*, "INTON",INTON
+             !     print*, "mc%umbrellaOn",mc%umbrellaOn
+             !     print*, "rxnQ",mc%rxnQ
+             !     print*, "mc%minQ",mc%minQ
+             !     print*, "nUmbrellaBins",mc%nUmbrellaBins
+             !     stop
+             ! endif
+              md%umbrellaCounts(mc%umbBin)=md%umbrellaCounts(mc%umbBin)+1
+          elseif (mc%umbBin.eq.-1) then
+              mc%nOutside=mc%nOutside+1
           endif
 
 
