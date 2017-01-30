@@ -81,27 +81,32 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     md%ABP=0 ! set entire array to zero
     !  Notide that ABP and AB are intensionally swapped below
     IT1=1; IT2=mc%NT
-    call MC_bind(mc%NT,mc%G,IT1,IT2,md%ABP,md%AB,md%METH, &
-                 mc%EU,mc%EM,mc%DEBind,mc%mu,mc%dx_mu,mc%nBeadsP2)
+    if (mc%simtype.eq.1) then
+        call MC_bind(mc%NT,mc%G,IT1,IT2,md%ABP,md%AB,md%METH, &
+                     mc%EU,mc%EM,mc%DEBind,mc%mu,mc%dx_mu,mc%nBeadsP2)
 
-    inquire(file = "data/error", exist=isfile)
-    if (isfile) then
-        OPEN (UNIT = 3, FILE = "data/error", STATUS ='OLD', POSITION="append")
-    else 
-        OPEN (UNIT = 3, FILE = "data/error", STATUS = 'new')
+        inquire(file = "data/error", exist=isfile)
+        if (isfile) then
+            OPEN (UNIT = 3, FILE = "data/error", STATUS ='OLD', POSITION="append")
+        else 
+            OPEN (UNIT = 3, FILE = "data/error", STATUS = 'new')
+        endif
+
+        if(abs(mc%EBind-mc%DEBind).gt.0.00001) then
+            print*, "Warning. Integrated binding enrgy:", &
+                    mc%EBind," while absolute binding energy:", &
+                    mc%DEBind
+            write(3,*), "Warning. Integrated binding enrgy:", &
+                    mc%EBind," while absolute binding energy:", &
+                    mc%DEBind
+        endif
+        mc%EBind=mc%DEBind
+        mc%x_mu=mc%dx_mu
+    else
+        mc%EBind=0.0
+        mc%DEBind=0.0
+        mc%x_mu=0.0
     endif
-
-    if(abs(mc%EBind-mc%DEBind).gt.0.00001) then
-        print*, "Warning. Integrated binding enrgy:", &
-                mc%EBind," while absolute binding energy:", &
-                mc%DEBind
-        write(3,*), "Warning. Integrated binding enrgy:", &
-                mc%EBind," while absolute binding energy:", &
-                mc%DEBind
-    endif
-    mc%EBind=mc%DEBind
-    mc%x_mu=mc%dx_mu
-
 
     ! --- Elastic Energy ---
     call energy_elas(mc%DEELAS,md%R,md%U,mc%NT,mc%NB,mc%NP,mc%Para,mc%nBeadsP2)
@@ -321,9 +326,9 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               if(mod(mc%IndUmbrella,mc%nStepsUmbrella).eq.0) then
                   call updateUmbrella(mc,md)
               endif
-              if ((mod(ISTEP,25000).eq.0).and.(MCTYPE.eq.1)) then
-                  call saveQ(mc)
-              endif
+              !if ((mod(ISTEP,25000).eq.0).and.(MCTYPE.eq.1)) then
+              !    call saveQ(mc)
+              !endif
           else
               mc%DEUmbrella=0
           endif 
@@ -337,6 +342,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           if (TEST.LE.PROB) then
              if(MCTYPE.EQ.7) then
                  print*, "Not set up"; stop
+                 !mc%EBind=mc%EBind+mc%DEBind
                  DO I=IT1,IT2
                       md%AB(I)=md%ABP(I)
                       md%AB(I)=md%ABP(I)
@@ -367,7 +373,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
              mc%umbBin=mc%umbBin_p
              mc%rxnQ=mc%rxnQp
 
-             mc%EBind=mc%EBind+mc%DEBind
              mc%x_mu=mc%x_mu+mc%dx_mu
              mc%EELAS_P2(1)=mc%EELAS_P2(1)+mc%DEELAS_P2(1)
              mc%EELAS_P2(2)=mc%EELAS_P2(2)+mc%DEELAS_P2(2)
@@ -509,6 +514,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
           TEST=urnd(1)
           if (TEST.LE.PROB) then
              if(MCTYPE.EQ.7) then
+                 mc%EBind=mc%EBind+mc%DEBind
                  DO I=IT1,IT2
                       md%AB(I)=md%ABP(I)
                  ENDDO
@@ -538,7 +544,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                  print*, "error in MCsim, out of bounds "
                  stop 1
              endif
-             mc%EBind=mc%EBind+mc%DEBind
              mc%x_mu=mc%x_mu+mc%dx_mu
              mc%EELAS(1)=mc%EELAS(1)+mc%DEELAS(1)
              mc%EELAS(2)=mc%EELAS(2)+mc%DEELAS(2)
@@ -587,7 +592,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
        !  -----  Parallel tempering ----
        IF (mod(ISTEP,mc%NPT).eq.0) THEN
-          call replicaExchange(mc)
+          call replicaExchange(mc,md)
        ENDIF
       
        ! seps in this subroutine

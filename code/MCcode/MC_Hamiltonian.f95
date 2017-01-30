@@ -23,7 +23,8 @@ double precision phi_B ! density of B
 double precision phi_h ! strength of field
 double precision VV ! volume of bin
 integer I,J ! for looping
-
+double precision LSratio
+LSratio=5
 
 mc%dx_Chi=0.0_dp
 mc%Dx_Couple=0.0_dp
@@ -34,11 +35,16 @@ if (initialize) then  ! calculate absolute energy
         do I=1,mc%NBIN
             VV=md%Vol(I)
             if (VV.le.0.1_dp) CYCLE
-            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIA(I)*md%PHIB(I))
+            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIA(I)*md%PHIB(I)) ! N
+
+            mc%Dx_Chi=mc%Dx_Chi+LSratio*(VV/mc%V)*(md%PHIA(I)*md%PHIB(I)) ! LS
+            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*((1-md%PHIA(I)-md%PHIB(I))*md%PHIB(I)) ! LS
+
+
             mc%Dx_Field=mc%dx_Field-md%PHIH(I)*md%PHIA(I)
 
             if ((md%PHIA(I)+md%PHIB(I)-1.0_dp)>0.0_dp) then
-                mc%Dx_Kap=mc%dx_Kap+(VV/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2)
+                mc%Dx_Kap=mc%dx_Kap+(VV/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2) 
             endif
         enddo        
     elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
@@ -66,7 +72,11 @@ else ! Calculate change in energy
             phi_A=md%PHIA(J)+md%DPHIA(I)
             phi_B=md%PHIB(J)+md%DPHIB(I)
             phi_h=md%PHIH(J)
-            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*phi_B
+            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*phi_B ! N
+
+            mc%Dx_Chi=mc%Dx_Chi+LSratio*(VV/mc%V)*phi_A*phi_B ! LS
+            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(1-phi_A-phi_B)*phi_B ! LS
+
             mc%Dx_Field=mc%Dx_Field-phi_h*phi_A
             
             if ((phi_A+phi_B-1.0_dp)>0.0_dp) then
@@ -74,7 +84,11 @@ else ! Calculate change in energy
             endif
             
             ! minus old
-            mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(J)*md%PHIB(J))
+            !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(J)*md%PHIB(J)) !N
+
+            mc%Dx_Chi=mc%Dx_Chi-LSratio*(VV/mc%V)*(md%PHIA(J)*md%PHIB(J)) !LS
+            mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*((1-md%PHIA(J)-md%PHIB(J))*md%PHIB(J)) !LS
+
             mc%Dx_Field=mc%Dx_Field+phi_h*md%PHIA(J)
 
             if ((md%PHIA(J)+md%PHIB(J)-1.0_dp)>0.0_dp) then

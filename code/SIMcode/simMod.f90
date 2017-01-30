@@ -226,7 +226,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%restart=.FALSE.
 
     ! geometry options
-    mc%NP  =1
+    mc%NP  =-1
     mc%N   =2000
     mc%G   =1
     mc%NB=mc%G*mc%N    
@@ -525,6 +525,8 @@ Subroutine MCvar_setParams(mc,fileName)
            call READF(mc%maxQ)
        CASE('N_UMBRELLA_STEPS')
            call READI(mc%nStepsUmbrella)  ! number of steps before umbrella update
+       CASE('N_POLY')
+           call READI(mc%NP)  ! number of steps before umbrella update
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
@@ -533,21 +535,6 @@ Subroutine MCvar_setParams(mc,fileName)
     ENDDO
     close(PF)
 
-    if ((mc%NBINX(1)-mc%NBINX(2).ne.0).or. &
-        (mc%NBINX(1)-mc%NBINX(3).ne.0)) then
-        if (mc%simType.eq.1) then
-            print*, "Solution not tested with non-cube box, more coding needed"
-            stop 1
-        endif
-        if (mc%confineType.ne.4) then
-            print*, "Unequal boundaries require confineType=4"
-            stop 1
-        endif    
-        if (mc%setType.eq.4) then
-            print*, "You shouldn't put a shpere in and unequal box!"
-            stop 1
-        endif    
-    endif
     ! --------------------
     !
     ! Derived Variables, Reconcile inputs
@@ -574,8 +561,10 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%LBOX(3) = mc%NBINX(3)*mc%DEL! used to be: DEL=LBOX/NBINX
     elseif (mc%simType.eq.0) then
         if (mc%confineType.eq.0) then
-            mc%NP=nint(mc%Fpoly*mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
-            mc%LBOX=(mc%V*mc%N*mc%G*mc%NP/mc%Fpoly)**(1.0_dp/3.0_dp)
+            if (mc%NP.eq.-1) then
+                mc%NP=nint(mc%Fpoly*mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+                mc%LBOX=(mc%V*mc%N*mc%G*mc%NP/mc%Fpoly)**(1.0_dp/3.0_dp)
+            endif
             mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
             mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
             mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
@@ -587,7 +576,9 @@ Subroutine MCvar_setParams(mc,fileName)
             mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
             mc%LBOX(2)=mc%DEL*mc%NBINX(2)
             mc%LBOX(3)=mc%DEL*mc%NBINX(3)
-            mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+            if (mc%NP.eq.-1) then
+                mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+            endif
             print*, "Density =", &
                   mc%N*mc%G*mc%V*mc%NP/(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3))
         endif
@@ -636,16 +627,33 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%DEUmbrella=0.0_dp
     mc%IndUmbrella=0
     mc%nOutside=0
-    mc%umbBin=0
-    mc%umbBin_p=0
+    mc%umbBin=1
+    mc%umbBin_p=1
 
-    !call MCvar_printDescription(mc)
+    call MCvar_printDescription(mc)
 
     !-----------------------------
     !
     !  Idiot checks
     !
     !-----------------------------
+    if ((mc%NBINX(1)-mc%NBINX(2).ne.0).or. &
+        (mc%NBINX(1)-mc%NBINX(3).ne.0)) then
+        if (mc%simType.eq.1) then
+            print*, "Solution not tested with non-cube box, more coding needed"
+            stop 1
+        endif
+        if (mc%confineType.ne.4) then
+            print*, "Unequal boundaries require confineType=4"
+            print*, "confineType", mc%confineType
+            print*, "NBINX",mc%NBINX
+            stop 1
+        endif    
+        if (mc%setType.eq.4) then
+            print*, "You shouldn't put a shpere in and unequal box!"
+            stop 1
+        endif    
+    endif
     if (mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3).ne.mc%NBIN) then
         print*, "error in MCsim. Wrong number of bins"
         stop 1

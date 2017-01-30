@@ -104,7 +104,11 @@ Subroutine wlcsim(rand_stat)
           print*, "wlcsim: FRMMETH not fininshed"
           stop 1
       ELSE
-          call initchem(md%METH,mc%NT,mc%N,mc%G,mc%NP,mc%F_METH,mc%LAM_METH,rand_stat,mc%nBeadsP2)        
+          if (mc%simtype.eq.1) then
+              call initchem(md%METH,mc%NT,mc%N,mc%G,mc%NP,mc%F_METH,mc%LAM_METH,rand_stat,mc%nBeadsP2)
+          else
+              md%METH=0
+          endif
       ENDIF
     
     ! Load External field
