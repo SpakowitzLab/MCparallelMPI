@@ -10,7 +10,7 @@
 !     Updated by Quinn in 2016
 !
 SUBROUTINE initcond(R,U,AB,NT,N,NP,FRMFILE,PARA,LBOX, &
-                    setType,rand_stat)
+                    setType,rand_stat,RCylinder,LCylinder)
 
 !use mt19937, only : grnd, init_genrand, rnorm, mt, mti
 use mersenne_twister
@@ -21,6 +21,8 @@ IMPLICIT NONE
 DOUBLE PRECISION PI
 PARAMETER (PI=3.141593_dp)
 
+DOUBLE PRECISION, intent(in) :: RCylinder
+DOUBLE PRECISION, intent(in) :: LCylinder
 DOUBLE PRECISION R(NT,3)  ! Bead positions
 DOUBLE PRECISION U(NT,3)  ! Tangent vectors
 INTEGER AB(NT)            ! Chemical identity of beads
@@ -288,7 +290,58 @@ else if(setType.eq.4) then
            IB=IB+1
        enddo ! loop to N
     enddo ! loop to np
-else if(setType.eq.5) then 
+else if(setType.eq.5) then
+    ! travel in radom direction
+    ! rerandomize when reaching boundary
+    ! shpere boundary
+    ! radius of LBox/2 centered at LBox/2             
+    Rc=LBOX(1)/2.0_dp ! use LBOX as radius
+       GAM=PARA(4)
+    IB=1
+    DO  I=1,NP
+       call random_number(urand,rand_stat)
+       theta=urand(1)*2.0_dp*PI
+       z=urand(2)*2.0_dp-1.0_dp
+       rr=Rc*urand(3)  ! should have an r**2 from jacobian
+       Rold(1)=sqrt(1.0_dp-z*z)*cos(theta)*rr + Rc
+       Rold(2)=sqrt(1.0_dp-z*z)*sin(theta)*rr + Rc
+       Rold(3)=z*rr + Rc
+       call random_number(urand,rand_stat)
+       theta=urand(1)*2_dp*PI
+       z=urand(2)*2.0_dp-1.0_dp
+       Uold(1)=sqrt(1-z*z)*cos(theta)
+       Uold(2)=sqrt(1-z*z)*sin(theta)
+       Uold(3)=z                  
+       DO J=1,N
+           search=.TRUE.
+           do while(search)
+               test(1)=Rold(1)+Uold(1)*GAM
+               test(2)=Rold(2)+Uold(2)*GAM
+               test(3)=Rold(3)+Uold(3)*GAM
+               call elong(test,RCylinder,LCylinder,search)
+               if(search) then
+                    call random_number(urand,rand_stat)
+                    theta=urand(1)*2.0_dp*PI
+                    z=urand(2)*2.0_dp-1.0_dp
+                    Uold(1)=sqrt(1.0_dp-z*z)*cos(theta)
+                    Uold(2)=sqrt(1.0_dp-z*z)*sin(theta)
+                    Uold(3)=z
+               endif
+           enddo
+           R(IB,1)=test(1)
+           R(IB,2)=test(2)
+           R(IB,3)=test(3)
+           Rold(1)=test(1)
+           Rold(2)=test(2)
+           Rold(3)=test(3)
+           U(IB,1)=Uold(1)
+           U(IB,2)=Uold(2)
+           U(IB,3)=Uold(3)
+           IB=IB+1
+       enddo ! loop to N
+    enddo ! loop to np
+
+else if(setType.eq.6) then 
     ! randomly distribute beads in shereical confinement
     do IB=1,NT
         search=.true.
@@ -315,5 +368,5 @@ endif
  
 RETURN     
 END
-      
+
 !---------------------------------------------------------------*

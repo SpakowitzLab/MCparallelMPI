@@ -415,14 +415,14 @@ function mu_path(s) result(mu)
     implicit none
     double precision, intent(in) :: s
     double precision mu
-    mu=s-2.0
+    mu=s-2.5
 end function mu_path
 function kap_path(s) result(kap)
     use setPrecision
     implicit none
     double precision, intent(in) :: s
     double precision kap
-    kap=s*10.0_dp
+    kap=s*1.0_dp
 end function kap_path
 function hp1_bind_path(s) result(hp1_bind)
     use setPrecision
@@ -466,7 +466,7 @@ Subroutine PT_override(mc,md)
     !----------------------------------------------
     if (id.eq.1) then
         do dest=2,nThreads-1
-            if(mc%simType.eq.1) then
+            if(mc%simType.eq.1 .or. mc%simType.eq.2) then
                 call MPI_Send (md%METH,mc%NT, MPI_INTEGER, dest,   0, &
                                MPI_COMM_WORLD,error )
             elseif(mc%simType.eq.0) then
@@ -479,7 +479,7 @@ Subroutine PT_override(mc,md)
         enddo
     else
         source=1
-        if(mc%simType.eq.1) then
+        if(mc%simType.eq.1.or.mc%simType.eq.2) then
             call MPI_Recv (md%METH, mc%NT, MPI_INTEGER, source, 0, &
                            MPI_COMM_WORLD, status, error )
         elseif(mc%simType.eq.0) then

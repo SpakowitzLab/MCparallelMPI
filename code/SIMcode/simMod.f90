@@ -21,6 +21,8 @@ Module simMod
     INTEGER G                 ! Beads per monomer
     INTEGER NP                ! Number of polymers
     DOUBLE PRECISION LBOX(3)  ! Box length (approximate)
+    DOUBLE PRECISION Lcylinder   ! for elongnated confinement
+    DOUBLE PRECISION Rcylinder  ! for elongnated confinement
     DOUBLE PRECISION DEL      ! Discretization size (approximate)
     DOUBLE PRECISION L0       ! Equilibrium segment length
     DOUBLE PRECISION V        ! Bead volume
@@ -202,6 +204,8 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%LBOX(1)=25.0_dp
     mc%LBOX(2)=25.0_dp
     mc%LBOX(3)=25.0_dp
+    mc%Lcylinder=0.0_dp   ! for elongnated confinement
+    mc%Rcylinder=25.0_dp  ! for elongnated confinement
     mc%DEL =1.0_dp
     mc%L0  =1.25_dp
     mc%V   =0.1_dp
@@ -465,6 +469,10 @@ Subroutine MCvar_setParams(mc,fileName)
            call READO(mc%PT_couple) ! parallel temper HP1_bind
        CASE('RESTART')
            call READO(mc%restart) ! Restart from parallel tempering
+       CASE('CYLINDER_LENGTH')
+           call READF(mc%LCylinder)   ! for elongnated confinement
+       CASE('CYLENDER_RADIUS')
+           call READF(mc%RCylinder)  ! for elongnated confinement
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
@@ -533,6 +541,18 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%MAXWINDOW(7)=min(150,mc%NB)
         mc%MAXAMP(2)=1.0_dp*mc%L0
         mc%MAXAMP(6)=0.1*mc%LBOX(1)
+    elseif (mc%simType.eq.2) then ! Bruno confinment problem
+        if (mc%confineType.ne.5) then
+            print*, "only tested for confineType=1"
+            stop
+        endif
+        mc%NBINX(1)=int(mc%LBOX(1))
+        mc%NBINX(2)=int(mc%LBOX(2))
+        mc%NBINX(3)=int(mc%LBOX(3))
+        mc%NB=mc%N*mc%G
+        mc%NBIN=mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3)
+        mc%NT=mc%N*mc%NP*mc%G
+
     else
        print*, "Error in simMod: symType",mc%simType," not found"
     endif 
@@ -571,8 +591,8 @@ Subroutine MCvar_setParams(mc,fileName)
             print*, mc%NBINX(1), mc%NBINX(2), mc%NBINX(3)
             stop 1
         endif
-        if (mc%confineType.ne.4) then
-            print*, "Unequal boundaries require confineType=4"
+        if (mc%confineType.ne.4 .and. mc%confineType .ne.5) then
+            print*, "Unequal boundaries require confineType=4 or 5"
             stop 1
         endif    
         if (mc%setType.eq.4) then
@@ -887,8 +907,25 @@ subroutine MCvar_MakeField(mc,md)
     enddo
     return
 end subroutine
+Subroutine MCvar_loadMeth(mc,md,fileName)
+! Loads Methalation for file
+    IMPLICIT NONE
+    TYPE(MCvar), intent(in) :: mc
+    TYPE(MCData), intent(inout) :: md
+    character*16, intent(in) :: fileName ! file name to load from
+    INTEGER IB, I, J ! counters
+    OPEN (UNIT = 1, FILE = fileName, STATUS = 'OLD')      
+    IB=1
+    DO I=1,mc%NP
+       DO J=1,mc%NB
+          READ(1,"(I2)") md%Meth(IB)
+          IB=IB+1
+          enddo
+    enddo 
+    CLOSE(1)
+end subroutine
 Subroutine MCvar_loadAB(mc,md,fileName)
-! Loads AB for file...has not been tested
+! Loads AB for file
     IMPLICIT NONE
     TYPE(MCvar), intent(in) :: mc
     TYPE(MCData), intent(inout) :: md

@@ -44,16 +44,17 @@ Subroutine wlcsim(rand_stat)
   print*, "setting parameters from: ", iostr
   call MCvar_setParams(mc,iostr)
   call MCvar_allocate(mc,md)
- 
+
+  print*, "In wlcsim after allocate"
 !-----------------------------------------------------
 !
 !   Initial condition / Restart
 !
 !----------------------------------------------------
   !  Calculate volume of bins
-  if (mc%confineType.eq.3) then 
-      call MC_caclVolume(mc%confineType,mc%NBINX,mc%DEL, mc%LBox(1), &
-                         md%Vol,rand_stat)  ! calculate partial volumes
+  if (mc%confineType.eq.3 .or. mc%confineType.eq.5) then
+      call MC_calcVolume(mc%confineType,mc%NBINX,mc%DEL, mc%LBox(1), &
+                         md%Vol,rand_stat,mc%RCylinder,mc%LCylinder)  ! calculate partial volumes
   else
       do I=1,mc%NBIN
            md%Vol(I)=mc%del**3
@@ -71,10 +72,12 @@ Subroutine wlcsim(rand_stat)
       
     !   Setup the initial condition
       call initcond(md%R,md%U,md%AB,mc%NT,mc%NB,mc%NP,mc%FRMFILE,mc%PARA,mc%LBOX, &
-                    mc%setType,rand_stat)
+                    mc%setType,rand_stat,mc%RCylinder,mc%LCylinder)
     
     !   Load in AB sequence
-      IF (mc%FRMCHEM) THEN
+      if (mc%simtype.ne.2) then
+          md%AB=1;
+      elseIF (mc%FRMCHEM) THEN
           iostr='input/ab'
           call MCvar_loadAB(mc,md,iostr)
       ELSE
@@ -84,6 +87,9 @@ Subroutine wlcsim(rand_stat)
       
     !   Load methalation sequence
       IF (mc%FRMMETH) THEN
+          iostr='input/meth'
+          call MCvar_loadAB(mc,md,iostr)
+
           ! more to come here ...
           print*, "wlcsim: FRMMETH not fininshed"
           stop 1

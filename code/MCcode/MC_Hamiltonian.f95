@@ -23,12 +23,13 @@ double precision phi_B ! density of B
 double precision phi_h ! strength of field
 double precision VV ! volume of bin
 integer I,J ! for looping
-
+double precision PHI_s
 
 mc%dx_Chi=0.0_dp
 mc%Dx_Couple=0.0_dp
 mc%Dx_Kap=0.0_dp
 mc%Dx_Field=0.0_dp
+
 if (initialize) then  ! calculate absolute energy
     if (mc%simType.eq.0) then ! Melt Hamiltonian
         do I=1,mc%NBIN
@@ -48,7 +49,15 @@ if (initialize) then  ! calculate absolute energy
             if(PHIPoly.GT.1.0_dp) then
                mc%Dx_Kap=mc%Dx_Kap+(VV/mc%V)*(PHIPoly-1.0_dp)**2
             endif
-        enddo        
+        enddo
+    elseif(mc%simType.eq.2) then
+        do I=1,mc%NBIN
+            VV=md%Vol(I)
+            if (VV.le.0.1_dp) CYCLE
+            PHIPoly=md%PHIA(I)+md%PHIB(I)
+            PHI_s=1.0_dp-PHIPoly
+            mc%Dx_Kap = mc%Dx_Kap + PHI_s*log(PHI_s) -  PHI_s
+        enddo
     else
         print*, "Error in MC_int, simType",mc%simType, &
                 " notdefined"
@@ -90,6 +99,21 @@ else ! Calculate change in energy
             if(PHIPoly.GT.1.0_dp) then
                mc%Dx_Kap=mc%Dx_Kap-(VV/mc%V)*(PHIPoly-1.0_dp)**2
             endif 
+        enddo
+    elseif(mc%simType.eq.2) then
+        do I=1,mc%NBIN
+            J=md%INDPHI(I)
+            VV=md%Vol(I)
+            ! new ...
+            if (VV.le.0.1_dp) CYCLE
+            PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
+            PHI_s=1.0_dp-PHIPoly
+            mc%Dx_Kap = mc%Dx_Kap + PHI_s*log(PHI_s) -  PHI_s
+
+            ! minus old
+            PHIPoly=md%PHIA(J)+md%PHIB(J)
+            PHI_s=1.0_dp-PHIPoly
+            mc%Dx_Kap = mc%Dx_Kap - PHI_s*log(PHI_s) +  PHI_s
         enddo
     endif
 endif

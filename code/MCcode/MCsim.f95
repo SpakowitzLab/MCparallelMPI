@@ -294,7 +294,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               (MCTYPE.NE.8).and. &
               (MCTYPE.NE.9)) then
               call MC_confine(mc%confineType, mc%LBox, md%RP, mc%NT, & 
-                              IT1,IT2,mc%ECon)
+                              IT1,IT2,mc%ECon,mc%RCylinder,mc%LCylinder)
           else
               mc%ECon=0.0_dp;
           endif
