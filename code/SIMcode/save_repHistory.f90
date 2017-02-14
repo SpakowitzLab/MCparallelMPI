@@ -32,7 +32,7 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
                " h_A  |  x_h_A |",&
                " mu   |  x_mu  |  s   |"
     do rep=1,nPTReplicas
-        write(1,"(2I6,2f7.4,f7.4,f9.1,f7.1,f9.1,f7.4,f9.1,f7.4,f9.1,f7.4)"),&
+        write(1,"(2I6,2f7.4,f7.4,f9.1,f7.3,f9.1,f7.4,f9.1,f7.4,f9.1,f7.4)"),&
                  rep, nodeNumber(rep), &
                  real(upSuccess(rep))/real(N_average), &
                  real(downSuccess(rep))/real(N_average),& 

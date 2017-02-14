@@ -46,7 +46,6 @@ double precision xx(3)
 integer outside_Larger_volume
 double precision vol_total
 
-print*, "Inside calc volume"
 
 !if (abs(DEL*NBINX(1)-LBOX).gt.0.000001_dp) then 
 !    print*, "DEL=", DEL
