@@ -299,13 +299,9 @@ else if(setType.eq.5) then
        GAM=PARA(4)
     IB=1
     DO  I=1,NP
-       call random_number(urand,rand_stat)
-       theta=urand(1)*2.0_dp*PI
-       z=urand(2)*2.0_dp-1.0_dp
-       rr=Rc*urand(3)  ! should have an r**2 from jacobian
-       Rold(1)=sqrt(1.0_dp-z*z)*cos(theta)*rr + Rc
-       Rold(2)=sqrt(1.0_dp-z*z)*sin(theta)*rr + Rc
-       Rold(3)=z*rr + Rc
+       Rold(1)=RCylinder+LCylinder*0.5
+       Rold(2)=RCylinder 
+       Rold(3)=RCylinder  
        call random_number(urand,rand_stat)
        theta=urand(1)*2_dp*PI
        z=urand(2)*2.0_dp-1.0_dp

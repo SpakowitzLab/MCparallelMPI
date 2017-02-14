@@ -230,7 +230,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%moveTypes=10
     mc%setType = 4 ! 4 for shereical
     mc%confineType = 3 ! 3 for sherical
-    mc%simType=1
+    mc%simType=-1
     mc%winType=1
     mc%min_accept=0.05
 
@@ -661,6 +661,7 @@ Subroutine MCvar_printDescription(mc)
     print*, "Other:"
     print*, " confineType:",mc%confineType
     print*, " setType:",mc%setType
+    print*, " simType:",mc%simType
     print*, "---------------------------------------------"
     
 end Subroutine
@@ -1059,11 +1060,11 @@ Subroutine MCvar_appendEnergyData(mc,fileName)
     else 
         OPEN (UNIT = 1, FILE = fullName, STATUS = 'new')
         WRITE(1,*), "IND | id |",&
-                    " EBend  | EParll | EShear | ECoupl | E Kap  | E Chi  |",&
-                    " EField | EBind  |   M    | Couple |  Chi   |  mu    |",&
-                    "  Kap   | Field  | E mu   "
+                    " EBend    | EParll   | EShear   | ECoupl   |    E Kap   |  E Chi   |",&
+                    " EField   | EBind    |     M    | Couple   |    Chi   |    mu    |",&
+                    "  Kap     |   Field  |   E mu   "
     endif
-    WRITE(1,"(2I5, 9f9.1,5f9.4,f9.2)") mc%IND, mc%id, &
+    WRITE(1,"(2I5, 4f11.1,f13.1,4f11.1,5f11.4,f11.2)") mc%IND, mc%id, &
            mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
            mc%EKap, mc%ECHI, mc%EField, mc%EBind, mc%M, &
            mc%HP1_Bind*mc%Couple_on, mc%CHI*mc%CHI_ON, mc%mu, mc%KAP*mc%KAP_ON,&

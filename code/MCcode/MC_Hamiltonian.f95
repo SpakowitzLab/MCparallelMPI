@@ -56,7 +56,11 @@ if (initialize) then  ! calculate absolute energy
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(I)+md%PHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            mc%Dx_Kap = mc%Dx_Kap + PHI_s*log(PHI_s) -  PHI_s
+            if (PHI_s.gt.0) then 
+                mc%Dx_Kap = mc%Dx_Kap + VV*( PHI_s*log(PHI_s) -  PHI_s)
+            else
+                mc%Dx_Kap = mc%Dx_Kap + 10
+            endif
         enddo
     else
         print*, "Error in MC_int, simType",mc%simType, &
@@ -101,19 +105,27 @@ else ! Calculate change in energy
             endif 
         enddo
     elseif(mc%simType.eq.2) then
-        do I=1,mc%NBIN
+        do I=1,mc%NPHI
             J=md%INDPHI(I)
             VV=md%Vol(I)
             ! new ...
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            mc%Dx_Kap = mc%Dx_Kap + PHI_s*log(PHI_s) -  PHI_s
+            if (PHI_s.lt.0) then 
+                mc%Dx_Kap = mc%Dx_Kap + VV*( PHI_s*log(PHI_s) -  PHI_s)
+            else
+                mc%Dx_Kap = mc%Dx_Kap + 10
+            endif
 
             ! minus old
             PHIPoly=md%PHIA(J)+md%PHIB(J)
             PHI_s=1.0_dp-PHIPoly
-            mc%Dx_Kap = mc%Dx_Kap - PHI_s*log(PHI_s) +  PHI_s
+            if (PHI_s.gt.0) then 
+                mc%Dx_Kap = mc%Dx_Kap - VV*( PHI_s*log(PHI_s) +  PHI_s )
+            else
+                mc%Dx_Kap = mc%Dx_Kap - 10
+            endif
         enddo
     endif
 endif
@@ -125,6 +137,7 @@ mc%DEChi=mc%Chi*        mc%dx_chi
 mc%DECouple=mc%HP1_Bind*mc%dx_couple
 mc%DEKap=mc%Kap*        mc%dx_Kap
 mc%DEField=mc%h_A*      mc%dx_Field
+!print*, "NPHI",mc%NPHI," DEKap",mc%DEKap,"dx_Kap", mc%dx_Kap 
 RETURN
 END subroutine
 

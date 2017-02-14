@@ -28,14 +28,16 @@ Subroutine save_repHistory(upSuccess,downSuccess,nPTReplicas, &
     write(1,*) "~~~~~~~~~~~exchange: ",nExchange,", IND:",IND,"~~~~~~~~~~~~~~~~~~~~"
     write(1,*) " rep | node|  up  | down |",&
                " chi  |  x_chi |",&
+               " Kap  |  x_Kap |",&
                " h_A  |  x_h_A |",&
                " mu   |  x_mu  |  s   |"
     do rep=1,nPTReplicas
-        write(1,"(2I6,2f7.4,f7.4,f9.1,f7.4,f9.1,f7.4,f9.1,f7.4)"),&
+        write(1,"(2I6,2f7.4,f7.4,f9.1,f7.1,f9.1,f7.4,f9.1,f7.4,f9.1,f7.4)"),&
                  rep, nodeNumber(rep), &
                  real(upSuccess(rep))/real(N_average), &
                  real(downSuccess(rep))/real(N_average),& 
                  cofMtrx(rep,1), xMtrx(rep,1),&
+                 cofMtrx(rep,5), xMtrx(rep,5),&
                  cofMtrx(rep,3), xMtrx(rep,3),&
                  cofMtrx(rep,2), xMtrx(rep,2),s(rep)
     enddo  

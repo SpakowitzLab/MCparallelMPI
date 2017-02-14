@@ -193,7 +193,7 @@ subroutine paraTemp ( p, id)
         do rep=1,nPTReplicas
             upSuccess(rep)=0
             downSuccess(rep)=0
-            s_vals(rep)=mc%INITIAL_MAX_S*dble(rep)/dble(nPTReplicas)
+            s_vals(rep)=mc%INITIAL_MAX_S*dble(rep-1)/dble(nPTReplicas-1.0)
         enddo
 
         do rep=1,nPTReplicas
@@ -218,7 +218,7 @@ subroutine paraTemp ( p, id)
                 cofMtrx(rep,4)=mc%HP1_Bind
             endif
             if (mc%PT_Kap) then
-                cofMtrx(rep,5)=kap_path(s_vals(rep))
+                cofMtrx(rep,5)=kap_path(s_vals(rep),mc%KAP)
             else
                 cofMtrx(rep,5)=mc%KAP
             endif
@@ -324,7 +324,7 @@ subroutine paraTemp ( p, id)
                             cofMtrx(rep,4)=HP1_Bind_path(s_vals(rep))
                         endif
                         if (mc%PT_Kap) then
-                            cofMtrx(rep,5)=kap_path(s_vals(rep))
+                            cofMtrx(rep,5)=kap_path(s_vals(rep),mc%Kap)
                         endif
                     enddo
                 endif
@@ -417,12 +417,13 @@ function mu_path(s) result(mu)
     double precision mu
     mu=s-2.5
 end function mu_path
-function kap_path(s) result(kap)
+function kap_path(s,kapMax) result(kap)
     use setPrecision
     implicit none
     double precision, intent(in) :: s
     double precision kap
-    kap=s*1.0_dp
+    double precision kapMax
+    kap=s*kapMax
 end function kap_path
 function hp1_bind_path(s) result(hp1_bind)
     use setPrecision

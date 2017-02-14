@@ -148,6 +148,39 @@ CASE (4) ! Box from 0-LBOX, Bins split by boundaries
     IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX(2))) * NBINX(2)
     IZ(1)=IZ(1)-floor(REAL((IZ(1)-1))/REAL(NBINX(3))) * NBINX(3)
     IZ(2)=IZ(2)-floor(REAL((IZ(2)-1))/REAL(NBINX(3))) * NBINX(3)
+CASE(5)
+    ! Periodic BC
+    RBIN(1)=RBIN(1)-floor(RBIN(1)/LBOX(1))*LBOX(1)
+    RBIN(2)=RBIN(2)-floor(RBIN(2)/LBOX(2))*LBOX(2)
+    RBIN(3)=RBIN(3)-floor(RBIN(3)/LBOX(3))*LBOX(3)
+
+    ! Binning  
+    IX(1)=ceiling(RBIN(1)/DEL)
+    IY(1)=ceiling(RBIN(2)/DEL)
+    IZ(1)=ceiling(RBIN(3)/DEL)
+    
+    IX(2)=IX(1)-1
+    IY(2)=IY(1)-1
+    IZ(2)=IZ(1)-1
+    
+    ! Calculate the bin weighting
+    WX(2)=(DEL*IX(1)-RBIN(1))/DEL   
+    WX(1)=1.0_dp-WX(2)              
+    WY(2)=(DEL*IY(1)-RBIN(2))/DEL   
+    WY(1)=1.0_dp-WY(2)              
+    WZ(2)=(DEL*IZ(1)-RBIN(3))/DEL   
+    WZ(1)=1.0_dp-WZ(2)              
+
+    ! Periodic BC on Bins:
+    IX(1)=IX(1)-floor(REAL((IX(1)-1))/REAL(NBINX(1))) * NBINX(1)
+    IX(2)=IX(2)-floor(REAL((IX(2)-1))/REAL(NBINX(1))) * NBINX(1)
+    IY(1)=IY(1)-floor(REAL((IY(1)-1))/REAL(NBINX(2))) * NBINX(2)
+    IY(2)=IY(2)-floor(REAL((IY(2)-1))/REAL(NBINX(2))) * NBINX(2)
+    IZ(1)=IZ(1)-floor(REAL((IZ(1)-1))/REAL(NBINX(3))) * NBINX(3)
+    IZ(2)=IZ(2)-floor(REAL((IZ(2)-1))/REAL(NBINX(3))) * NBINX(3)
+
+CASE DEFAULT
+    print*, "Not a known confineType"
 END SELECT
 return
 end subroutine

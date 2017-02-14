@@ -73,9 +73,8 @@ Subroutine wlcsim(rand_stat)
     !   Setup the initial condition
       call initcond(md%R,md%U,md%AB,mc%NT,mc%NB,mc%NP,mc%FRMFILE,mc%PARA,mc%LBOX, &
                     mc%setType,rand_stat,mc%RCylinder,mc%LCylinder)
-    
     !   Load in AB sequence
-      if (mc%simtype.ne.2) then
+      if (mc%simtype.eq.2) then
           md%AB=1;
       elseIF (mc%FRMCHEM) THEN
           iostr='input/ab'
