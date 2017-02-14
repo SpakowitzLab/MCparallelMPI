@@ -56,7 +56,7 @@ if (initialize) then  ! calculate absolute energy
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(I)+md%PHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            if (PHI_s.gt.0) then 
+            if (PHI_s.gt.0.0) then 
                 mc%Dx_Kap = mc%Dx_Kap + VV*( PHI_s*log(PHI_s) -  PHI_s)
             else
                 mc%Dx_Kap = mc%Dx_Kap + 10
@@ -112,7 +112,7 @@ else ! Calculate change in energy
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            if (PHI_s.lt.0) then 
+            if (PHI_s.gt.0.0) then 
                 mc%Dx_Kap = mc%Dx_Kap + VV*( PHI_s*log(PHI_s) -  PHI_s)
             else
                 mc%Dx_Kap = mc%Dx_Kap + 10
@@ -121,7 +121,7 @@ else ! Calculate change in energy
             ! minus old
             PHIPoly=md%PHIA(J)+md%PHIB(J)
             PHI_s=1.0_dp-PHIPoly
-            if (PHI_s.gt.0) then 
+            if (PHI_s.gt.0.0) then 
                 mc%Dx_Kap = mc%Dx_Kap - VV*( PHI_s*log(PHI_s) +  PHI_s )
             else
                 mc%Dx_Kap = mc%Dx_Kap - 10
