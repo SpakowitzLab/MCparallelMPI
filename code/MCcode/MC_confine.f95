@@ -88,7 +88,7 @@ elseif(confineType.EQ.5) then ! Cylinder with spherical caps
                 return
             endif
         elseif ( RP(I,1) .GT. RCylinder+LCylinder) then
-            r(1) = RP(I,1) - RCylinder + LCylinder
+            r(1) = RP(I,1) - RCylinder - LCylinder
             r(2) = RP(I,2) - RCylinder
             r(3) = RP(I,3) - RCylinder
             if (r(1)**2+r(2)**2+r(3)**2 .gt. RCylinder**2) then
