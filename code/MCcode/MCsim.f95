@@ -36,11 +36,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     
     INTEGER MCTYPE                    ! Type of MC move
     
-    DOUBLE PRECISION EB,EPAR,EPERP
-    DOUBLE PRECISION GAM,ETA
-    DOUBLE PRECISION XIR,XIU
-    DOUBLE PRECISION LHC      ! Length of HC int
-    DOUBLE PRECISION VHC      ! HC strength
     DOUBLE PRECISION phiTot  ! for testing
 
     DOUBLE PRECISION ENERGY
@@ -52,16 +47,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
     Type(MCvar), intent(inout) :: mc      ! system varibles 
     Type(MCData), intent(inout) :: md     ! system allocated data
 
-
-    EB=   mc%PARA(1)
-    EPAR= mc%PARA(2)
-    EPERP=mc%PARA(3)
-    GAM=  mc%PARA(4)
-    ETA=  mc%PARA(5)
-    XIR=  mc%PARA(6)
-    XIU=  mc%PARA(7)
-    LHC=  mc%PARA(9)
-    VHC=  mc%PARA(10)
 ! -------------------------------------
 !
 !   initialize densities and energies 
@@ -94,7 +79,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
 
     ! --- Elastic Energy ---
-    call energy_elas(mc%DEELAS,md%R,md%U,mc%NT,mc%NB,mc%NP,mc%Para)
+    call energy_elas(mc%DEELAS,md%R,md%U,md%AB,mc%NT,mc%NB,mc%NP,mc%elasParam0,mc%elasParam1)
     if(abs((mc%EElas(1)+  mc%EElas(2)+ mc%EElas(3))-& 
            (mc%DEElas(1)+mc%DEElas(2)+mc%DEElas(3))).gt.0.0001) then
         print*, "Warning. Integrated elastic enrgy:", &
@@ -222,9 +207,10 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               (MCTYPE.NE.8) .and. &
               (MCTYPE.NE.9) .and. &
               (MCTYPE.NE.10) )then
-              call MC_eelas(mc%DEELAS,md%R,md%U,md%RP,md%UP,&
-                            mc%NT,mc%NB,IB1,IB2, & 
-                            IT1,IT2,EB,EPAR,EPERP,GAM,ETA)
+              call MC_eelasRodCoil(mc%DEELAS,md%R,md%U,md%RP,md%UP,&
+                       mc%NT,mc%NB,IB1,IB2,&
+                       IT1,IT2,mc%elasParam0,mc%elasParam1,md%AB)
+
           else
               mc%DEELAS(1)=0.0
               mc%DEELAS(2)=0.0
@@ -329,6 +315,8 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
                    md%PHIB(J)=md%PHIB(J)+md%DPHIB(I)  
                    if ((md%PHIA(J).lt.-0.000001_dp) .or. (md%PHIB(J).lt.-0.00001_dp)) then
                        print*, "Error in MCsim. Negitive phi"
+                       print*, "md%PHIA(J)",md%PHIA(J),"md%PHIB(J)",md%PHIB(J),"J",J
+                       print*, "MCTYPE",MCTYPE
                        stop 1
                    endif
                 enddo

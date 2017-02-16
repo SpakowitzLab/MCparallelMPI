@@ -81,19 +81,19 @@ Subroutine pt_restart(mc,md)
     print*, "first set from file", iostrg
     print*, temp
     ! not sure if the following if statments are necessary
-    if (mc%Chi.ne.0.0) then
+    if (abs(mc%Chi).gt.0.000000001) then
         mc%x_Chi=mc%EChi/mc%Chi
     endif
-    if (mc%Chi.ne.0.0) then
+    if (abs(mc%HP1_Bind).gt.0.000000001) then
         mc%x_Couple=mc%ECouple/mc%HP1_Bind
     endif
-    if (mc%Kap.ne.0) then
+    if (abs(mc%Kap).gt.0.000000001) then
         mc%x_Kap=mc%EKap/mc%Kap
     endif
-    if (mc%x_Field.ne.0.0) then
+    if (abs(mc%x_Field).gt.0.0000001) then
         mc%x_Field=mc%EField/mc%h_A
     endif
-    if (mc%Mu.ne.0.0) then
+    if (abs(mc%Mu).gt.0.00000001) then
         mc%x_Mu=mc%EBind/mc%Mu
     endif
 

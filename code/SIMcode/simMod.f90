@@ -10,6 +10,7 @@
 !   --------------------------------------------------------------
 Module simMod
     use setPrecision
+    use elasMod
     IMPLICIT NONE
     INTEGER, Parameter :: NmoveTypes = 10 ! ******* YOU MAY NEED TO CHAGE THIS ***
 
@@ -22,11 +23,19 @@ Module simMod
     INTEGER NP                ! Number of polymers
     DOUBLE PRECISION LBOX(3)  ! Box length (approximate)
     DOUBLE PRECISION DEL      ! Discretization size (approximate)
-    DOUBLE PRECISION L0       ! Equilibrium segment length
     DOUBLE PRECISION V        ! Bead volume
     DOUBLE PRECISION FA       ! Fraction of A beads
     DOUBLE PRECISION LAM      ! Chemical correlation parameter
+
+    DOUBLE PRECISION L0       ! Equilibrium segment length
+    DOUBLE PRECISION L0_1       ! Other Equilibrium segment length
     DOUBLE PRECISION EPS      ! Elasticity l0/(2lp)
+    DOUBLE PRECISION EPS_1      ! other Elasticity l0/(2lp)
+    TYPE(elasParamType) elasParam0
+    TYPE(elasParamType) elasParam1
+    DOUBLE PRECISION PARA(10) ! Parameters for sswlc
+    
+
     DOUBLE PRECISION CHI      ! Chi parameter value (solvent-polymer)        
     DOUBLE PRECISION KAP      ! Incompressibility parameter
     DOUBLE PRECISION h_A      ! fild strength
@@ -40,7 +49,6 @@ Module simMod
     DOUBLE PRECISION mu       ! chemical potential of HP1
     INTEGER NBIN     ! Number of bins
     INTEGER NBINX(3) ! Number of bin on an edge
-    DOUBLE PRECISION PARA(10) ! Parameters for sswlc
         ! EB, EPAR, EPERP, GAM, ETA, ...
 
 
@@ -207,7 +215,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%LAM =0.0_dp
     mc%F_METH=0.5_dp
     mc%LAM_METH=0.9_dp
-    mc%Fpoly=0.025_dp
+    mc%Fpoly=1.0_dp
     mc%k_field=1.5708_dp !0.3145_dp
 
     ! energy parameters
@@ -463,6 +471,10 @@ Subroutine MCvar_setParams(mc,fileName)
            call READO(mc%PT_couple) ! parallel temper HP1_bind
        CASE('RESTART')
            call READO(mc%restart) ! Restart from parallel tempering
+       CASE('L0_1')
+           call READF(mc%L0_1) ! Other L0 for rod-coil
+       CASE('EPS_1')
+           call READF(mc%EPS_1) ! Other EPS for rod-coil
        CASE DEFAULT
            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
                    TRIM(WORD)
@@ -512,8 +524,8 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%LBOX(3) = mc%NBINX(3)*mc%DEL! used to be: DEL=LBOX/NBINX
     elseif (mc%simType.eq.0) then
         if (mc%confineType.eq.0) then
-            mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
-            mc%LBOX=(mc%V*mc%N*mc%G*mc%NP)**(1.0_dp/3.0_dp)
+            mc%NP=nint(mc%Fpoly*mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+            mc%LBOX=(mc%V*mc%N*mc%G*mc%NP/mc%Fpoly)**(1.0_dp/3.0_dp)
             mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
             mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
             mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
@@ -549,7 +561,10 @@ Subroutine MCvar_setParams(mc,fileName)
     else
        print*, "Error in simMod: symType",mc%simType," not found"
     endif 
-    call getpara(mc%PARA,mc%EPS,mc%L0,NAN_dp)
+    ! call getpara(mc%PARA,mc%EPS,mc%L0,NAN_dp)
+    call getpara(mc%elasParam0,mc%EPS,mc%L0)
+    call getpara(mc%elasParam1,mc%EPS_1,mc%L0_1)
+    mc%para=mc%elasParam1%para
    
     ! -----------------------
     !
@@ -570,6 +585,7 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%x_Kap=0.0_dp
     mc%x_Chi=0.0_dp
 
+    call MCvar_printDescription(mc)
     !-----------------------------
     !
     !  Idiot checks
@@ -611,6 +627,7 @@ Subroutine MCvar_printDescription(mc)
     print*, " Number of monomers in a polymer, N=", mc%N
     print*, " Number of polymers, NP=",mc%NP
     print*, " Number of beads in a monomer, G=", mc%G
+    print*, " Fraction polymer, Fpoly", mc%Fpoly
     print*, " fraction Methalated", mc%F_METH
     print*, " LAM_METH", mc%LAM_METH
     print*, "Length and volume Variables:"
@@ -621,6 +638,7 @@ Subroutine MCvar_printDescription(mc)
     print*, " Number of bins", mc%NBIN
     print*, " spatial descritation DEL=",mc%DEL
     print*, " L0=", mc%L0
+    print*, " L0_1=", mc%L0_1
     print*, " volume fraction polymer =", mc%Fpoly
     print*, " bead volume V=", mc%V
     print*, "Energy Variables"
