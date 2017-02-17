@@ -20,6 +20,9 @@ Module simMod
     INTEGER NB                ! Number of beads in a polymer NB=N*G
     INTEGER N                 ! Number of monomers in a polymer
     INTEGER G                 ! Beads per monomer
+    INTEGER numA              ! beads in A monomer
+    INTEGER numB              ! beads in B monomer
+    INTEGER numLink           ! beads in linker
     INTEGER NP                ! Number of polymers
     DOUBLE PRECISION LBOX(3)  ! Box length (approximate)
     DOUBLE PRECISION DEL      ! Discretization size (approximate)
@@ -349,8 +352,16 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READF(mc%LBox(3)) ! side length of box in z direction
        CASE('NP')
            CALL READI(mc%NP)  ! Number of polymers
+       CASE('NUMA')
+           Call READI(mc%numA) ! Beads per A monomer
+       CASE('NUMB')
+           Call READI(mc%numB) ! Beads per B monomer
+       CASE('NUMLINK')
+           Call READI(mc%numLink) ! Beads in linker
        CASE('G')
            Call READI(mc%G) ! Beads per monomer
+       CASE('NB')
+           CALL READI(mc%NB) ! Number of beads in a polymer
        CASE('N')
            CALL READI(mc%N) ! Number of monomers in a polymer
        CASE('NNOINT')
@@ -483,21 +494,6 @@ Subroutine MCvar_setParams(mc,fileName)
     ENDDO
     close(PF)
 
-    if ((mc%NBINX(1)-mc%NBINX(2).ne.0).or. &
-        (mc%NBINX(1)-mc%NBINX(3).ne.0)) then
-        if (mc%simType.eq.1) then
-            print*, "Solution not tested with non-cube box, more coding needed"
-            stop 1
-        endif
-        if (mc%confineType.ne.4) then
-            print*, "Unequal boundaries require confineType=4"
-            stop 1
-        endif    
-        if (mc%setType.eq.4) then
-            print*, "You shouldn't put a shpere in and unequal box!"
-            stop 1
-        endif    
-    endif
     ! --------------------
     !
     ! Derived Variables, Reconcile inputs
@@ -523,27 +519,30 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%LBOX(2) = mc%NBINX(2)*mc%DEL! used to be: DEL=LBOX/NBINX
         mc%LBOX(3) = mc%NBINX(3)*mc%DEL! used to be: DEL=LBOX/NBINX
     elseif (mc%simType.eq.0) then
-        if (mc%confineType.eq.0) then
-            mc%NP=nint(mc%Fpoly*mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
-            mc%LBOX=(mc%V*mc%N*mc%G*mc%NP/mc%Fpoly)**(1.0_dp/3.0_dp)
-            mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
-            mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
-            mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
-            mc%DEL=mc%LBOX(1)/mc%NBINX(1)
-        elseif(mc%confineType.eq.4) then
-            mc%DEL=mc%LBOX(1)/nint(mc%LBOX(1)/mc%DEL)
-            mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
-            mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
-            mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
-            mc%LBOX(2)=mc%DEL*mc%NBINX(2)
-            mc%LBOX(3)=mc%DEL*mc%NBINX(3)
-            mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
-            print*, "Density =", &
-                  mc%N*mc%G*mc%V*mc%NP/(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3))
-        endif
+        mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
+        mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
+        mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
+        !if (mc%confineType.eq.0) then
+        !    mc%NP=nint(mc%Fpoly*mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+        !    mc%LBOX=(mc%V*mc%N*mc%G*mc%NP/mc%Fpoly)**(1.0_dp/3.0_dp)
+        !    mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
+        !    mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
+        !    mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
+        !    mc%DEL=mc%LBOX(1)/mc%NBINX(1)
+        !elseif(mc%confineType.eq.4) then
+        !    mc%DEL=mc%LBOX(1)/nint(mc%LBOX(1)/mc%DEL)
+        !    mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
+        !    mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
+        !    mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
+        !    mc%LBOX(2)=mc%DEL*mc%NBINX(2)
+        !    mc%LBOX(3)=mc%DEL*mc%NBINX(3)
+        !    mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+        !    print*, "Density =", &
+        !          mc%N*mc%G*mc%V*mc%NP/(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3))
+        !endif
         mc%NB=mc%N*mc%G
-        mc%NBIN=mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3)
         mc%NT=mc%N*mc%NP*mc%G
+        mc%NBIN=mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3)
         mc%WINDOW(5)=mc%NB
         mc%WINDOW(6)=mc%NB
         mc%WINDOW(8)=mc%NB
@@ -558,6 +557,7 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%MAXWINDOW(7)=min(150,mc%NB)
         mc%MAXAMP(2)=1.0_dp*mc%L0
         mc%MAXAMP(6)=0.1*mc%LBOX(1)
+
     else
        print*, "Error in simMod: symType",mc%simType," not found"
     endif 
@@ -666,7 +666,7 @@ Subroutine MCvar_allocate(mc,md)
     NT=mc%NT
     NBIN=mc%NBIN
     
-    if ((NT.GT.200000).OR.(NT.lt.1)) then
+    if ((NT.GT.500000).OR.(NT.lt.1)) then
         print*, "Tried to allocate ", NT," beads in MCvar_allocate"
         stop 1
     endif 

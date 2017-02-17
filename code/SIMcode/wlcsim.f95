@@ -78,7 +78,9 @@ Subroutine wlcsim(rand_stat)
           iostr='input/ab'
           call MCvar_loadAB(mc,md,iostr)
       ELSE
-          call initchem(md%AB,mc%NT,mc%N,mc%G,mc%NP,mc%FA,mc%LAM,rand_stat)
+          call initchemJie(md%AB,mc%NT,mc%NP,mc%FA,mc%LAM,rand_stat, & 
+                           mc%numA,mc%numB,mc%numLink)
+          !call initchem(md%AB,mc%NT,mc%N,mc%G,mc%NP,mc%FA,mc%LAM,rand_stat)
       ENDIF
     
       

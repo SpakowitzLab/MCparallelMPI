@@ -45,26 +45,26 @@ DEELAS(3)=0.0_dp
 
 !     Calculate the change in the energy
 
-if (AB(IT1-1).eq.0 .and. AB(IT1).eq.0) then
-    EB=elasParam0%EB
-    EPAR=elasParam0%EPAR
-    EPERP=elasParam0%EPERP
-    GAM=elasParam0%GAM
-    ETA=elasParam0%ETA
-else if (AB(IT1-1).eq.1 .and. AB(IT1).eq.1) then
-    EB=   elasParam1%EB
-    EPAR= elasParam1%EPAR
-    EPERP=elasParam1%EPERP
-    GAM=  elasParam1%GAM
-    ETA=  elasParam1%ETA
-else
-    EB=   (elasParam1%EB   + elasParam0%EB   )/2 
-    EPAR= (elasParam1%EPAR + elasParam0%EPAR )/2
-    EPERP=(elasParam1%EPERP+ elasParam0%EPERP)/2
-    GAM=  (elasParam1%GAM  + elasParam0%GAM  )/2
-    ETA=  (elasParam1%ETA  + elasParam0%ETA  )/2
-endif
 if (IB1.NE.1) then
+   if (AB(IT1-1).eq.0 .and. AB(IT1).eq.0) then
+       EB=elasParam0%EB
+       EPAR=elasParam0%EPAR
+       EPERP=elasParam0%EPERP
+       GAM=elasParam0%GAM
+       ETA=elasParam0%ETA
+   else if (AB(IT1-1).eq.1 .and. AB(IT1).eq.1) then
+       EB=   elasParam1%EB
+       EPAR= elasParam1%EPAR
+       EPERP=elasParam1%EPERP
+       GAM=  elasParam1%GAM
+       ETA=  elasParam1%ETA
+   else
+       EB=   (elasParam1%EB   + elasParam0%EB   )/2 
+       EPAR= (elasParam1%EPAR + elasParam0%EPAR )/2
+       EPERP=(elasParam1%EPERP+ elasParam0%EPERP)/2
+       GAM=  (elasParam1%GAM  + elasParam0%GAM  )/2
+       ETA=  (elasParam1%ETA  + elasParam0%ETA  )/2
+   endif
    
    DR(1)=R(IT1,1)-R(IT1-1,1)
    DR(2)=R(IT1,2)-R(IT1-1,2)
@@ -104,26 +104,26 @@ if (IB1.NE.1) then
    
 endif
 
-if (AB(IT2).eq.0 .and. AB(IT2+1).eq.0) then
-    EB=elasParam0%EB
-    EPAR=elasParam0%EPAR
-    EPERP=elasParam0%EPERP
-    GAM=elasParam0%GAM
-    ETA=elasParam0%ETA
-else if (AB(IT2).eq.1 .and. AB(IT2+1).eq.1) then
-    EB=   elasParam1%EB
-    EPAR= elasParam1%EPAR
-    EPERP=elasParam1%EPERP
-    GAM=  elasParam1%GAM
-    ETA=  elasParam1%ETA
-else
-    EB=   (elasParam1%EB   + elasParam0%EB   )/2 
-    EPAR= (elasParam1%EPAR + elasParam0%EPAR )/2
-    EPERP=(elasParam1%EPERP+ elasParam0%EPERP)/2
-    GAM=  (elasParam1%GAM  + elasParam0%GAM  )/2
-    ETA=  (elasParam1%ETA  + elasParam0%ETA  )/2
-endif
 if (IB2.NE.NB) then
+   if (AB(IT2).eq.0 .and. AB(IT2+1).eq.0) then
+       EB=elasParam0%EB
+       EPAR=elasParam0%EPAR
+       EPERP=elasParam0%EPERP
+       GAM=elasParam0%GAM
+       ETA=elasParam0%ETA
+   else if (AB(IT2).eq.1 .and. AB(IT2+1).eq.1) then
+       EB=   elasParam1%EB
+       EPAR= elasParam1%EPAR
+       EPERP=elasParam1%EPERP
+       GAM=  elasParam1%GAM
+       ETA=  elasParam1%ETA
+   else
+       EB=   (elasParam1%EB   + elasParam0%EB   )/2 
+       EPAR= (elasParam1%EPAR + elasParam0%EPAR )/2
+       EPERP=(elasParam1%EPERP+ elasParam0%EPERP)/2
+       GAM=  (elasParam1%GAM  + elasParam0%GAM  )/2
+       ETA=  (elasParam1%ETA  + elasParam0%ETA  )/2
+   endif
    
    DR(1)=R(IT2+1,1)-R(IT2,1)
    DR(2)=R(IT2+1,2)-R(IT2,2)

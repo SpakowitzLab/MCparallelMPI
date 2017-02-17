@@ -79,7 +79,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
 
 
     ! --- Elastic Energy ---
-    call energy_elas(mc%DEELAS,md%R,md%U,md%AB,mc%NT,mc%NB,mc%NP,mc%elasParam0,mc%elasParam1)
+    call energyElasRodCoil(mc%DEELAS,md%R,md%U,md%AB,mc%NT,mc%NB,mc%NP,mc%elasParam0,mc%elasParam1)
     if(abs((mc%EElas(1)+  mc%EElas(2)+ mc%EElas(3))-& 
            (mc%DEElas(1)+mc%DEElas(2)+mc%DEElas(3))).gt.0.0001) then
         print*, "Warning. Integrated elastic enrgy:", &
@@ -194,7 +194,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
               ((MCTYPE.eq.5).or.(MCTYPE.eq.6))) then
               CYCLE
           endif
-          
           call MC_move(md%R,md%U,md%RP,md%UP,mc%NT,mc%NB,mc%NP, &
                        IP,IB1,IB2,IT1,IT2,MCTYPE, & 
                        mc%MCAMP,mc%WINDOW,md%AB,md%ABP,mc%G,&

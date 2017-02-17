@@ -5,7 +5,7 @@ rm MCparrll_out
 cd code
 # compile with mpi's fortran compiler
 mpifort -c DATAcode/* mersenne_twister.f90
-mpifort -c -fbounds-check -Wall -W -fmax-errors=5 -O5 SIMcode/*  MCcode/* 
+mpifort -c -fbounds-check -Wall -W -fmax-errors=5 -O1 SIMcode/*  MCcode/* 
 mpifort *.o -o MCparrll_out 
 rm *.o
 cd ..
@@ -17,4 +17,4 @@ touch data/error
 echo "Now run"
 # now run the output
 # --prefix used to avoid changing path
-mpirun -np 80 MCparrll_out
+mpirun -np 15 MCparrll_out
