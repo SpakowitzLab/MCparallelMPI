@@ -1026,6 +1026,8 @@ Subroutine MCvar_appendEnergyData(mc,fileName)
     TYPE(MCvar), intent(in) :: mc
     LOGICAL isfile
     character*16, intent(in) :: fileName
+    double precision disp(14)
+    integer ii
     character*32 fullName
     fullName=  trim(fileName) // trim(mc%repSufix) 
     inquire(file = fullName, exist=isfile)
@@ -1038,11 +1040,20 @@ Subroutine MCvar_appendEnergyData(mc,fileName)
                     " EField | EBind  |   M    | Couple |  Chi   |  mu    |",&
                     "  Kap   | Field  |"
     endif
-    WRITE(1,"(2I5, 9f9.1,5f9.4)") mc%IND, mc%id, &
-           mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
+    disp=(/mc%EELAS(1), mc%EELAS(2), mc%EELAS(3), mc%ECouple, &
            mc%EKap, mc%ECHI, mc%EField, mc%EBind, mc%M, &
            mc%HP1_Bind*mc%Couple_on, mc%CHI*mc%CHI_ON, mc%mu, mc%KAP*mc%KAP_ON,&
-           mc%h_A
+           mc%h_A/)
+    do ii=1,9
+        disp(ii)=min(999999.9,disp(ii))
+        disp(ii)=max(-99999.9,disp(ii))
+    enddo
+    do ii=10,14
+        disp(ii)=min(9999.9,disp(ii))
+        disp(ii)=max(-999.9,disp(ii))
+    enddo
+    WRITE(1,"(2I5, 9f9.1,5f9.3)") mc%IND, mc%id, &
+           disp(1:9),disp(10:14)
     Close(1)
 end subroutine
 Subroutine MCvar_appendAdaptData(mc,fileName)

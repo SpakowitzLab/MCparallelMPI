@@ -1,0 +1,1066 @@
+diff --git a/code/MCcode/MC_Hamiltonian.f95 b/code/MCcode/MC_Hamiltonian.f95
+index 923597f..a774c16 100644
+--- a/code/MCcode/MC_Hamiltonian.f95
++++ b/code/MCcode/MC_Hamiltonian.f95
+@@ -34,9 +34,14 @@ if (initialize) then  ! calculate absolute energy
+         do I=1,mc%NBIN
+             VV=md%Vol(I)
+             if (VV.le.0.1_dp) CYCLE
+-            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIA(I)*md%PHIB(I))
+-            mc%Dx_Kap=mc%dx_Kap+(VV/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2)
+-            mc%Dx_Field=mc%dx_Field-md%PHIH(I)*md%PHIA(I)
++            !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(I)*(1.0_dp-md%PHIA(I)-md%PHIB(I))) ! P
++            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIB(I)*(1.0_dp-md%PHIB(I))) ! H
++            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIA(I)*md%PHIB(I)) ! N
++            !mc%Dx_Field=mc%dx_Field-md%PHIH(I)*md%PHIA(I)
++
++            if ((md%PHIA(I)+md%PHIB(I)-1.0_dp)>0.0_dp) then
++                mc%Dx_Kap=mc%dx_Kap+(VV/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2)
++            endif
+         enddo        
+     elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
+         do I=1,mc%NBIN
+@@ -63,13 +68,29 @@ else ! Calculate change in energy
+             phi_A=md%PHIA(J)+md%DPHIA(I)
+             phi_B=md%PHIB(J)+md%DPHIB(I)
+             phi_h=md%PHIH(J)
+-            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*phi_B
+-            mc%Dx_Kap=mc%Dx_Kap+(VV/mc%V)*((phi_A+phi_B-1.0_dp)**2)
+-            mc%Dx_Field=mc%Dx_Field-phi_h*phi_A
++            !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*phi_A*(1.0_dp-phi_A-phi_B) !P
++            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_B*(1.0_dp-phi_B) !H
++            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*phi_B !N
++            !mc%Dx_Field=mc%Dx_Field-phi_h*phi_A
++            
++            if ((phi_A+phi_B-1.0_dp)>0.0_dp) then
++                mc%Dx_Kap=mc%Dx_Kap+(VV/mc%V)*((phi_A+phi_B-1.0_dp)**2)
++            endif
++            
+             ! minus old
+-            mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(J)*md%PHIB(J))
+-            mc%Dx_Kap=mc%Dx_Kap-(VV/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
+-            mc%Dx_Field=mc%Dx_Field+phi_h*md%PHIA(J)
++            phi_A=md%PHIA(J)
++            phi_B=md%PHIB(J)
++            phi_h=md%PHIH(J)
++            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*(1.0_dp-phi_A-phi_B) !P
++            mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*phi_B*(1.0_dp-phi_B) !H
++            !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(J)*md%PHIB(J))
++            !mc%Dx_Field=mc%Dx_Field+phi_h*md%PHIA(J)
++
++            if ((md%PHIA(J)+md%PHIB(J)-1.0_dp)>0.0_dp) then
++                mc%Dx_Kap=mc%Dx_Kap-(VV/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)
++            endif
++
++
+         enddo
+     elseif(mc%simType.eq.1) then ! Chromatin Hamiltonian
+         do I=1,mc%NPHI
+diff --git a/code/MCcode/MC_elasRodCoil.f95 b/code/MCcode/MC_elasRodCoil.f95
+new file mode 100755
+index 0000000..5dc69d9
+--- /dev/null
++++ b/code/MCcode/MC_elasRodCoil.f95
+@@ -0,0 +1,169 @@
++!---------------------------------------------------------------*
++
++! Calculate the change in the bending energy for a displacement.
++     
++SUBROUTINE MC_eelasRodCoil(DEELAS,R,U,RP,UP,&
++                    NT,NB,IB1,IB2,&
++                    IT1,IT2,elasParam0,elasParam1,AB)
++use elasMod
++use setPrecision
++IMPLICIT NONE
++TYPE(elasParamType), intent(in) :: elasParam0
++TYPE(elasParamType), intent(in) :: elasParam1
++DOUBLE PRECISION, intent(in) :: R(NT,3)  ! Bead positions
++INTEGER, intent(in) :: AB(NT)  ! Bead positions
++DOUBLE PRECISION, intent(in) :: U(NT,3)  ! Tangent vectors
++DOUBLE PRECISION, intent(in) :: RP(NT,3)  ! Bead positions
++DOUBLE PRECISION, intent(in) :: UP(NT,3)  ! Tangent vectors
++INTEGER, intent(in) :: NB                ! Number of beads in a polymer
++INTEGER, intent(in) :: NT                ! Total number of beads
++INTEGER, intent(in) :: IB1               ! Test bead position 1
++INTEGER, intent(in) :: IT1               ! Index of test bead 1
++INTEGER, intent(in) :: IB2               ! Test bead position 2
++INTEGER, intent(in) :: IT2               ! Index of test bead 2
++
++DOUBLE PRECISION, intent(out) :: DEELAS(3)   ! Change in ECOM      
++
++!     Polymer properties
++
++double precision EB
++double precision EPAR
++double precision EPERP
++double precision GAM
++double precision ETA
++
++!     Variables for force and torque calculations
++
++DOUBLE PRECISION DR(3),DRPAR,DRPERP(3)
++DOUBLE PRECISION GI(3)
++
++! Setup parameters
++
++DEELAS(1)=0.0_dp
++DEELAS(2)=0.0_dp
++DEELAS(3)=0.0_dp
++
++!     Calculate the change in the energy
++
++if (IB1.NE.1) then
++   if (AB(IT1-1).eq.0 .and. AB(IT1).eq.0) then
++       EB=elasParam0%EB
++       EPAR=elasParam0%EPAR
++       EPERP=elasParam0%EPERP
++       GAM=elasParam0%GAM
++       ETA=elasParam0%ETA
++   else if (AB(IT1-1).eq.1 .and. AB(IT1).eq.1) then
++       EB=   elasParam1%EB
++       EPAR= elasParam1%EPAR
++       EPERP=elasParam1%EPERP
++       GAM=  elasParam1%GAM
++       ETA=  elasParam1%ETA
++   else
++       EB=   (elasParam1%EB   + elasParam0%EB   )/2 
++       EPAR= (elasParam1%EPAR + elasParam0%EPAR )/2
++       EPERP=(elasParam1%EPERP+ elasParam0%EPERP)/2
++       GAM=  (elasParam1%GAM  + elasParam0%GAM  )/2
++       ETA=  (elasParam1%ETA  + elasParam0%ETA  )/2
++   endif
++   
++   DR(1)=R(IT1,1)-R(IT1-1,1)
++   DR(2)=R(IT1,2)-R(IT1-1,2)
++   DR(3)=R(IT1,3)-R(IT1-1,3)
++   DRPAR=DR(1)*U(IT1-1,1)+DR(2)*U(IT1-1,2)+DR(3)*U(IT1-1,3)
++   
++   DRPERP(1)=DR(1)-DRPAR*U(IT1-1,1)
++   DRPERP(2)=DR(2)-DRPAR*U(IT1-1,2)
++   DRPERP(3)=DR(3)-DRPAR*U(IT1-1,3)
++   !U1U2=U(IT1-1,1)*U(IT1,1)+U(IT1-1,2)*U(IT1,2)+U(IT1-1,3)*U(IT1,3)
++
++   GI(1)=(U(IT1,1)-U(IT1-1,1)-ETA*DRPERP(1))
++   GI(2)=(U(IT1,2)-U(IT1-1,2)-ETA*DRPERP(2))
++   GI(3)=(U(IT1,3)-U(IT1-1,3)-ETA*DRPERP(3))
++
++   DEELAS(1)=DEELAS(1)-0.5_dp*EB*(GI(1)**2+GI(2)**2+GI(3)**2) 
++   DEELAS(2)=DEELAS(2)-0.5_dp*EPAR*(DRPAR-GAM)**2
++   DEELAS(3)=DEELAS(3)-0.5_dp*EPERP*(DRPERP(1)**2+DRPERP(2)**2.+DRPERP(3)**2)
++
++   DR(1)=RP(IT1,1)-R(IT1-1,1)
++   DR(2)=RP(IT1,2)-R(IT1-1,2)
++   DR(3)=RP(IT1,3)-R(IT1-1,3)
++   DRPAR=DR(1)*U(IT1-1,1)+DR(2)*U(IT1-1,2)+DR(3)*U(IT1-1,3)
++                  
++   DRPERP(1)=DR(1)-DRPAR*U(IT1-1,1)
++   DRPERP(2)=DR(2)-DRPAR*U(IT1-1,2)
++   DRPERP(3)=DR(3)-DRPAR*U(IT1-1,3)
++   !U1U2=U(IT1-1,1)*UP(IT1,1)+U(IT1-1,2)*UP(IT1,2)+U(IT1-1,3)*UP(IT1,3)
++
++   GI(1)=(UP(IT1,1)-U(IT1-1,1)-ETA*DRPERP(1))
++   GI(2)=(UP(IT1,2)-U(IT1-1,2)-ETA*DRPERP(2))
++   GI(3)=(UP(IT1,3)-U(IT1-1,3)-ETA*DRPERP(3))
++
++   DEELAS(1)=DEELAS(1)+0.5_dp*EB*(GI(1)**2+GI(2)**2+GI(3)**2)
++   DEELAS(2)=DEELAS(2)+0.5_dp*EPAR*(DRPAR-GAM)**2
++   DEELAS(3)=DEELaS(3)+0.5_dp*EPERP*(DRPERP(1)**2+DRPERP(2)**2+DRPERP(3)**2)
++   
++endif
++
++if (IB2.NE.NB) then
++   if (AB(IT2).eq.0 .and. AB(IT2+1).eq.0) then
++       EB=elasParam0%EB
++       EPAR=elasParam0%EPAR
++       EPERP=elasParam0%EPERP
++       GAM=elasParam0%GAM
++       ETA=elasParam0%ETA
++   else if (AB(IT2).eq.1 .and. AB(IT2+1).eq.1) then
++       EB=   elasParam1%EB
++       EPAR= elasParam1%EPAR
++       EPERP=elasParam1%EPERP
++       GAM=  elasParam1%GAM
++       ETA=  elasParam1%ETA
++   else
++       EB=   (elasParam1%EB   + elasParam0%EB   )/2 
++       EPAR= (elasParam1%EPAR + elasParam0%EPAR )/2
++       EPERP=(elasParam1%EPERP+ elasParam0%EPERP)/2
++       GAM=  (elasParam1%GAM  + elasParam0%GAM  )/2
++       ETA=  (elasParam1%ETA  + elasParam0%ETA  )/2
++   endif
++   
++   DR(1)=R(IT2+1,1)-R(IT2,1)
++   DR(2)=R(IT2+1,2)-R(IT2,2)
++   DR(3)=R(IT2+1,3)-R(IT2,3)
++   DRPAR=DR(1)*U(IT2,1)+DR(2)*U(IT2,2)+DR(3)*U(IT2,3)
++                  
++   DRPERP(1)=DR(1)-DRPAR*U(IT2,1)
++   DRPERP(2)=DR(2)-DRPAR*U(IT2,2)
++   DRPERP(3)=DR(3)-DRPAR*U(IT2,3)
++   !U1U2=U(IT2,1)*U(IT2+1,1)+U(IT2,2)*U(IT2+1,2)+U(IT2,3)*U(IT2+1,3)
++
++   GI(1)=(U(IT2+1,1)-U(IT2,1)-ETA*DRPERP(1))
++   GI(2)=(U(IT2+1,2)-U(IT2,2)-ETA*DRPERP(2))
++   GI(3)=(U(IT2+1,3)-U(IT2,3)-ETA*DRPERP(3))
++   
++   DEELAS(1)=DEELAS(1)-0.5_dp*EB*(GI(1)**2.+GI(2)**2.+GI(3)**2.)
++   DEELAS(2)=DEELAS(2)-0.5_dp*EPAR*(DRPAR-GAM)**2.
++   DEELAS(3)=DEELAS(3)-0.5_dp*EPERP*(DRPERP(1)**2.+DRPERP(2)**2.+DRPERP(3)**2.)
++
++   DR(1)=R(IT2+1,1)-RP(IT2,1)
++   DR(2)=R(IT2+1,2)-RP(IT2,2)
++   DR(3)=R(IT2+1,3)-RP(IT2,3)
++   DRPAR=DR(1)*UP(IT2,1)+DR(2)*UP(IT2,2)+DR(3)*UP(IT2,3)
++                  
++   DRPERP(1)=DR(1)-DRPAR*UP(IT2,1)
++   DRPERP(2)=DR(2)-DRPAR*UP(IT2,2)
++   DRPERP(3)=DR(3)-DRPAR*UP(IT2,3)
++   !U1U2=UP(IT2,1)*U(IT2+1,1)+UP(IT2,2)*U(IT2+1,2)+UP(IT2,3)*U(IT2+1,3)
++
++   GI(1)=(U(IT2+1,1)-UP(IT2,1)-ETA*DRPERP(1))
++   GI(2)=(U(IT2+1,2)-UP(IT2,2)-ETA*DRPERP(2))
++   GI(3)=(U(IT2+1,3)-UP(IT2,3)-ETA*DRPERP(3))
++   
++   DEELAS(1)=DEELAS(1)+0.5_dp*EB*(GI(1)**2.+GI(2)**2+GI(3)**2)
++   DEELAS(2)=DEELAS(2)+0.5_dp*EPAR*(DRPAR-GAM)**2.
++   DEELAS(3)=DEELaS(3)+0.5_dp*EPERP*(DRPERP(1)**2.+DRPERP(2)**2.+DRPERP(3)**2.)
++
++endif         
++
++RETURN      
++END
++
++!---------------------------------------------------------------*
+diff --git a/code/MCcode/MCsim.f95 b/code/MCcode/MCsim.f95
+index 7ce5262..d2a6974 100755
+--- a/code/MCcode/MCsim.f95
++++ b/code/MCcode/MCsim.f95
+@@ -36,11 +36,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
+     
+     INTEGER MCTYPE                    ! Type of MC move
+     
+-    DOUBLE PRECISION EB,EPAR,EPERP
+-    DOUBLE PRECISION GAM,ETA
+-    DOUBLE PRECISION XIR,XIU
+-    DOUBLE PRECISION LHC      ! Length of HC int
+-    DOUBLE PRECISION VHC      ! HC strength
+     DOUBLE PRECISION phiTot  ! for testing
+ 
+     DOUBLE PRECISION ENERGY
+@@ -52,16 +47,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
+     Type(MCvar), intent(inout) :: mc      ! system varibles 
+     Type(MCData), intent(inout) :: md     ! system allocated data
+ 
+-
+-    EB=   mc%PARA(1)
+-    EPAR= mc%PARA(2)
+-    EPERP=mc%PARA(3)
+-    GAM=  mc%PARA(4)
+-    ETA=  mc%PARA(5)
+-    XIR=  mc%PARA(6)
+-    XIU=  mc%PARA(7)
+-    LHC=  mc%PARA(9)
+-    VHC=  mc%PARA(10)
+ ! -------------------------------------
+ !
+ !   initialize densities and energies 
+@@ -94,7 +79,7 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
+ 
+ 
+     ! --- Elastic Energy ---
+-    call energy_elas(mc%DEELAS,md%R,md%U,mc%NT,mc%NB,mc%NP,mc%Para)
++    call energyElasRodCoil(mc%DEELAS,md%R,md%U,md%AB,mc%NT,mc%NB,mc%NP,mc%elasParam0,mc%elasParam1)
+     if(abs((mc%EElas(1)+  mc%EElas(2)+ mc%EElas(3))-& 
+            (mc%DEElas(1)+mc%DEElas(2)+mc%DEElas(3))).gt.0.0001) then
+         print*, "Warning. Integrated elastic enrgy:", &
+@@ -209,7 +194,6 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
+               ((MCTYPE.eq.5).or.(MCTYPE.eq.6))) then
+               CYCLE
+           endif
+-          
+           call MC_move(md%R,md%U,md%RP,md%UP,mc%NT,mc%NB,mc%NP, &
+                        IP,IB1,IB2,IT1,IT2,MCTYPE, & 
+                        mc%MCAMP,mc%WINDOW,md%AB,md%ABP,mc%G,&
+@@ -222,9 +206,10 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
+               (MCTYPE.NE.8) .and. &
+               (MCTYPE.NE.9) .and. &
+               (MCTYPE.NE.10) )then
+-              call MC_eelas(mc%DEELAS,md%R,md%U,md%RP,md%UP,&
+-                            mc%NT,mc%NB,IB1,IB2, & 
+-                            IT1,IT2,EB,EPAR,EPERP,GAM,ETA)
++              call MC_eelasRodCoil(mc%DEELAS,md%R,md%U,md%RP,md%UP,&
++                       mc%NT,mc%NB,IB1,IB2,&
++                       IT1,IT2,mc%elasParam0,mc%elasParam1,md%AB)
++
+           else
+               mc%DEELAS(1)=0.0
+               mc%DEELAS(2)=0.0
+@@ -329,6 +314,8 @@ SUBROUTINE MCsim(mc,md,NSTEP,INTON,rand_stat)
+                    md%PHIB(J)=md%PHIB(J)+md%DPHIB(I)  
+                    if ((md%PHIA(J).lt.-0.000001_dp) .or. (md%PHIB(J).lt.-0.00001_dp)) then
+                        print*, "Error in MCsim. Negitive phi"
++                       print*, "md%PHIA(J)",md%PHIA(J),"md%PHIB(J)",md%PHIB(J),"J",J
++                       print*, "MCTYPE",MCTYPE
+                        stop 1
+                    endif
+                 enddo
+diff --git a/code/MCcode/energyElasRodCoil.f95 b/code/MCcode/energyElasRodCoil.f95
+new file mode 100755
+index 0000000..32ee884
+--- /dev/null
++++ b/code/MCcode/energyElasRodCoil.f95
+@@ -0,0 +1,92 @@
++!---------------------------------------------------------------*
++      
++!     
++!     This subroutine calculates the elastic forces for a wormlike
++!     chain with a stretching potential.  The stretch and bend
++!     moduli are fed along with the bead positions.
++!     This version is rod-coil capible.
++!     
++!     Quinn MacPherson (Rod-Coile)
++!     Andrew Spakowitz (SSWLC)
++!     Written 2-8-17
++      
++SUBROUTINE energyElasRodCoil(EELAS,R,U,AB,NT,NB,NP,elasParam0,elasParam1)
++use setPrecision
++use elasMod
++IMPLICIT NONE 
++TYPE(elasParamType), intent(in) :: elasParam0
++TYPE(elasParamType), intent(in) :: elasParam1
++INTEGER, intent(in) :: NB           ! Number of beads in a polymer
++INTEGER, intent(in) :: NT           ! Number of beads total
++INTEGER, intent(in) :: NP           ! Number of polymers
++DOUBLE PRECISION, intent(in) :: R(NT,3)  ! Bead positions
++DOUBLE PRECISION, intent(in) :: U(NT,3)  ! Tangent vectors
++integer, intent(in) :: AB(NT)  ! Bead positions
++DOUBLE PRECISION, intent(out):: EELAS(3) ! Elastic force
++INTEGER I,J,IB            ! Index holders
++
++!     Polymer properties
++
++DOUBLE PRECISION EB,EPAR,EPERP
++DOUBLE PRECISION GAM,ETA
++
++DOUBLE PRECISION DR(3),DRPAR,DRPERP(3)
++DOUBLE PRECISION GI(3)
++
++
++
++EELAS(1)=0.0_dp
++EELAS(2)=0.0_dp
++EELAS(3)=0.0_dp
++IB=1
++DO I=1,NP
++    DO J=1,(NB-1)
++        if (AB(IB).eq.0 .and. AB(IB+1).eq.0) then
++            EB=elasParam0%EB
++            EPAR=elasParam0%EPAR
++            EPERP=elasParam0%EPERP
++            GAM=elasParam0%GAM
++            ETA=elasParam0%ETA
++        else if (AB(IB).eq.1 .and. AB(IB+1).eq.1) then
++            EB=   elasParam1%EB
++            EPAR= elasParam1%EPAR
++            EPERP=elasParam1%EPERP
++            GAM=  elasParam1%GAM
++            ETA=  elasParam1%ETA
++        else
++            EB=   (elasParam1%EB   + elasParam0%EB   )/2 
++            EPAR= (elasParam1%EPAR + elasParam0%EPAR )/2
++            EPERP=(elasParam1%EPERP+ elasParam0%EPERP)/2
++            GAM=  (elasParam1%GAM  + elasParam0%GAM  )/2
++            ETA=  (elasParam1%ETA  + elasParam0%ETA  )/2
++        endif
++        DR(1)=R(IB+1,1)-R(IB,1)
++        DR(2)=R(IB+1,2)-R(IB,2)
++        DR(3)=R(IB+1,3)-R(IB,3)
++        DRPAR=DR(1)*U(IB,1)+DR(2)*U(IB,2)+DR(3)*U(IB,3)
++        
++        DRPERP(1)=DR(1)-DRPAR*U(IB,1)
++        DRPERP(2)=DR(2)-DRPAR*U(IB,2)
++        DRPERP(3)=DR(3)-DRPAR*U(IB,3)
++        ! U1U2=U(IB,1)*U(IB+1,1)+U(IB,2)*U(IB+1,2)+U(IB,3)*U(IB+1,3)
++
++        GI(1)=(U(IB+1,1)-U(IB,1)-ETA*DRPERP(1))
++        GI(2)=(U(IB+1,2)-U(IB,2)-ETA*DRPERP(2))
++        GI(3)=(U(IB+1,3)-U(IB,3)-ETA*DRPERP(3))
++
++        EELAS(1)=EELAS(1)+0.5_dp*EB*(GI(1)**2 &
++                 +GI(2)**2+GI(3)**2)
++        EELAS(2)=EELAS(2)+0.5_dp*EPAR*(DRPAR-GAM)**2
++        EELAS(3)=EELAS(3)+0.5_dp*EPERP*(DRPERP(1)**2 & 
++                 +DRPERP(2)**2+DRPERP(3)**2)
++
++        IB=IB+1 
++    enddo 
++    IB=IB+1
++enddo
++
++
++RETURN
++END
++
++!---------------------------------------------------------------*
+diff --git a/code/SIMcode/elasMod.f90 b/code/SIMcode/elasMod.f90
+new file mode 100644
+index 0000000..8145196
+--- /dev/null
++++ b/code/SIMcode/elasMod.f90
+@@ -0,0 +1,136 @@
++!   --------------------------------------------------------------
++!
++!    This module handles the SSWLC variables
++!        By Quinn MacPherson ~ Winter 2017
++!
++!   --------------------------------------------------------------
++Module elasMod
++use setPrecision
++IMPLICIT NONE
++
++Type elasParamType   ! Structure for simulation variables of known size
++    DOUBLE PRECISION PARA(10) ! Parameters for sswlc
++        ! EB, EPAR, EPERP, GAM, ETA, ...
++
++    DOUBLE PRECISION EB,EPAR,EPERP
++    DOUBLE PRECISION GAM,ETA
++    DOUBLE PRECISION L0       ! Equilibrium segment length
++    DOUBLE PRECISION EPS       ! L0/2lp
++
++end TYPE
++contains
++SUBROUTINE printElasParam(elasParam)
++IMPLICIT NONE
++TYPE(elasParamType), intent(in) :: elasParam
++
++print*, "L0=",elasParam%L0
++print*, "EPS=",elasParam%EPS
++print*, "EB=",elasParam%EB
++print*, "EPAR=",elasParam%EPAR
++print*, "EPERP=",elasParam%EPERP
++print*, "GAM=",elasParam%GAM
++
++end subroutine
++SUBROUTINE getpara(elasParam,EPS,L0)
++
++IMPLICIT NONE
++TYPE(elasParamType), intent(out) :: elasParam
++DOUBLE PRECISION, intent(in) :: EPS   ! Elasticity l0/(2lp)
++DOUBLE PRECISION, intent(in) :: L0       ! Equilibrium segment length
++DOUBLE PRECISION PVEC(679,8)
++INTEGER IND,CRS
++DOUBLE PRECISION EB,EPAR,EPERP
++DOUBLE PRECISION GAM,ETA
++DOUBLE PRECISION M
++DOUBLE PRECISION DEL
++INTEGER I
++
++!     Load in the parameters for the simulation
++
++DEL=2.*EPS
++
++
++
++!     Load the tabulated parameters
++
++OPEN (UNIT=5,FILE='input/dssWLCparams',STATUS='OLD')
++DO I=1,679
++   READ(5,*) PVEC(I,1),PVEC(I,2),PVEC(I,3),PVEC(I,4),PVEC(I,5), &
++             PVEC(I,6),PVEC(I,7),PVEC(I,8)
++enddo 
++CLOSE(5)
++
++if (DEL.LT.PVEC(1,1)) then
++   DEL=PVEC(1,1)
++endif
++if (DEL.GT.PVEC(679,1)) then
++   DEL=PVEC(679,1)
++endif
++
++CRS=0
++IND=1
++do while (CRS.EQ.0)
++   if (DEL.LE.PVEC(IND,1)) then
++      CRS=1
++   else
++      IND=IND+1
++   endif
++enddo
++
++I=2 
++M=(PVEC(IND,I)-PVEC(IND-1,I))/(PVEC(IND,1)-PVEC(IND-1,1))
++EB=M*(DEL-PVEC(IND,1))+PVEC(IND,I)
++
++I=3 
++M=(PVEC(IND,I)-PVEC(IND-1,I))/(PVEC(IND,1)-PVEC(IND-1,1))
++GAM=M*(DEL-PVEC(IND,1))+PVEC(IND,I)
++
++I=4
++M=(PVEC(IND,I)-PVEC(IND-1,I))/(PVEC(IND,1)-PVEC(IND-1,1))
++EPAR=M*(DEL-PVEC(IND,1))+PVEC(IND,I)
++
++I=5
++M=(PVEC(IND,I)-PVEC(IND-1,I))/(PVEC(IND,1)-PVEC(IND-1,1))
++EPERP=M*(DEL-PVEC(IND,1))+PVEC(IND,I)
++
++I=6
++M=(PVEC(IND,I)-PVEC(IND-1,I))/(PVEC(IND,1)-PVEC(IND-1,1))
++ETA=M*(DEL-PVEC(IND,1))+PVEC(IND,I)
++
++!      I=7
++!      M=(PVEC(IND,I)-PVEC(IND-1,I))/(PVEC(IND,1)-PVEC(IND-1,1))
++!      XIU=M*(DEL-PVEC(IND,1))+PVEC(IND,I)
++
++!      I=8
++!      M=(PVEC(IND,I)-PVEC(IND-1,I))/(PVEC(IND,1)-PVEC(IND-1,1))
++!      DT=XIU*(M*(DEL-PVEC(IND,1))+PVEC(IND,I))
++
++EB=EB/DEL
++EPAR=EPAR*DEL/L0**2.
++EPERP=EPERP*DEL/L0**2.
++ETA=ETA*DEL/L0
++GAM=L0*GAM
++     
++elasParam%EB=EB
++elasParam%EPAR=EPAR
++elasParam%EPERP=EPERP
++elasParam%GAM=GAM
++elasParam%ETA=ETA
++elasParam%EPS=EPS
++elasParam%L0=L0
++
++elasParam%PARA(1)=EB
++elasParam%PARA(2)=EPAR
++elasParam%PARA(3)=EPERP
++elasParam%PARA(4)=GAM
++elasParam%PARA(5)=ETA
++elasParam%PARA(6)=0
++elasParam%PARA(7)=0
++elasParam%PARA(8)=0
++elasParam%PARA(9)=0
++elasParam%PARA(10)=0
++
++RETURN     
++END
++End MODULE      
++!---------------------------------------------------------------*
+diff --git a/code/SIMcode/initchemJie.f95 b/code/SIMcode/initchemJie.f95
+new file mode 100644
+index 0000000..9f5acc9
+--- /dev/null
++++ b/code/SIMcode/initchemJie.f95
+@@ -0,0 +1,107 @@
++!! ---------------------------------------------------------------*
++      
++!     
++!     This subroutine sets the initial condition for a rodCoil polymer.
++!
++!     
++!     A linker segment is put between each monomer.
++!     A=1, B=0, Link=1
++!     Cuts off mid monomer at end of chain
++!     Based on a code from Andrew Spakowitz written 4-16-04
++!     By Quinn 2/16/17
++!
++      
++SUBROUTINE initchemJie(AB,NT,NP,FA,LAM,rand_stat,numA,numB,numLink)
++
++use mersenne_twister
++use setPrecision
++implicit none
++INTEGER, intent(out) :: AB(NT)     ! Chemical identity of beads
++INTEGER, intent(in) :: NP          ! Number of polymer chains
++INTEGER, intent(in) :: NT          ! Total number of beads
++
++INTEGER I,J,K,IB
++real TEST(1)   ! changed to real by Quinn
++type(random_stat), intent(inout) ::rand_stat    ! status of random number generator
++
++DOUBLE PRECISION, intent(in) :: FA   ! Fraction of A beads
++DOUBLE PRECISION, intent(in) :: LAM  ! Chemical correlation parameter
++DOUBLE PRECISION PAA,PBB,PAB,PBA ! Chemical identity statistics
++
++
++integer, intent(in) :: numA
++integer, intent(in) :: numB
++integer, intent(in) :: numLink
++integer beadsPerPoly
++integer ABtype
++
++beadsPerPoly=NT/NP
++if (NT.ne.beadsPerPoly*NP) then
++    print*, "Error in initchemJi. NT",NT,"NP",NP,"bead/Poly",beadsPerPoly
++endif
++
++!		Translate LAM and FA to probabilities
++
++PAA=FA*(1.0_dp-LAM)+LAM
++PBB=FA*(LAM-1.0_dp)+1.0_dp
++PBA=1.0_dp-PAA
++PAB=1.0_dp-PBB
++
++!		Determine the bead identities
++
++IB=1
++DO  I=1,NP
++    call random_number(TEST,rand_stat)
++    if (dble(TEST(1)).lt.FA) then
++       ABtype=1
++    else
++       ABtype=0
++    endif
++    DO J=1,beadsPerPoly  ! maximum possible monomers is beads
++        call random_number(TEST,rand_stat)
++
++        if (ABtype.EQ.1) then
++           if (TEST(1).LE.PAA) then
++              ABtype=1
++           else
++              ABtype=0
++           endif
++        else
++           if (TEST(1).LE.PAB) then
++              ABtype=1
++           else
++              ABtype=0
++           endif
++        endif
++         
++        if (ABtype.EQ.1) then
++            Do K=1,numA
++                AB(IB)=1
++                IB=IB+1
++                if (IB>I*beadsPerPoly) then
++                    GO To 10
++                endif
++            enddo
++        else
++            Do K=1,numB
++                AB(IB)=0
++                IB=IB+1
++                if (IB>I*beadsPerPoly) then
++                    GO To 10
++                endif
++            enddo
++        endif
++        DO K=1,numLink
++           AB(IB)=1
++           IB=IB+1
++           if (IB>I*beadsPerPoly) then
++               GO To 10
++           endif
++        enddo
++    enddo
++10  Continue ! next polymer
++enddo 
++RETURN     
++END
++      
++!---------------------------------------------------------------*
+diff --git a/code/SIMcode/restart_mpi.f90 b/code/SIMcode/restart_mpi.f90
+index 8784d31..d66a7d7 100644
+--- a/code/SIMcode/restart_mpi.f90
++++ b/code/SIMcode/restart_mpi.f90
+@@ -81,19 +81,19 @@ Subroutine pt_restart(mc,md)
+     print*, "first set from file", iostrg
+     print*, temp
+     ! not sure if the following if statments are necessary
+-    if (mc%Chi.ne.0.0) then
++    if (abs(mc%Chi).gt.0.000000001) then
+         mc%x_Chi=mc%EChi/mc%Chi
+     endif
+-    if (mc%Chi.ne.0.0) then
++    if (abs(mc%HP1_Bind).gt.0.000000001) then
+         mc%x_Couple=mc%ECouple/mc%HP1_Bind
+     endif
+-    if (mc%Kap.ne.0) then
++    if (abs(mc%Kap).gt.0.000000001) then
+         mc%x_Kap=mc%EKap/mc%Kap
+     endif
+-    if (mc%x_Field.ne.0.0) then
++    if (abs(mc%x_Field).gt.0.0000001) then
+         mc%x_Field=mc%EField/mc%h_A
+     endif
+-    if (mc%Mu.ne.0.0) then
++    if (abs(mc%Mu).gt.0.00000001) then
+         mc%x_Mu=mc%EBind/mc%Mu
+     endif
+ 
+diff --git a/code/SIMcode/simMod.f90 b/code/SIMcode/simMod.f90
+index 4fdcaf9..6746cbf 100644
+--- a/code/SIMcode/simMod.f90
++++ b/code/SIMcode/simMod.f90
+@@ -10,6 +10,7 @@
+ !   --------------------------------------------------------------
+ Module simMod
+     use setPrecision
++    use elasMod
+     IMPLICIT NONE
+     INTEGER, Parameter :: NmoveTypes = 10 ! ******* YOU MAY NEED TO CHAGE THIS ***
+ 
+@@ -19,14 +20,25 @@ Module simMod
+     INTEGER NB                ! Number of beads in a polymer NB=N*G
+     INTEGER N                 ! Number of monomers in a polymer
+     INTEGER G                 ! Beads per monomer
++    INTEGER numA              ! beads in A monomer
++    INTEGER numB              ! beads in B monomer
++    INTEGER numLink           ! beads in linker
+     INTEGER NP                ! Number of polymers
+     DOUBLE PRECISION LBOX(3)  ! Box length (approximate)
+     DOUBLE PRECISION DEL      ! Discretization size (approximate)
+-    DOUBLE PRECISION L0       ! Equilibrium segment length
+     DOUBLE PRECISION V        ! Bead volume
+     DOUBLE PRECISION FA       ! Fraction of A beads
+     DOUBLE PRECISION LAM      ! Chemical correlation parameter
++
++    DOUBLE PRECISION L0       ! Equilibrium segment length
++    DOUBLE PRECISION L0_1       ! Other Equilibrium segment length
+     DOUBLE PRECISION EPS      ! Elasticity l0/(2lp)
++    DOUBLE PRECISION EPS_1      ! other Elasticity l0/(2lp)
++    TYPE(elasParamType) elasParam0
++    TYPE(elasParamType) elasParam1
++    DOUBLE PRECISION PARA(10) ! Parameters for sswlc
++    
++
+     DOUBLE PRECISION CHI      ! Chi parameter value (solvent-polymer)        
+     DOUBLE PRECISION KAP      ! Incompressibility parameter
+     DOUBLE PRECISION h_A      ! fild strength
+@@ -40,7 +52,6 @@ Module simMod
+     DOUBLE PRECISION mu       ! chemical potential of HP1
+     INTEGER NBIN     ! Number of bins
+     INTEGER NBINX(3) ! Number of bin on an edge
+-    DOUBLE PRECISION PARA(10) ! Parameters for sswlc
+         ! EB, EPAR, EPERP, GAM, ETA, ...
+ 
+ 
+@@ -207,7 +218,7 @@ Subroutine MCvar_setParams(mc,fileName)
+     mc%LAM =0.0_dp
+     mc%F_METH=0.5_dp
+     mc%LAM_METH=0.9_dp
+-    mc%Fpoly=0.025_dp
++    mc%Fpoly=1.0_dp
+     mc%k_field=1.5708_dp !0.3145_dp
+ 
+     ! energy parameters
+@@ -341,8 +352,16 @@ Subroutine MCvar_setParams(mc,fileName)
+            Call READF(mc%LBox(3)) ! side length of box in z direction
+        CASE('NP')
+            CALL READI(mc%NP)  ! Number of polymers
++       CASE('NUMA')
++           Call READI(mc%numA) ! Beads per A monomer
++       CASE('NUMB')
++           Call READI(mc%numB) ! Beads per B monomer
++       CASE('NUMLINK')
++           Call READI(mc%numLink) ! Beads in linker
+        CASE('G')
+            Call READI(mc%G) ! Beads per monomer
++       CASE('NB')
++           CALL READI(mc%NB) ! Number of beads in a polymer
+        CASE('N')
+            CALL READI(mc%N) ! Number of monomers in a polymer
+        CASE('NNOINT')
+@@ -463,6 +482,10 @@ Subroutine MCvar_setParams(mc,fileName)
+            call READO(mc%PT_couple) ! parallel temper HP1_bind
+        CASE('RESTART')
+            call READO(mc%restart) ! Restart from parallel tempering
++       CASE('L0_1')
++           call READF(mc%L0_1) ! Other L0 for rod-coil
++       CASE('EPS_1')
++           call READF(mc%EPS_1) ! Other EPS for rod-coil
+        CASE DEFAULT
+            print*, "Error in MCvar_setParams.  Unidentified keyword:", &
+                    TRIM(WORD)
+@@ -471,21 +494,6 @@ Subroutine MCvar_setParams(mc,fileName)
+     ENDDO
+     close(PF)
+ 
+-    if ((mc%NBINX(1)-mc%NBINX(2).ne.0).or. &
+-        (mc%NBINX(1)-mc%NBINX(3).ne.0)) then
+-        if (mc%simType.eq.1) then
+-            print*, "Solution not tested with non-cube box, more coding needed"
+-            stop 1
+-        endif
+-        if (mc%confineType.ne.4) then
+-            print*, "Unequal boundaries require confineType=4"
+-            stop 1
+-        endif    
+-        if (mc%setType.eq.4) then
+-            print*, "You shouldn't put a shpere in and unequal box!"
+-            stop 1
+-        endif    
+-    endif
+     ! --------------------
+     !
+     ! Derived Variables, Reconcile inputs
+@@ -511,27 +519,30 @@ Subroutine MCvar_setParams(mc,fileName)
+         mc%LBOX(2) = mc%NBINX(2)*mc%DEL! used to be: DEL=LBOX/NBINX
+         mc%LBOX(3) = mc%NBINX(3)*mc%DEL! used to be: DEL=LBOX/NBINX
+     elseif (mc%simType.eq.0) then
+-        if (mc%confineType.eq.0) then
+-            mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+-            mc%LBOX=(mc%V*mc%N*mc%G*mc%NP)**(1.0_dp/3.0_dp)
+-            mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
+-            mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
+-            mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
+-            mc%DEL=mc%LBOX(1)/mc%NBINX(1)
+-        elseif(mc%confineType.eq.4) then
+-            mc%DEL=mc%LBOX(1)/nint(mc%LBOX(1)/mc%DEL)
+-            mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
+-            mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
+-            mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
+-            mc%LBOX(2)=mc%DEL*mc%NBINX(2)
+-            mc%LBOX(3)=mc%DEL*mc%NBINX(3)
+-            mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
+-            print*, "Density =", &
+-                  mc%N*mc%G*mc%V*mc%NP/(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3))
+-        endif
++        mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
++        mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
++        mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
++        !if (mc%confineType.eq.0) then
++        !    mc%NP=nint(mc%Fpoly*mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
++        !    mc%LBOX=(mc%V*mc%N*mc%G*mc%NP/mc%Fpoly)**(1.0_dp/3.0_dp)
++        !    mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
++        !    mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
++        !    mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
++        !    mc%DEL=mc%LBOX(1)/mc%NBINX(1)
++        !elseif(mc%confineType.eq.4) then
++        !    mc%DEL=mc%LBOX(1)/nint(mc%LBOX(1)/mc%DEL)
++        !    mc%NBINX(1)=nint(mc%LBOX(1)/mc%DEL)
++        !    mc%NBINX(2)=nint(mc%LBOX(2)/mc%DEL)
++        !    mc%NBINX(3)=nint(mc%LBOX(3)/mc%DEL)
++        !    mc%LBOX(2)=mc%DEL*mc%NBINX(2)
++        !    mc%LBOX(3)=mc%DEL*mc%NBINX(3)
++        !    mc%NP=nint(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3)/(mc%N*mc%G*mc%V))
++        !    print*, "Density =", &
++        !          mc%N*mc%G*mc%V*mc%NP/(mc%LBOX(1)*mc%LBOX(2)*mc%LBOX(3))
++        !endif
+         mc%NB=mc%N*mc%G
+-        mc%NBIN=mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3)
+         mc%NT=mc%N*mc%NP*mc%G
++        mc%NBIN=mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3)
+         mc%WINDOW(5)=mc%NB
+         mc%WINDOW(6)=mc%NB
+         mc%WINDOW(8)=mc%NB
+@@ -546,10 +557,14 @@ Subroutine MCvar_setParams(mc,fileName)
+         mc%MAXWINDOW(7)=min(150,mc%NB)
+         mc%MAXAMP(2)=1.0_dp*mc%L0
+         mc%MAXAMP(6)=0.1*mc%LBOX(1)
++
+     else
+        print*, "Error in simMod: symType",mc%simType," not found"
+     endif 
+-    call getpara(mc%PARA,mc%EPS,mc%L0,NAN_dp)
++    ! call getpara(mc%PARA,mc%EPS,mc%L0,NAN_dp)
++    call getpara(mc%elasParam0,mc%EPS,mc%L0)
++    call getpara(mc%elasParam1,mc%EPS_1,mc%L0_1)
++    mc%para=mc%elasParam1%para
+    
+     ! -----------------------
+     !
+@@ -570,6 +585,7 @@ Subroutine MCvar_setParams(mc,fileName)
+     mc%x_Kap=0.0_dp
+     mc%x_Chi=0.0_dp
+ 
++    call MCvar_printDescription(mc)
+     !-----------------------------
+     !
+     !  Idiot checks
+@@ -611,6 +627,7 @@ Subroutine MCvar_printDescription(mc)
+     print*, " Number of monomers in a polymer, N=", mc%N
+     print*, " Number of polymers, NP=",mc%NP
+     print*, " Number of beads in a monomer, G=", mc%G
++    print*, " Fraction polymer, Fpoly", mc%Fpoly
+     print*, " fraction Methalated", mc%F_METH
+     print*, " LAM_METH", mc%LAM_METH
+     print*, "Length and volume Variables:"
+@@ -621,6 +638,7 @@ Subroutine MCvar_printDescription(mc)
+     print*, " Number of bins", mc%NBIN
+     print*, " spatial descritation DEL=",mc%DEL
+     print*, " L0=", mc%L0
++    print*, " L0_1=", mc%L0_1
+     print*, " volume fraction polymer =", mc%Fpoly
+     print*, " bead volume V=", mc%V
+     print*, "Energy Variables"
+@@ -648,7 +666,7 @@ Subroutine MCvar_allocate(mc,md)
+     NT=mc%NT
+     NBIN=mc%NBIN
+     
+-    if ((NT.GT.200000).OR.(NT.lt.1)) then
++    if ((NT.GT.500000).OR.(NT.lt.1)) then
+         print*, "Tried to allocate ", NT," beads in MCvar_allocate"
+         stop 1
+     endif 
+diff --git a/code/SIMcode/wlcsim.f95 b/code/SIMcode/wlcsim.f95
+index 1bf80a1..85f1016 100755
+--- a/code/SIMcode/wlcsim.f95
++++ b/code/SIMcode/wlcsim.f95
+@@ -78,7 +78,9 @@ Subroutine wlcsim(rand_stat)
+           iostr='input/ab'
+           call MCvar_loadAB(mc,md,iostr)
+       ELSE
+-          call initchem(md%AB,mc%NT,mc%N,mc%G,mc%NP,mc%FA,mc%LAM,rand_stat)
++          call initchemJie(md%AB,mc%NT,mc%NP,mc%FA,mc%LAM,rand_stat, & 
++                           mc%numA,mc%numB,mc%numLink)
++          !call initchem(md%AB,mc%NT,mc%N,mc%G,mc%NP,mc%FA,mc%LAM,rand_stat)
+       ENDIF
+     
+       
+diff --git a/code/elasmod.mod b/code/elasmod.mod
+new file mode 100644
+index 0000000..375210a
+Binary files /dev/null and b/code/elasmod.mod differ
+diff --git a/code/inputparams.mod b/code/inputparams.mod
+index b4c573c..ce7a574 100644
+Binary files a/code/inputparams.mod and b/code/inputparams.mod differ
+diff --git a/code/mersenne_twister.mod b/code/mersenne_twister.mod
+index b611a1e..d76629d 100644
+Binary files a/code/mersenne_twister.mod and b/code/mersenne_twister.mod differ
+diff --git a/code/setprecision.mod b/code/setprecision.mod
+index f6eed6c..2930f16 100644
+Binary files a/code/setprecision.mod and b/code/setprecision.mod differ
+diff --git a/code/simmod.mod b/code/simmod.mod
+index 02e15cc..e6d6af3 100644
+Binary files a/code/simmod.mod and b/code/simmod.mod differ
+diff --git a/elasmod.mod b/elasmod.mod
+new file mode 100644
+index 0000000..4c3196d
+Binary files /dev/null and b/elasmod.mod differ
+diff --git a/input/params b/input/params
+index dd9d265..b62cf28 100644
+--- a/input/params
++++ b/input/params
+@@ -4,7 +4,7 @@
+ # -----------------------------------------------
+ # Simulation basics
+ #
+-RESTART T
++RESTART F
+ SETTYPE 1
+ CONFINETYPE 0
+ SIMTYPE 0
+@@ -15,25 +15,32 @@ PTON T
+ PT_CHI T
+ 
+ # Chain parameters
+-G 5
+-N 8
++NP 4000
++G 1
++N 50
++NB 50
++NUMA 2
++NUMLINK 2
++NUMB 5
+ FA 0.5
+-LAM -1.0
+-EPS 0.01
+-L0 0.406666
+-V 0.1
++LAM 0.0
++L0 0.802
++L0_1 0.318
++EPS 2.066
++EPS_1 0.104
++V 0.03333
+ 
+ # Simulation parameters
+-FPOLY 1.0
+-LBOX 20
++FPOLY 0.4
++LBOX 25
+ DEL 1.0000
+-CHI 1.0
++CHI 0.0
+ KAP 10
+ H_A 0.0
+ 
+ # Simulation schedule
+ #NSTEP 4000000
+-NSTEP 4000
++NSTEP 100000
+ NPT 100
+ NNOINT 10
+ INDMAX 1000
+@@ -48,7 +55,7 @@ LOWER_REP_EXE 0.12
+ UPPER_REP_EXE 0.22
+ LOWER_COF_RAIL 0.005
+ UPPER_COF_RAIL 0.5
+-REP_ANNEAL_SPEED 0.01
++REP_ANNEAL_SPEED 0.05
+ REPLICA_BOUNDS F
+ INITIAL_MAX_S 0.1
+ 
+@@ -61,8 +68,8 @@ FULL_CHAIN_ROTATION_ON 1
+ FULL_CHAIN_SLIDE_ON 1
+ BIND_MOVE_ON 0
+ CHAIN_FLIP_MOVE_ON 0
+-CHAIN_SWAP_MOVE_ON 1
+-REPTATION_MOVE_ON 1
++CHAIN_SWAP_MOVE_ON 0
++REPTATION_MOVE_ON 0
+ RECENTER_ON T
+ WINTYPE 1
+ MIN_SLIDE_WIN 6
+@@ -70,5 +77,4 @@ MIN_PIVOT_WIN 6
+ MIN_ACCEPT 0.1
+ REDUCE_MOVE 6
+ SAVE_U T
+-SAVE_PHI F
+-
++SAVE_PHI T
+diff --git a/runwlcsim.sh b/runwlcsim.sh
+index 8c9cd28..5bb214d 100755
+--- a/runwlcsim.sh
++++ b/runwlcsim.sh
+@@ -5,7 +5,7 @@ rm MCparrll_out
+ cd code
+ # compile with mpi's fortran compiler
+ mpifort -c DATAcode/* mersenne_twister.f90
+-mpifort -c -fbounds-check -Wall -W -fmax-errors=5 -O5 SIMcode/*  MCcode/* 
++mpifort -c -fbounds-check -Wall -W -fmax-errors=5 -O1 SIMcode/*  MCcode/* 
+ mpifort *.o -o MCparrll_out 
+ rm *.o
+ cd ..
+@@ -17,4 +17,4 @@ touch data/error
+ echo "Now run"
+ # now run the output
+ # --prefix used to avoid changing path
+-mpirun -np 8 MCparrll_out
++mpirun -np 15 MCparrll_out
+diff --git a/simmod.mod b/simmod.mod
+new file mode 100644
+index 0000000..1d42c2a
+Binary files /dev/null and b/simmod.mod differ
+diff --git a/visual/random.pl b/visual/random.pl
+index 6a3758c..91fb92e 100755
+--- a/visual/random.pl
++++ b/visual/random.pl
+@@ -2,7 +2,7 @@
+ use POSIX qw(ceil floor);
+ use Cwd;
+ 
+-my $savept =50;  # save point
++my $savept =90;  # save point
+ my $repno0 =1;    # replica index 1
+ my $repnof =79;   # replica index final
+ 
+@@ -12,7 +12,8 @@ my $dir = getcwd;
+ my $title = "randcopoly";
+ my $ind = index($dir, $title);
+ my $folder = substr $dir, $ind, -6;
+-my $loaddir = "../../../sim-".$folder."data/";
++#my $loaddir = "../../../sim-".$folder."data/";
++my $loaddir = "../data/";
+ 
+ my $ratviz=0.5; # Ratio of visualization
+ my $cut = 0;    # Whether show cross-section
+@@ -23,7 +24,7 @@ my $zlbox=20; # Box edge length
+ my $xshift=0;  # shift of x periodicity
+ my $yshift=0;  # shift of x periodicity
+ my $zshift=0;  # shift of x periodicity
+-my $nbead=40*2000;
++my $nbead=40*1000;
+ 
+ my $radius=1;           # Radius of chain
+ my $ratio=1;            # Resize ratio
