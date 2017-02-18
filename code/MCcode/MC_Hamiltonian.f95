@@ -35,7 +35,7 @@ if (initialize) then  ! calculate absolute energy
             VV=md%Vol(I)
             if (VV.le.0.1_dp) CYCLE
             !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(I)*(1.0_dp-md%PHIA(I)-md%PHIB(I))) ! P
-            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIB(I)*(1.0_dp-md%PHIB(I))) ! H
+            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIA(I)*(1.0_dp-md%PHIA(I))) ! H
             !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIA(I)*md%PHIB(I)) ! N
             !mc%Dx_Field=mc%dx_Field-md%PHIH(I)*md%PHIA(I)
 
@@ -69,7 +69,7 @@ else ! Calculate change in energy
             phi_B=md%PHIB(J)+md%DPHIB(I)
             phi_h=md%PHIH(J)
             !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*phi_A*(1.0_dp-phi_A-phi_B) !P
-            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_B*(1.0_dp-phi_B) !H
+            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*(1.0_dp-phi_A) !H
             !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*phi_B !N
             !mc%Dx_Field=mc%Dx_Field-phi_h*phi_A
             
@@ -82,7 +82,7 @@ else ! Calculate change in energy
             phi_B=md%PHIB(J)
             phi_h=md%PHIH(J)
             !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*(1.0_dp-phi_A-phi_B) !P
-            mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*phi_B*(1.0_dp-phi_B) !H
+            mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*phi_A*(1.0_dp-phi_A) !H
             !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(J)*md%PHIB(J))
             !mc%Dx_Field=mc%Dx_Field+phi_h*md%PHIA(J)
 
