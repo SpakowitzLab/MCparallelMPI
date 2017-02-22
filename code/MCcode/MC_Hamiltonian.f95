@@ -10,12 +10,13 @@
 !   Otherwise calcualte only specified bins.
 !-------------------------------------------------------------------
 
-function phi_function(phi_s,VV) result(dx)
-    use setPrecision
+function phi_function(phi_s,VV,ratio) result(dx)
     implicit none
-    double precision, intent(in) :: phi_s
-    double precision, intent(in) :: VV
-    double precision dx
+    double precision, intent(in) :: phi_s! franction solvent
+    double precision, intent(in) :: VV   !Fraction of a bin
+    double precision, intent(in) :: ratio  !geometric ratio
+    double precision dx ! change in energy / KAP
+
     if (PHI_s.gt.0.05) then 
         dx = VV*( PHI_s*log(PHI_s) +  PHI_s - 1.0)
     elseif (PHI_s.gt.0.0) then 
@@ -40,11 +41,17 @@ double precision VV ! volume of bin
 integer I,J ! for looping
 double precision PHI_s
 double precision phi_function
+double precision ratio
 
 mc%dx_Chi=0.0_dp
 mc%Dx_Couple=0.0_dp
 mc%Dx_Kap=0.0_dp
 mc%Dx_Field=0.0_dp
+
+
+ratio=sqrt(4*mc%V/(mc%DEL**2*3.1416*mc%L0))  ! rod diameter / DEL
+!ratio=sqrt(mc%V/(mc%DEL**2*3.1416*mc%L0))  ! rod radious / DEL
+
 
 if (initialize) then  ! calculate absolute energy
     if (mc%simType.eq.0) then ! Melt Hamiltonian
@@ -72,7 +79,7 @@ if (initialize) then  ! calculate absolute energy
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(I)+md%PHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV)
+            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV,ratio)
         enddo
     else
         print*, "Error in MC_int, simType",mc%simType, &
@@ -125,13 +132,13 @@ else ! Calculate change in energy
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV)
+            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV,ratio)
 
             ! minus old
             PHIPoly=md%PHIA(J)+md%PHIB(J)
             PHI_s=1.0_dp-PHIPoly
             
-            mc%Dx_Kap = mc%Dx_Kap - phi_function(PHI_s,VV)
+            mc%Dx_Kap = mc%Dx_Kap - phi_function(PHI_s,VV,ratio)
         enddo
     endif
 endif
