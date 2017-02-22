@@ -542,7 +542,7 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%MAXAMP(2)=1.0_dp*mc%L0
         mc%MAXAMP(6)=0.1*mc%LBOX(1)
     elseif (mc%simType.eq.2) then ! Bruno confinment problem
-        if (mc%confineType.ne.5) then
+        if (mc%confineType.ne.5 .and. mc%confineType .ne.0) then
             print*, "only tested for confineType=1"
             stop
         endif

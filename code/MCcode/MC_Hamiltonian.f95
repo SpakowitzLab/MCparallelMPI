@@ -10,6 +10,21 @@
 !   Otherwise calcualte only specified bins.
 !-------------------------------------------------------------------
 
+function phi_function(phi_s,VV) result(dx)
+    use setPrecision
+    implicit none
+    double precision, intent(in) :: phi_s
+    double precision, intent(in) :: VV
+    double precision dx
+    if (PHI_s.gt.0.05) then 
+        dx = VV*( PHI_s*log(PHI_s) +  PHI_s - 1.0)
+    elseif (PHI_s.gt.0.0) then 
+        dx = VV*( 1.0-4.0*PHI_s)
+    else
+        dx = 10.0
+    endif
+    
+end function phi_function
 subroutine hamiltonian(mc,md,initialize)
 use simMod
 use setPrecision
@@ -24,6 +39,7 @@ double precision phi_h ! strength of field
 double precision VV ! volume of bin
 integer I,J ! for looping
 double precision PHI_s
+double precision phi_function
 
 mc%dx_Chi=0.0_dp
 mc%Dx_Couple=0.0_dp
@@ -56,11 +72,7 @@ if (initialize) then  ! calculate absolute energy
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(I)+md%PHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            if (PHI_s.gt.0.0) then 
-                mc%Dx_Kap = mc%Dx_Kap + VV*( PHI_s*log(PHI_s) -  PHI_s + 1)
-            else
-                mc%Dx_Kap = mc%Dx_Kap + 10
-            endif
+            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV)
         enddo
     else
         print*, "Error in MC_int, simType",mc%simType, &
@@ -108,24 +120,18 @@ else ! Calculate change in energy
         do I=1,mc%NPHI
             J=md%INDPHI(I)
             VV=md%Vol(I)
-            ! new ...
+
+            !! new ...
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            if (PHI_s.gt.0.0) then 
-                mc%Dx_Kap = mc%Dx_Kap + VV*( PHI_s*log(PHI_s) -  PHI_s + 1)
-            else
-                mc%Dx_Kap = mc%Dx_Kap + 10
-            endif
+            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV)
 
             ! minus old
             PHIPoly=md%PHIA(J)+md%PHIB(J)
             PHI_s=1.0_dp-PHIPoly
-            if (PHI_s.gt.0.0) then 
-                mc%Dx_Kap = mc%Dx_Kap - VV*( PHI_s*log(PHI_s) +  PHI_s - 1)
-            else
-                mc%Dx_Kap = mc%Dx_Kap - 10
-            endif
+            
+            mc%Dx_Kap = mc%Dx_Kap - phi_function(PHI_s,VV)
         enddo
     endif
 endif
@@ -140,5 +146,4 @@ mc%DEField=mc%h_A*      mc%dx_Field
 !print*, "NPHI",mc%NPHI," DEKap",mc%DEKap,"dx_Kap", mc%dx_Kap 
 RETURN
 END subroutine
-
 !---------------------------------------------------------------!

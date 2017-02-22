@@ -69,7 +69,7 @@ hide lines, (name A9)
 
 show (name P1)
 color black, (name P1)
-set stick_radius=0.05
+set stick_radius=0.1
 show sticks, (name P1)
 
 #run bar.py
