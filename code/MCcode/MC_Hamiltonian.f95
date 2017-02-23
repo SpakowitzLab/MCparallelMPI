@@ -10,20 +10,44 @@
 !   Otherwise calcualte only specified bins.
 !-------------------------------------------------------------------
 
-function phi_function(phi_s,VV,ratio) result(dx)
+function phi_function(phi_s,VV,mc) result(dx)
+use simMod
     implicit none
     double precision, intent(in) :: phi_s! franction solvent
     double precision, intent(in) :: VV   !Fraction of a bin
-    double precision, intent(in) :: ratio  !geometric ratio
+    TYPE(MCvar), intent(in) :: mc
     double precision dx ! change in energy / KAP
 
-    if (PHI_s.gt.0.05) then 
-        dx = VV*( PHI_s*log(PHI_s) -  PHI_s + 1.0)
-    elseif (PHI_s.gt.0.0) then 
-        dx = VV*( 1.0-4.0*PHI_s)
-    else
-        dx = 10.0
-    endif
+    double precision ratio  !geometric ratio
+    integer indexPhi
+    integer indexRatio
+    double precision abovePhi,aboveRatio, temp
+    
+    ratio=sqrt(4*mc%V/(mc%DEL**2*3.1416*mc%L0))  ! rod diameter / DEL
+    !ratio=sqrt(mc%V/(mc%DEL**2*3.1416*mc%L0))  ! rod radious / DEL
+    
+    temp=(1.0-PHI_s)*(mc%nPhiValues-1)/(mc%phiMax-mc%phiMin)
+    indexPhi=floor(temp);
+    abovePhi=temp - dble(indexPhi)
+
+
+    temp=ratio*(mc%nDiameters-1)/(mc%dMax-mc%dMin)
+    indexRatio=floor(temp);
+    aboveRatio=temp - dble(indexRatio)
+
+    dx=0.0
+    dx=dx+VV*mc%ERepusionData(indexPHI,indexRatio)*(1-aboveRatio)*(1-abovePhi) 
+    dx=dx+VV*mc%ERepusionData(indexPHI+1,indexRatio)*(aboveRatio)*(1-abovePhi) 
+    dx=dx+VV*mc%ERepusionData(indexPHI,indexRatio+1)*(1-aboveRatio)*(abovePhi) 
+    dx=dx+VV*mc%ERepusionData(indexPHI+1,indexRatio+1)*(aboveRatio)*(abovePhi)
+
+    !if (PHI_s.gt.0.05) then 
+    !    dx = VV*( PHI_s*log(PHI_s) -  PHI_s + 1.0)
+    !elseif (PHI_s.gt.0.0) then 
+    !    dx = VV*( 1.0-4.0*PHI_s)
+    !else
+    !    dx = 10.0
+    !endif
     
 end function phi_function
 subroutine hamiltonian(mc,md,initialize)
@@ -41,16 +65,11 @@ double precision VV ! volume of bin
 integer I,J ! for looping
 double precision PHI_s
 double precision phi_function
-double precision ratio
 
 mc%dx_Chi=0.0_dp
 mc%Dx_Couple=0.0_dp
 mc%Dx_Kap=0.0_dp
 mc%Dx_Field=0.0_dp
-
-
-ratio=sqrt(4*mc%V/(mc%DEL**2*3.1416*mc%L0))  ! rod diameter / DEL
-!ratio=sqrt(mc%V/(mc%DEL**2*3.1416*mc%L0))  ! rod radious / DEL
 
 
 if (initialize) then  ! calculate absolute energy
@@ -79,7 +98,7 @@ if (initialize) then  ! calculate absolute energy
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(I)+md%PHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV,ratio)
+            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV,mc)
         enddo
     else
         print*, "Error in MC_int, simType",mc%simType, &
@@ -132,13 +151,13 @@ else ! Calculate change in energy
             if (VV.le.0.1_dp) CYCLE
             PHIPoly=md%PHIA(J)+md%DPHIA(I)+md%PHIB(J)+md%DPHIB(I)
             PHI_s=1.0_dp-PHIPoly
-            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV,ratio)
+            mc%Dx_Kap = mc%Dx_Kap + phi_function(PHI_s,VV,mc)
 
             ! minus old
             PHIPoly=md%PHIA(J)+md%PHIB(J)
             PHI_s=1.0_dp-PHIPoly
             
-            mc%Dx_Kap = mc%Dx_Kap - phi_function(PHI_s,VV,ratio)
+            mc%Dx_Kap = mc%Dx_Kap - phi_function(PHI_s,VV,mc)
         enddo
     endif
 endif

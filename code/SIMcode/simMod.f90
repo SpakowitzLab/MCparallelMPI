@@ -45,6 +45,15 @@ Module simMod
     DOUBLE PRECISION PARA(10) ! Parameters for sswlc
         ! EB, EPAR, EPERP, GAM, ETA, ...
 
+!
+    
+    integer nDiameters
+    integer nPhiValues
+    double precision phiMax
+    double precision phiMin
+    double precision dMax
+    double precision dMin
+    double precision, allocatable, dimension(:,:) :: ERepusionData
 
 !   Monte Carlo Variables (for adaptation)
     INTEGER moveTypes
@@ -1104,196 +1113,196 @@ Subroutine MCvar_appendAdaptData(mc,fileName)
           REAL(mc%MOVEON(10)),mc%PHIT(10)
     Close(1)
 end subroutine
-Subroutine MCvar_writeBinary(mc,md,baceName)
-!    This function writes the contence of the structures mc and md
-!  to a binary file.  If you add more variables to md you need to 
-!  a seperate write command for them as it is not possible to write
-!  a structure with allocatables to a binar file.
-!    The contence are stored in 
-!     baceName//'R'
-!     baceName//'U'
-!     etc.
-    IMPLICIT NONE
-    INTEGER sizeOfType         ! for binary saving
-    TYPE(MCvar), intent(in) :: mc             ! to be save or filled
-    TYPE(MCData), intent(in) :: md             ! to be save or filled
-    CHARACTER(LEN=16), intent(in) :: baceName ! for example 'record/'
-    CHARACTER(LEN=16) fileName ! fileName
-    CHARACTER(LEN=16) sufix    ! end of file name
-    LOGICAL exists    ! Does file already exist?
-
-    !  ------parameters -----
-
-    sizeOfType=int(SIZEOF(mc))
-    sufix='parameters'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        open(unit=1,file=fileName, status='new', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    endif
-    write(1,rec=1) mc
-    close(1)    
-
-    ! -------- R --------
-
-    sizeOfType=int(SIZEOF(md%R))
-    sufix='R'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        open(unit=1,file=fileName, status='new', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    endif
-    write(1,rec=1) md%R
-    close(1)
-
-    ! -------- U --------
-
-    sizeOfType=int(SIZEOF(md%U))
-    sufix='U'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        open(unit=1,file=fileName, status='new', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    endif
-    write(1,rec=1) md%U
-    close(1)
-
-    ! -------- AB --------
-
-    sizeOfType=int(SIZEOF(md%AB))
-    sufix='AB'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        open(unit=1,file=fileName, status='new', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    endif
-    write(1,rec=1) md%AB
-    close(1)
-
-    ! -------- Vol --------
-
-    sizeOfType=int(SIZEOF(md%Vol))
-    sufix='Vol'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        open(unit=1,file=fileName, status='new', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    endif
-    write(1,rec=1) md%Vol
-    close(1)
-end Subroutine
-
-Subroutine MCvar_readBindary(mc,md,baceName)
-! This function reads what MCvar_writeBinary writes and 
-! stores it to mc and md.  Be sure to allocate md before 
-! calling this command.
-    IMPLICIT NONE
-    INTEGER sizeOfType         ! for binary saving
-    TYPE(MCvar) mc             ! to be save or filled
-    TYPE(MCData) md             ! to be save or filled
-    CHARACTER(LEN=16) baceName ! for example 'record/'
-    CHARACTER(LEN=16) fileName ! fileName
-    CHARACTER(LEN=16) sufix    ! end of file name
-    LOGICAL exists    ! Does file already exist?
-
-    !  ------parameters -----
-
-    sizeOfType=int(SIZEOF(mc))
-    sufix='parameters'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
-        stop 1
-    endif
-    read(1,rec=1) mc
-    close(1)    
-
-    ! -------- R --------
-
-    sizeOfType=int(SIZEOF(md%R))
-    sufix='R'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
-        stop 1
-    endif
-    read(1,rec=1) md%R
-    close(1)
-
-    ! -------- U --------
-
-    sizeOfType=int(SIZEOF(md%U))
-    sufix='U'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
-        stop 1
-    endif
-    read(1,rec=1) md%U
-    close(1)
-
-    ! -------- AB --------
-
-    sizeOfType=int(SIZEOF(md%AB))
-    sufix='AB'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
-        stop 1
-    endif
-    read(1,rec=1) md%AB
-    close(1)
-
-    ! -------- Vol --------
-
-    sizeOfType=int(SIZEOF(md%Vol))
-    sufix='Vol'
-    fileName=trim(baceName) // trim(sufix)
-    inquire(file=fileName,exist=exists)
-    if(exists) then
-        open(unit=1,file=fileName, status='old', &
-             form='unformatted',access='direct',recl=sizeOfType)
-    else
-        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
-        stop 1
-    endif
-    read(1,rec=1) md%Vol
-    close(1)
-end Subroutine
+!Subroutine MCvar_writeBinary(mc,md,baceName)
+!!    This function writes the contence of the structures mc and md
+!!  to a binary file.  If you add more variables to md you need to 
+!!  a seperate write command for them as it is not possible to write
+!!  a structure with allocatables to a binar file.
+!!    The contence are stored in 
+!!     baceName//'R'
+!!     baceName//'U'
+!!     etc.
+!    IMPLICIT NONE
+!    INTEGER sizeOfType         ! for binary saving
+!    TYPE(MCvar), intent(in) :: mc             ! to be save or filled
+!    TYPE(MCData), intent(in) :: md             ! to be save or filled
+!    CHARACTER(LEN=16), intent(in) :: baceName ! for example 'record/'
+!    CHARACTER(LEN=16) fileName ! fileName
+!    CHARACTER(LEN=16) sufix    ! end of file name
+!    LOGICAL exists    ! Does file already exist?
+!
+!    !  ------parameters -----
+!
+!    sizeOfType=int(SIZEOF(mc))
+!    sufix='parameters'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        open(unit=1,file=fileName, status='new', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    endif
+!    write(1,rec=1) mc
+!    close(1)    
+!
+!    ! -------- R --------
+!
+!    sizeOfType=int(SIZEOF(md%R))
+!    sufix='R'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        open(unit=1,file=fileName, status='new', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    endif
+!    write(1,rec=1) md%R
+!    close(1)
+!
+!    ! -------- U --------
+!
+!    sizeOfType=int(SIZEOF(md%U))
+!    sufix='U'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        open(unit=1,file=fileName, status='new', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    endif
+!    write(1,rec=1) md%U
+!    close(1)
+!
+!    ! -------- AB --------
+!
+!    sizeOfType=int(SIZEOF(md%AB))
+!    sufix='AB'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        open(unit=1,file=fileName, status='new', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    endif
+!    write(1,rec=1) md%AB
+!    close(1)
+!
+!    ! -------- Vol --------
+!
+!    sizeOfType=int(SIZEOF(md%Vol))
+!    sufix='Vol'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        open(unit=1,file=fileName, status='new', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    endif
+!    write(1,rec=1) md%Vol
+!    close(1)
+!end Subroutine
+!
+!Subroutine MCvar_readBindary(mc,md,baceName)
+!! This function reads what MCvar_writeBinary writes and 
+!! stores it to mc and md.  Be sure to allocate md before 
+!! calling this command.
+!    IMPLICIT NONE
+!    INTEGER sizeOfType         ! for binary saving
+!    TYPE(MCvar) mc             ! to be save or filled
+!    TYPE(MCData) md             ! to be save or filled
+!    CHARACTER(LEN=16) baceName ! for example 'record/'
+!    CHARACTER(LEN=16) fileName ! fileName
+!    CHARACTER(LEN=16) sufix    ! end of file name
+!    LOGICAL exists    ! Does file already exist?
+!
+!    !  ------parameters -----
+!
+!    sizeOfType=int(SIZEOF(mc))
+!    sufix='parameters'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
+!        stop 1
+!    endif
+!    read(1,rec=1) mc
+!    close(1)    
+!
+!    ! -------- R --------
+!
+!    sizeOfType=int(SIZEOF(md%R))
+!    sufix='R'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
+!        stop 1
+!    endif
+!    read(1,rec=1) md%R
+!    close(1)
+!
+!    ! -------- U --------
+!
+!    sizeOfType=int(SIZEOF(md%U))
+!    sufix='U'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
+!        stop 1
+!    endif
+!    read(1,rec=1) md%U
+!    close(1)
+!
+!    ! -------- AB --------
+!
+!    sizeOfType=int(SIZEOF(md%AB))
+!    sufix='AB'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
+!        stop 1
+!    endif
+!    read(1,rec=1) md%AB
+!    close(1)
+!
+!    ! -------- Vol --------
+!
+!    sizeOfType=int(SIZEOF(md%Vol))
+!    sufix='Vol'
+!    fileName=trim(baceName) // trim(sufix)
+!    inquire(file=fileName,exist=exists)
+!    if(exists) then
+!        open(unit=1,file=fileName, status='old', &
+!             form='unformatted',access='direct',recl=sizeOfType)
+!    else
+!        print*, 'Error in MCvar_readBinary. File ',fileName,'does not exist'
+!        stop 1
+!    endif
+!    read(1,rec=1) md%Vol
+!    close(1)
+!end Subroutine
 end module simMod
