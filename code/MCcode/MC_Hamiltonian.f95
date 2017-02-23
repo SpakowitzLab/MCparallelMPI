@@ -18,7 +18,7 @@ function phi_function(phi_s,VV,ratio) result(dx)
     double precision dx ! change in energy / KAP
 
     if (PHI_s.gt.0.05) then 
-        dx = VV*( PHI_s*log(PHI_s) +  PHI_s - 1.0)
+        dx = VV*( PHI_s*log(PHI_s) -  PHI_s + 1.0)
     elseif (PHI_s.gt.0.0) then 
         dx = VV*( 1.0-4.0*PHI_s)
     else

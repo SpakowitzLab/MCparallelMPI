@@ -995,7 +995,7 @@ Subroutine MCVar_savePHI(mc,md,fileName)
     fullName=  trim(fileName) // trim(mc%repSufix) 
     OPEN (UNIT = 1, FILE = fullName, STATUS = 'NEW')
     Do I=1,mc%NBIN
-        WRITE(1,"(2f7.2)") md%PHIA(I),md%PHIB(I)
+        WRITE(1,"(2f7.5)") md%PHIA(I),md%PHIB(I)
     enddo
     Close(1)
 end subroutine

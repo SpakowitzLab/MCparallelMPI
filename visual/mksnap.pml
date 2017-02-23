@@ -1,8 +1,8 @@
 delete *
 reset
 
-movie.load snap*.pdb, snap
-#load snap0001.pdb,snap 
+#movie.load snap*.pdb, snap
+load snap0001.pdb,snap 
 
 set connect_mode,1
 #rotate y,+70,state=0,camera=0
