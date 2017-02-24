@@ -26,20 +26,23 @@ use simMod
     ratio=sqrt(4*mc%V/(mc%DEL**2*3.1416*mc%L0))  ! rod diameter / DEL
     !ratio=sqrt(mc%V/(mc%DEL**2*3.1416*mc%L0))  ! rod radious / DEL
     
-    temp=(1.0-PHI_s)*(mc%nPhiValues-1)/(mc%phiMax-mc%phiMin)
-    indexPhi=floor(temp);
+    temp=(1.0-PHI_s-mc%phiMin)*(mc%nPhiValues-1)/(mc%phiMax-mc%phiMin) +1.0
+    indexPhi=floor(temp)
     abovePhi=temp - dble(indexPhi)
 
-
-    temp=ratio*(mc%nDiameters-1)/(mc%dMax-mc%dMin)
+    temp=(ratio-mc%dMin)*(mc%nDiameters-1)/(mc%dMax-mc%dMin) + 1.0
     indexRatio=floor(temp);
     aboveRatio=temp - dble(indexRatio)
 
+
     dx=0.0
-    dx=dx+VV*mc%ERepusionData(indexPHI,indexRatio)*(1-aboveRatio)*(1-abovePhi) 
-    dx=dx+VV*mc%ERepusionData(indexPHI+1,indexRatio)*(aboveRatio)*(1-abovePhi) 
-    dx=dx+VV*mc%ERepusionData(indexPHI,indexRatio+1)*(1-aboveRatio)*(abovePhi) 
-    dx=dx+VV*mc%ERepusionData(indexPHI+1,indexRatio+1)*(aboveRatio)*(abovePhi)
+    dx=dx+mc%exclusionMu(indexRatio,indexPHI)*(1-aboveRatio)*(1-abovePhi) 
+    dx=dx+mc%exclusionMu(indexRatio,indexPHI+1)*(aboveRatio)*(1-abovePhi) 
+    dx=dx+mc%exclusionMu(indexRatio+1,indexPHI)*(1-aboveRatio)*(abovePhi) 
+    dx=dx+mc%exclusionMu(indexRatio+1,indexPHI+1)*(aboveRatio)*(abovePhi)
+
+
+    dx=dx*VV*(1.0-PHI_s)/(ratio**2)  ! energy per length to energy
 
     !if (PHI_s.gt.0.05) then 
     !    dx = VV*( PHI_s*log(PHI_s) -  PHI_s + 1.0)

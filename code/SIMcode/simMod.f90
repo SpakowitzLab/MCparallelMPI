@@ -53,7 +53,7 @@ Module simMod
     double precision phiMin
     double precision dMax
     double precision dMin
-    double precision, allocatable, dimension(:,:) :: ERepusionData
+    double precision, allocatable, dimension(:,:) ::exclusionMu
 
 !   Monte Carlo Variables (for adaptation)
     INTEGER moveTypes
@@ -561,6 +561,7 @@ Subroutine MCvar_setParams(mc,fileName)
         mc%NB=mc%N*mc%G
         mc%NBIN=mc%NBINX(1)*mc%NBINX(2)*mc%NBINX(3)
         mc%NT=mc%N*mc%NP*mc%G
+        call getRepusionData(mc)
 
     else
        print*, "Error in simMod: symType",mc%simType," not found"
