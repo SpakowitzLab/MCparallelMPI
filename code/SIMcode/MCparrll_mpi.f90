@@ -648,7 +648,7 @@ Subroutine replicaExchange(mc)
         print*, "Error in replicaExchange"
         print*, "mc%EChi",mc%EChi,"x(1)*Cof(1)",x(1)*Cof(1)
         write(1,*), "Error in replicaExchange"
-        print(1,*), "mc%EChi",mc%EChi,"x(1)*Cof(1)",x(1)*Cof(1)
+        write(1,*), "mc%EChi",mc%EChi,"x(1)*Cof(1)",x(1)*Cof(1)
         close (1)
     endif
 
