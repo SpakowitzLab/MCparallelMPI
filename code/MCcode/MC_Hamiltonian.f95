@@ -148,7 +148,7 @@ else ! Calculate change in energy
     elseif(mc%simType.eq.2) then
         do I=1,mc%NPHI
             J=md%INDPHI(I)
-            VV=md%Vol(I)
+            VV=md%Vol(J)
 
             !! new ...
             if (VV.le.0.1_dp) CYCLE
