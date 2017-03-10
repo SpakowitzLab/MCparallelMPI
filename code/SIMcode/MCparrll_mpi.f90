@@ -620,7 +620,8 @@ Subroutine replicaExchange(mc)
     if (abs(mc%EChi-x(1)*CofOld(1)).gt.0.0000001_dp) then
         print*, "Error in replicaExchange"
         print*, "mc%EChi",mc%EChi,"x(1)*CofOld(1)",x(1)*CofOld(1)
-        stop 1
+        write(1,*), "Error in replicaExchange"
+        write(1,*), "mc%EChi",mc%EChi,"x(1)*CofOld(1)",x(1)*CofOld(1)
     endif
 
     mc%EChi    =mc%EChi    +x(1)*(Cof(1)-CofOld(1)) 
@@ -635,6 +636,8 @@ Subroutine replicaExchange(mc)
     if (abs(mc%EChi-x(1)*Cof(1)).gt.0.000001_dp) then
         print*, "Error in replicaExchange"
         print*, "mc%EChi",mc%EChi,"x(1)*Cof(1)",x(1)*Cof(1)
+        write(1,*), "Error in replicaExchange"
+        write(1,*), "mc%EChi",mc%EChi,"x(1)*Cof(1)",x(1)*Cof(1)
         stop 1
     endif
 

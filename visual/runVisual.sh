@@ -1,0 +1,46 @@
+#/bin/bash
+
+rm snap0*
+
+#for i in `seq 1 2 19`; 
+#for i in `seq 1 11 79`; 
+for i in `seq 1 14`; 
+  do name=$(printf "snap%04d.pdb" $i); 
+  python r2pdb.py ../Jie3p4sPEG1500n4nA4fPEG30/data/r85v$i > "${name}";
+
+
+# Jie3p4sPEG1500n4nA4fPEG50
+# Jie3p4sPEG1500n4nA4fPEG20
+# Jie3p4sPEG1500n4nA4fPEG30
+# Jie3p4sPEG1500n4nA4fPEG40
+
+
+# Jie3p4sPEG1500n4HfPEG50
+# Jie3p4sPEG1500n4Ap1fPEG50
+# Jie3p4sPEG1500n4A1fPEG50
+# Jie3p4sPEG1500n4A4fPEG50
+
+# Jie3p4sPEG1500n4A1fPEG30
+# Jie3p4sPEG1500n4A1fPEG50
+# Jie3p4sPEG1500n4A1fPEG70
+
+# Jie3p4sPEG1500n4HfPEG50
+# Jie3p4sPEG1500n4nAp1fPEG50
+# Jie3p4sPEG1500n4nA1fPEG50
+# Jie3p4sPEG1500n4nA4fPEG50
+
+# Jie3p4sPEG1500n4nA1fPEG30
+# Jie3p4sPEG1500n4nA1fPEG50
+# Jie3p4sPEG1500n4nA1fPEG70
+
+# Jie4p57sPEG1500n4N
+# Jie3p4sPEG1500n4N
+# Jie2p28sPEG900n4N
+# Jie1p47sPEG900n4N
+# Jie3p4sPEG1500n4NfPEG30
+# Jie3p4sPEG1500n4NfPEG70
+# Jie3p4sPEG1500n4NfPEG50
+
+done
+
+pymol mksnap.pml
