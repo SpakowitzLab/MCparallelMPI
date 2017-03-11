@@ -6,7 +6,7 @@ rm snap0*
 #for i in `seq 1 11 79`; 
 for i in `seq 1 14`; 
   do name=$(printf "snap%04d.pdb" $i); 
-  python r2pdb.py ../Jie3p4sPEG1500n4nA4fPEG30/data/r85v$i > "${name}";
+  python r2pdb.py ../data/r85v$i > "${name}";
 
 
 # Jie3p4sPEG1500n4nA4fPEG50
