@@ -618,10 +618,16 @@ Subroutine replicaExchange(mc)
     !mc%Para(3)  =cof(8)
 
     if (abs(mc%EChi-x(1)*CofOld(1)).gt.0.0000001_dp) then
+        if (isfile) then
+            OPEN (UNIT = 1, FILE = "data/error", STATUS ='OLD', POSITION="append")
+        else 
+            OPEN (UNIT = 1, FILE = "data/error", STATUS = 'new')
+        endif
         print*, "Error in replicaExchange"
         print*, "mc%EChi",mc%EChi,"x(1)*CofOld(1)",x(1)*CofOld(1)
         write(1,*), "Error in replicaExchange"
         write(1,*), "mc%EChi",mc%EChi,"x(1)*CofOld(1)",x(1)*CofOld(1)
+        close(1)
     endif
 
     mc%EChi    =mc%EChi    +x(1)*(Cof(1)-CofOld(1)) 
@@ -634,11 +640,16 @@ Subroutine replicaExchange(mc)
    ! mc%EElas(3)=mc%EElas(3)+x(8)*(Cof(8)-CofOld(8)) 
 
     if (abs(mc%EChi-x(1)*Cof(1)).gt.0.000001_dp) then
+        if (isfile) then
+            OPEN (UNIT = 1, FILE = "data/error", STATUS ='OLD', POSITION="append")
+        else 
+            OPEN (UNIT = 1, FILE = "data/error", STATUS = 'new')
+        endif
         print*, "Error in replicaExchange"
         print*, "mc%EChi",mc%EChi,"x(1)*Cof(1)",x(1)*Cof(1)
         write(1,*), "Error in replicaExchange"
         write(1,*), "mc%EChi",mc%EChi,"x(1)*Cof(1)",x(1)*Cof(1)
-        stop 1
+        close(1)
     endif
 
     ! change output file sufix
