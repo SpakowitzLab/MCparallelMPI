@@ -37,6 +37,8 @@ DEL 1.0000
 CHI 0.0
 KAP 900
 H_A 0.0
+ALPHA -4.0
+BETA 1.0
 
 # Simulation schedule
 #NSTEP 4000000

@@ -20,11 +20,10 @@ logical, intent(in) :: initialize ! Need to do all beads
 double precision PHIPoly ! fraction polymer
 double precision phi_A ! demsotu of A
 double precision phi_B ! density of B
+double precision phi_S ! density of Solvent
 double precision phi_h ! strength of field
 double precision VV ! volume of bin
 integer I,J ! for looping
-double precision alpha
-alpha=-4.0;
 
 mc%dx_Chi=0.0_dp
 mc%Dx_Couple=0.0_dp
@@ -35,12 +34,12 @@ if (initialize) then  ! calculate absolute energy
         do I=1,mc%NBIN
             VV=md%Vol(I)
             if (VV.le.0.1_dp) CYCLE
-            !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(I)*(1.0_dp-md%PHIA(I)-md%PHIB(I))) ! P
-            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIA(I)*(1.0_dp-md%PHIA(I))) ! H
-            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*(md%PHIA(I)*md%PHIB(I)) ! N
-            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*( (md%PHIA(I)*(1.0_dp-md%PHIA(I))) + &
-                     alpha*(md%PHIB(I)*(1.0_dp - md%PHIA(I) - md%PHIB(I)) ))! A
-            !mc%Dx_Field=mc%dx_Field-md%PHIH(I)*md%PHIA(I)
+            phi_A=md%PHIA(I)
+            phi_B=md%PHIB(I)
+            phi_S=1-phi_A-phi_B
+            
+            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*&
+                  (phi_A*phi_B + mc%beta*phi_A*phi_S + mc%alpha*phi_B*phi_S)
 
             if ((md%PHIA(I)+md%PHIB(I)-1.0_dp)>0.0_dp) then
                 mc%Dx_Kap=mc%dx_Kap+(VV/mc%V)*((md%PHIA(I)+md%PHIB(I)-1.0_dp)**2)
@@ -71,12 +70,10 @@ else ! Calculate change in energy
             phi_A=md%PHIA(J)+md%DPHIA(I)
             phi_B=md%PHIB(J)+md%DPHIB(I)
             phi_h=md%PHIH(J)
-            !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*phi_A*(1.0_dp-phi_A-phi_B) !P
-            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*(1.0_dp-phi_A) !H
-            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*phi_B !N
-            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*( (PHI_A*(1.0_dp-PHI_A)) + &
-                     alpha*(PHI_B*(1.0_dp - PHI_A - PHI_B) ))! A
-            !mc%Dx_Field=mc%Dx_Field-phi_h*phi_A
+            phi_S=1-phi_A-phi_B
+
+            mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*&
+                  (phi_A*phi_B + mc%beta*phi_A*phi_S + mc%alpha*phi_B*phi_S)
             
             if ((phi_A+phi_B-1.0_dp)>0.0_dp) then
                 mc%Dx_Kap=mc%Dx_Kap+(VV/mc%V)*((phi_A+phi_B-1.0_dp)**2)
@@ -86,12 +83,10 @@ else ! Calculate change in energy
             phi_A=md%PHIA(J)
             phi_B=md%PHIB(J)
             phi_h=md%PHIH(J)
-            !mc%Dx_Chi=mc%Dx_Chi+(VV/mc%V)*phi_A*(1.0_dp-phi_A-phi_B) !P
-            !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*phi_A*(1.0_dp-phi_A) !H
-            !mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*(md%PHIA(J)*md%PHIB(J))
-            mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*( (PHI_A*(1.0_dp-PHI_A)) + &
-                     alpha*(PHI_B*(1.0_dp - PHI_A - PHI_B) ))! A
-            !mc%Dx_Field=mc%Dx_Field+phi_h*md%PHIA(J)
+            phi_S=1-phi_A-phi_B
+
+            mc%Dx_Chi=mc%Dx_Chi-(VV/mc%V)*&
+                  (phi_A*phi_B + mc%beta*phi_A*phi_S + mc%alpha*phi_B*phi_S)
 
             if ((md%PHIA(J)+md%PHIB(J)-1.0_dp)>0.0_dp) then
                 mc%Dx_Kap=mc%Dx_Kap-(VV/mc%V)*((md%PHIA(J)+md%PHIB(J)-1.0_dp)**2)

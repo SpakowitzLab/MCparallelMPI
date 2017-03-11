@@ -40,6 +40,8 @@ Module simMod
     
 
     DOUBLE PRECISION CHI      ! Chi parameter value (solvent-polymer)        
+    DOUBLE PRECISION alpha    ! for B-solvent chi
+    DOUBLE PRECISION beta     ! for A-solvent chi
     DOUBLE PRECISION KAP      ! Incompressibility parameter
     DOUBLE PRECISION h_A      ! fild strength
     Double Precision k_field  ! wave vector of template field
@@ -222,6 +224,8 @@ Subroutine MCvar_setParams(mc,fileName)
     mc%k_field=1.5708_dp !0.3145_dp
 
     ! energy parameters
+    mc%alpha = 0.0
+    mc%beta = 0.0
     mc%EPS =0.3_dp
     mc%CHI =0.0_dp
     mc%h_A =0.0_dp
@@ -388,6 +392,10 @@ Subroutine MCvar_setParams(mc,fileName)
            Call READF(mc%EPS) ! Elasticity l0/(2lp) 
        CASE('CHI')
            Call READF(mc%CHI) ! CHI parameter (definition depends on  hamiltoniaon
+       CASE('ALPHA')
+           Call READF(mc%alpha) 
+       CASE('BETA')
+           Call READF(mc%beta) ! CHI parameter (definition depends on  hamiltoniaon
        CASE('H_A')
            Call READF(mc%h_A) ! strength of externally applied field
        CASE('KAP')
