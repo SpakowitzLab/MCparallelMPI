@@ -31,7 +31,6 @@ EPS_1 0.104
 V 0.03333
 
 # Simulation parameters
-FPOLY 0.4
 LBOX 25
 DEL 1.0000
 CHI 0.0
