@@ -193,7 +193,7 @@ subroutine paraTemp ( p, id)
         do rep=1,nPTReplicas
             upSuccess(rep)=0
             downSuccess(rep)=0
-            s_vals(rep)=mc%INITIAL_MAX_S*dble(rep)/dble(nPTReplicas)
+            s_vals(rep)=mc%INITIAL_MAX_S*(dble(rep)-1.0)/(dble(nPTReplicas)-1.0)
         enddo
 
         do rep=1,nPTReplicas
