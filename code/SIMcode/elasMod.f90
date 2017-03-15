@@ -49,7 +49,10 @@ INTEGER I
 
 DEL=2.*EPS
 
-
+if (DEL.LE.0.01 .or. DEL.GE. 10.0) then
+    print*, "Error: EPS of ",EPS," out of range."
+    print*, "0.005 < EPS < 5.0"
+endif
 
 !     Load the tabulated parameters
 
