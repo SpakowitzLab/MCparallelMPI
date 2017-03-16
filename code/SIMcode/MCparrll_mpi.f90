@@ -618,6 +618,7 @@ Subroutine replicaExchange(mc)
     !mc%Para(3)  =cof(8)
 
     if (abs(mc%EChi-x(1)*CofOld(1)).gt.0.0000001_dp) then
+        inquire(file = "data/error", exist=isfile)
         if (isfile) then
             OPEN (UNIT = 1, FILE = "data/error", STATUS ='OLD', POSITION="append")
         else 
@@ -640,6 +641,7 @@ Subroutine replicaExchange(mc)
    ! mc%EElas(3)=mc%EElas(3)+x(8)*(Cof(8)-CofOld(8)) 
 
     if (abs(mc%EChi-x(1)*Cof(1)).gt.0.000001_dp) then
+        inquire(file = "data/error", exist=isfile)
         if (isfile) then
             OPEN (UNIT = 1, FILE = "data/error", STATUS ='OLD', POSITION="append")
         else 
